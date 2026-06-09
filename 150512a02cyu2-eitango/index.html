@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中学２年　名詞</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>中学２年　名詞</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "advice",
+    "hint": "中学２年　名詞",
+    "a": "忠告"
+  },
+  {
+    "q": "air",
+    "hint": "中学２年　名詞",
+    "a": "空気"
+  },
+  {
+    "q": "airport",
+    "hint": "中学２年　名詞",
+    "a": "空港"
+  },
+  {
+    "q": "album",
+    "hint": "中学２年　名詞",
+    "a": "アルバム"
+  },
+  {
+    "q": "America",
+    "hint": "中学２年　名詞",
+    "a": "アメリカ"
+  },
+  {
+    "q": "animal",
+    "hint": "中学２年　名詞",
+    "a": "動物"
+  },
+  {
+    "q": "arm",
+    "hint": "中学２年　名詞",
+    "a": "腕"
+  },
+  {
+    "q": "art",
+    "hint": "中学２年　名詞",
+    "a": "美術、芸術"
+  },
+  {
+    "q": "baby",
+    "hint": "中学２年　名詞",
+    "a": "赤ん坊"
+  },
+  {
+    "q": "ball",
+    "hint": "中学２年　名詞",
+    "a": "ボール"
+  },
+  {
+    "q": "band",
+    "hint": "中学２年　名詞",
+    "a": "バンド"
+  },
+  {
+    "q": "bar",
+    "hint": "中学２年　名詞",
+    "a": "棒、横木"
+  },
+  {
+    "q": "bath",
+    "hint": "中学２年　名詞",
+    "a": "風呂"
+  },
+  {
+    "q": "bear",
+    "hint": "中学２年　名詞",
+    "a": "クマ"
+  },
+  {
+    "q": "beef",
+    "hint": "中学２年　名詞",
+    "a": "牛肉"
+  },
+  {
+    "q": "beer",
+    "hint": "中学２年　名詞",
+    "a": "ビール"
+  },
+  {
+    "q": "bell",
+    "hint": "中学２年　名詞",
+    "a": "ベル"
+  },
+  {
+    "q": "belt",
+    "hint": "中学２年　名詞",
+    "a": "ベルト"
+  },
+  {
+    "q": "bench",
+    "hint": "中学２年　名詞",
+    "a": "ベンチ"
+  },
+  {
+    "q": "bicycle",
+    "hint": "中学２年　名詞",
+    "a": "自転車"
+  },
+  {
+    "q": "birthday",
+    "hint": "中学２年　名詞",
+    "a": "誕生日"
+  },
+  {
+    "q": "body",
+    "hint": "中学２年　名詞",
+    "a": "身体"
+  },
+  {
+    "q": "bridge",
+    "hint": "中学２年　名詞",
+    "a": "橋"
+  },
+  {
+    "q": "building",
+    "hint": "中学２年　名詞",
+    "a": "建物"
+  },
+  {
+    "q": "business",
+    "hint": "中学２年　名詞",
+    "a": "商売"
+  },
+  {
+    "q": "butter",
+    "hint": "中学２年　名詞",
+    "a": "バター"
+  },
+  {
+    "q": "camp",
+    "hint": "中学２年　名詞",
+    "a": "キャンプ"
+  },
+  {
+    "q": "candle",
+    "hint": "中学２年　名詞",
+    "a": "ろうそく"
+  },
+  {
+    "q": "candy",
+    "hint": "中学２年　名詞",
+    "a": "キャンディー"
+  },
+  {
+    "q": "capital",
+    "hint": "中学２年　名詞",
+    "a": "首都"
+  },
+  {
+    "q": "card",
+    "hint": "中学２年　名詞",
+    "a": "カード"
+  },
+  {
+    "q": "carpet",
+    "hint": "中学２年　名詞",
+    "a": "じゅうたん"
+  },
+  {
+    "q": "center",
+    "hint": "中学２年　名詞",
+    "a": "中央"
+  },
+  {
+    "q": "chain",
+    "hint": "中学２年　名詞",
+    "a": "くさり"
+  },
+  {
+    "q": "chalk",
+    "hint": "中学２年　名詞",
+    "a": "チョーク"
+  },
+  {
+    "q": "chicken",
+    "hint": "中学２年　名詞",
+    "a": "ニワトリ"
+  },
+  {
+    "q": "child",
+    "hint": "中学２年　名詞",
+    "a": "子供"
+  },
+  {
+    "q": "Christmas",
+    "hint": "中学２年　名詞",
+    "a": "クリスマス"
+  },
+  {
+    "q": "circle",
+    "hint": "中学２年　名詞",
+    "a": "円"
+  },
+  {
+    "q": "classroom",
+    "hint": "中学２年　名詞",
+    "a": "教室"
+  },
+  {
+    "q": "clock",
+    "hint": "中学２年　名詞",
+    "a": "置き時計"
+  },
+  {
+    "q": "cloth",
+    "hint": "中学２年　名詞",
+    "a": "布"
+  },
+  {
+    "q": "clothes",
+    "hint": "中学２年　名詞",
+    "a": "服"
+  },
+  {
+    "q": "cloud",
+    "hint": "中学２年　名詞",
+    "a": "雲"
+  },
+  {
+    "q": "club",
+    "hint": "中学２年　名詞",
+    "a": "クラブ"
+  },
+  {
+    "q": "coat",
+    "hint": "中学２年　名詞",
+    "a": "コート"
+  },
+  {
+    "q": "coffee",
+    "hint": "中学２年　名詞",
+    "a": "コーヒー"
+  },
+  {
+    "q": "coin",
+    "hint": "中学２年　名詞",
+    "a": "硬貨"
+  },
+  {
+    "q": "college",
+    "hint": "中学２年　名詞",
+    "a": "大学"
+  },
+  {
+    "q": "computer",
+    "hint": "中学２年　名詞",
+    "a": "コンピュータ"
+  },
+  {
+    "q": "contest",
+    "hint": "中学２年　名詞",
+    "a": "コンテスト"
+  },
+  {
+    "q": "corner",
+    "hint": "中学２年　名詞",
+    "a": "かど"
+  },
+  {
+    "q": "culture",
+    "hint": "中学２年　名詞",
+    "a": "文化"
+  },
+  {
+    "q": "date",
+    "hint": "中学２年　名詞",
+    "a": "日付"
+  },
+  {
+    "q": "dictionary",
+    "hint": "中学２年　名詞",
+    "a": "辞書"
+  },
+  {
+    "q": "dish",
+    "hint": "中学２年　名詞",
+    "a": "皿、料理"
+  },
+  {
+    "q": "dollar",
+    "hint": "中学２年　名詞",
+    "a": "ドル"
+  },
+  {
+    "q": "dream",
+    "hint": "中学２年　名詞",
+    "a": "夢"
+  },
+  {
+    "q": "duck",
+    "hint": "中学２年　名詞",
+    "a": "あひる"
+  },
+  {
+    "q": "ear",
+    "hint": "中学２年　名詞",
+    "a": "耳"
+  },
+  {
+    "q": "earth",
+    "hint": "中学２年　名詞",
+    "a": "地球、大地"
+  },
+  {
+    "q": "elevator",
+    "hint": "中学２年　名詞",
+    "a": "エレベーター"
+  },
+  {
+    "q": "English",
+    "hint": "中学２年　名詞",
+    "a": "英語"
+  },
+  {
+    "q": "eraser",
+    "hint": "中学２年　名詞",
+    "a": "消しゴム"
+  },
+  {
+    "q": "example",
+    "hint": "中学２年　名詞",
+    "a": "例"
+  },
+  {
+    "q": "eye",
+    "hint": "中学２年　名詞",
+    "a": "目"
+  },
+  {
+    "q": "face",
+    "hint": "中学２年　名詞",
+    "a": "顔"
+  },
+  {
+    "q": "factory",
+    "hint": "中学２年　名詞",
+    "a": "工場"
+  },
+  {
+    "q": "fan",
+    "hint": "中学２年　名詞",
+    "a": "ファン"
+  },
+  {
+    "q": "farm",
+    "hint": "中学２年　名詞",
+    "a": "農場"
+  },
+  {
+    "q": "farmer",
+    "hint": "中学２年　名詞",
+    "a": "農場主"
+  },
+  {
+    "q": "feeling",
+    "hint": "中学２年　名詞",
+    "a": "感覚"
+  },
+  {
+    "q": "finger",
+    "hint": "中学２年　名詞",
+    "a": "指"
+  },
+  {
+    "q": "fire",
+    "hint": "中学２年　名詞",
+    "a": "火"
+  },
+  {
+    "q": "food",
+    "hint": "中学２年　名詞",
+    "a": "食べ物"
+  },
+  {
+    "q": "fool",
+    "hint": "中学２年　名詞",
+    "a": "馬鹿"
+  },
+  {
+    "q": "foot",
+    "hint": "中学２年　名詞",
+    "a": "足"
+  },
+  {
+    "q": "football",
+    "hint": "中学２年　名詞",
+    "a": "フットボール"
+  },
+  {
+    "q": "fork",
+    "hint": "中学２年　名詞",
+    "a": "フォーク"
+  },
+  {
+    "q": "front",
+    "hint": "中学２年　名詞",
+    "a": "前"
+  },
+  {
+    "q": "fun",
+    "hint": "中学２年　名詞",
+    "a": "楽しみ"
+  },
+  {
+    "q": "future",
+    "hint": "中学２年　名詞",
+    "a": "未来"
+  },
+  {
+    "q": "game",
+    "hint": "中学２年　名詞",
+    "a": "試合"
+  },
+  {
+    "q": "gentleman",
+    "hint": "中学２年　名詞",
+    "a": "紳士"
+  },
+  {
+    "q": "gift",
+    "hint": "中学２年　名詞",
+    "a": "贈り物"
+  },
+  {
+    "q": "glove",
+    "hint": "中学２年　名詞",
+    "a": "グローブ"
+  },
+  {
+    "q": "gold",
+    "hint": "中学２年　名詞",
+    "a": "金"
+  },
+  {
+    "q": "grandfather",
+    "hint": "中学２年　名詞",
+    "a": "祖父"
+  },
+  {
+    "q": "grandmother",
+    "hint": "中学２年　名詞",
+    "a": "祖母"
+  },
+  {
+    "q": "grass",
+    "hint": "中学２年　名詞",
+    "a": "草"
+  },
+  {
+    "q": "ground",
+    "hint": "中学２年　名詞",
+    "a": "地面"
+  },
+  {
+    "q": "group",
+    "hint": "中学２年　名詞",
+    "a": "グループ"
+  },
+  {
+    "q": "guest",
+    "hint": "中学２年　名詞",
+    "a": "客"
+  },
+  {
+    "q": "guitar",
+    "hint": "中学２年　名詞",
+    "a": "ギター"
+  },
+  {
+    "q": "gun",
+    "hint": "中学２年　名詞",
+    "a": "鉄砲"
+  },
+  {
+    "q": "hair",
+    "hint": "中学２年　名詞",
+    "a": "髪"
+  },
+  {
+    "q": "happiness",
+    "hint": "中学２年　名詞",
+    "a": "幸福"
+  },
+  {
+    "q": "hat",
+    "hint": "中学２年　名詞",
+    "a": "帽子"
+  },
+  {
+    "q": "head",
+    "hint": "中学２年　名詞",
+    "a": "頭、先頭"
+  },
+  {
+    "q": "health",
+    "hint": "中学２年　名詞",
+    "a": "健康"
+  },
+  {
+    "q": "heart",
+    "hint": "中学２年　名詞",
+    "a": "心"
+  },
+  {
+    "q": "hill",
+    "hint": "中学２年　名詞",
+    "a": "丘"
+  },
+  {
+    "q": "history",
+    "hint": "中学２年　名詞",
+    "a": "歴史"
+  },
+  {
+    "q": "hobby",
+    "hint": "中学２年　名詞",
+    "a": "趣味"
+  },
+  {
+    "q": "holiday",
+    "hint": "中学２年　名詞",
+    "a": "休日"
+  },
+  {
+    "q": "home",
+    "hint": "中学２年　名詞",
+    "a": "故郷、自宅"
+  },
+  {
+    "q": "homeroom",
+    "hint": "中学２年　名詞",
+    "a": "ホームルーム"
+  },
+  {
+    "q": "hope",
+    "hint": "中学２年　名詞",
+    "a": "希望"
+  },
+  {
+    "q": "horse",
+    "hint": "中学２年　名詞",
+    "a": "馬"
+  },
+  {
+    "q": "hundred",
+    "hint": "中学２年　名詞",
+    "a": "百"
+  },
+  {
+    "q": "ice",
+    "hint": "中学２年　名詞",
+    "a": "氷"
+  },
+  {
+    "q": "idea",
+    "hint": "中学２年　名詞",
+    "a": "考え"
+  },
+  {
+    "q": "inside",
+    "hint": "中学２年　名詞",
+    "a": "内側"
+  },
+  {
+    "q": "island",
+    "hint": "中学２年　名詞",
+    "a": "島"
+  },
+  {
+    "q": "job",
+    "hint": "中学２年　名詞",
+    "a": "仕事"
+  },
+  {
+    "q": "key",
+    "hint": "中学２年　名詞",
+    "a": "鍵"
+  },
+  {
+    "q": "kind",
+    "hint": "中学２年　名詞",
+    "a": "種類"
+  },
+  {
+    "q": "king",
+    "hint": "中学２年　名詞",
+    "a": "王様"
+  },
+  {
+    "q": "knife",
+    "hint": "中学２年　名詞",
+    "a": "ナイフ"
+  },
+  {
+    "q": "lady",
+    "hint": "中学２年　名詞",
+    "a": "婦人"
+  },
+  {
+    "q": "lake",
+    "hint": "中学２年　名詞",
+    "a": "湖"
+  },
+  {
+    "q": "land",
+    "hint": "中学２年　名詞",
+    "a": "陸地、土地"
+  },
+  {
+    "q": "language",
+    "hint": "中学２年　名詞",
+    "a": "言語"
+  },
+  {
+    "q": "last",
+    "hint": "中学２年　名詞",
+    "a": "最後"
+  },
+  {
+    "q": "law",
+    "hint": "中学２年　名詞",
+    "a": "法律"
+  },
+  {
+    "q": "leaf",
+    "hint": "中学２年　名詞",
+    "a": "葉"
+  },
+  {
+    "q": "leg",
+    "hint": "中学２年　名詞",
+    "a": "脚"
+  },
+  {
+    "q": "lesson",
+    "hint": "中学２年　名詞",
+    "a": "授業、課"
+  },
+  {
+    "q": "lie",
+    "hint": "中学２年　名詞",
+    "a": "嘘"
+  },
+  {
+    "q": "life",
+    "hint": "中学２年　名詞",
+    "a": "生活、人生"
+  },
+  {
+    "q": "light",
+    "hint": "中学２年　名詞",
+    "a": "光、明かり"
+  },
+  {
+    "q": "lion",
+    "hint": "中学２年　名詞",
+    "a": "ライオン"
+  },
+  {
+    "q": "locker",
+    "hint": "中学２年　名詞",
+    "a": "ロッカー"
+  },
+  {
+    "q": "love",
+    "hint": "中学２年　名詞",
+    "a": "愛、愛する人"
+  },
+  {
+    "q": "machine",
+    "hint": "中学２年　名詞",
+    "a": "機械"
+  },
+  {
+    "q": "magazine",
+    "hint": "中学２年　名詞",
+    "a": "雑誌"
+  },
+  {
+    "q": "market",
+    "hint": "中学２年　名詞",
+    "a": "市場"
+  },
+  {
+    "q": "math",
+    "hint": "中学２年　名詞",
+    "a": "数学"
+  },
+  {
+    "q": "meat",
+    "hint": "中学２年　名詞",
+    "a": "肉"
+  },
+  {
+    "q": "medal",
+    "hint": "中学２年　名詞",
+    "a": "メダル"
+  },
+  {
+    "q": "medicine",
+    "hint": "中学２年　名詞",
+    "a": "薬"
+  },
+  {
+    "q": "member",
+    "hint": "中学２年　名詞",
+    "a": "会員"
+  },
+  {
+    "q": "mile",
+    "hint": "中学２年　名詞",
+    "a": "マイル"
+  },
+  {
+    "q": "million",
+    "hint": "中学２年　名詞",
+    "a": "１００万"
+  },
+  {
+    "q": "mirror",
+    "hint": "中学２年　名詞",
+    "a": "鏡"
+  },
+  {
+    "q": "mistake",
+    "hint": "中学２年　名詞",
+    "a": "誤り"
+  },
+  {
+    "q": "money",
+    "hint": "中学２年　名詞",
+    "a": "お金"
+  },
+  {
+    "q": "monkey",
+    "hint": "中学２年　名詞",
+    "a": "サル"
+  },
+  {
+    "q": "moon",
+    "hint": "中学２年　名詞",
+    "a": "月"
+  },
+  {
+    "q": "mountain",
+    "hint": "中学２年　名詞",
+    "a": "山"
+  },
+  {
+    "q": "mouse",
+    "hint": "中学２年　名詞",
+    "a": "ねずみ"
+  },
+  {
+    "q": "mouth",
+    "hint": "中学２年　名詞",
+    "a": "口"
+  },
+  {
+    "q": "museum",
+    "hint": "中学２年　名詞",
+    "a": "博物館"
+  },
+  {
+    "q": "music",
+    "hint": "中学２年　名詞",
+    "a": "音楽"
+  },
+  {
+    "q": "nature",
+    "hint": "中学２年　名詞",
+    "a": "自然"
+  },
+  {
+    "q": "neck",
+    "hint": "中学２年　名詞",
+    "a": "首"
+  },
+  {
+    "q": "nest",
+    "hint": "中学２年　名詞",
+    "a": "巣"
+  },
+  {
+    "q": "news",
+    "hint": "中学２年　名詞",
+    "a": "ニュース"
+  },
+  {
+    "q": "newspaper",
+    "hint": "中学２年　名詞",
+    "a": "新聞"
+  },
+  {
+    "q": "noise",
+    "hint": "中学２年　名詞",
+    "a": "物音"
+  },
+  {
+    "q": "nose",
+    "hint": "中学２年　名詞",
+    "a": "鼻"
+  },
+  {
+    "q": "oil",
+    "hint": "中学２年　名詞",
+    "a": "油"
+  },
+  {
+    "q": "overcoat",
+    "hint": "中学２年　名詞",
+    "a": "オーバー"
+  },
+  {
+    "q": "pants",
+    "hint": "中学２年　名詞",
+    "a": "ズボン"
+  },
+  {
+    "q": "paper",
+    "hint": "中学２年　名詞",
+    "a": "紙、レポート"
+  },
+  {
+    "q": "part",
+    "hint": "中学２年　名詞",
+    "a": "部分"
+  },
+  {
+    "q": "party",
+    "hint": "中学２年　名詞",
+    "a": "パーティー"
+  },
+  {
+    "q": "passport",
+    "hint": "中学２年　名詞",
+    "a": "パスポート"
+  },
+  {
+    "q": "peace",
+    "hint": "中学２年　名詞",
+    "a": "平和"
+  },
+  {
+    "q": "peanut",
+    "hint": "中学２年　名詞",
+    "a": "ピーナッツ"
+  },
+  {
+    "q": "people",
+    "hint": "中学２年　名詞",
+    "a": "人々"
+  },
+  {
+    "q": "person",
+    "hint": "中学２年　名詞",
+    "a": "人"
+  },
+  {
+    "q": "pet",
+    "hint": "中学２年　名詞",
+    "a": "ペット"
+  },
+  {
+    "q": "phone",
+    "hint": "中学２年　名詞",
+    "a": "電話"
+  },
+  {
+    "q": "photo",
+    "hint": "中学２年　名詞",
+    "a": "写真"
+  },
+  {
+    "q": "picnic",
+    "hint": "中学２年　名詞",
+    "a": "ピクニック"
+  },
+  {
+    "q": "pie",
+    "hint": "中学２年　名詞",
+    "a": "パイ"
+  },
+  {
+    "q": "piece",
+    "hint": "中学２年　名詞",
+    "a": "断片"
+  },
+  {
+    "q": "pig",
+    "hint": "中学２年　名詞",
+    "a": "ブタ"
+  },
+  {
+    "q": "plan",
+    "hint": "中学２年　名詞",
+    "a": "計画"
+  },
+  {
+    "q": "planet",
+    "hint": "中学２年　名詞",
+    "a": "惑星"
+  },
+  {
+    "q": "pocket",
+    "hint": "中学２年　名詞",
+    "a": "ポケット"
+  },
+  {
+    "q": "police",
+    "hint": "中学２年　名詞",
+    "a": "警察"
+  },
+  {
+    "q": "pond",
+    "hint": "中学２年　名詞",
+    "a": "池"
+  },
+  {
+    "q": "pork",
+    "hint": "中学２年　名詞",
+    "a": "ブタ肉"
+  },
+  {
+    "q": "port",
+    "hint": "中学２年　名詞",
+    "a": "港"
+  },
+  {
+    "q": "post",
+    "hint": "中学２年　名詞",
+    "a": "郵便"
+  },
+  {
+    "q": "potato",
+    "hint": "中学２年　名詞",
+    "a": "じゃがいも"
+  },
+  {
+    "q": "program",
+    "hint": "中学２年　名詞",
+    "a": "番組"
+  },
+  {
+    "q": "question",
+    "hint": "中学２年　名詞",
+    "a": "質問"
+  },
+  {
+    "q": "rabbit",
+    "hint": "中学２年　名詞",
+    "a": "ウサギ"
+  },
+  {
+    "q": "radio",
+    "hint": "中学２年　名詞",
+    "a": "ラジオ"
+  },
+  {
+    "q": "rain",
+    "hint": "中学２年　名詞",
+    "a": "雨"
+  },
+  {
+    "q": "rat",
+    "hint": "中学２年　名詞",
+    "a": "ネズミ"
+  },
+  {
+    "q": "record",
+    "hint": "中学２年　名詞",
+    "a": "レコード"
+  },
+  {
+    "q": "rice",
+    "hint": "中学２年　名詞",
+    "a": "ご飯"
+  },
+  {
+    "q": "ring",
+    "hint": "中学２年　名詞",
+    "a": "指輪"
+  },
+  {
+    "q": "river",
+    "hint": "中学２年　名詞",
+    "a": "川"
+  },
+  {
+    "q": "road",
+    "hint": "中学２年　名詞",
+    "a": "道"
+  },
+  {
+    "q": "rock",
+    "hint": "中学２年　名詞",
+    "a": "ロック"
+  },
+  {
+    "q": "roof",
+    "hint": "中学２年　名詞",
+    "a": "屋根"
+  },
+  {
+    "q": "sailor",
+    "hint": "中学２年　名詞",
+    "a": "船員"
+  },
+  {
+    "q": "salt",
+    "hint": "中学２年　名詞",
+    "a": "塩"
+  },
+  {
+    "q": "sea",
+    "hint": "中学２年　名詞",
+    "a": "海"
+  },
+  {
+    "q": "seat",
+    "hint": "中学２年　名詞",
+    "a": "座席"
+  },
+  {
+    "q": "ship",
+    "hint": "中学２年　名詞",
+    "a": "船"
+  },
+  {
+    "q": "shirt",
+    "hint": "中学２年　名詞",
+    "a": "シャツ"
+  },
+  {
+    "q": "shoe",
+    "hint": "中学２年　名詞",
+    "a": "靴"
+  },
+  {
+    "q": "shop",
+    "hint": "中学２年　名詞",
+    "a": "店"
+  },
+  {
+    "q": "shoulder",
+    "hint": "中学２年　名詞",
+    "a": "肩"
+  },
+  {
+    "q": "show",
+    "hint": "中学２年　名詞",
+    "a": "ショー"
+  },
+  {
+    "q": "side",
+    "hint": "中学２年　名詞",
+    "a": "側面"
+  },
+  {
+    "q": "skirt",
+    "hint": "中学２年　名詞",
+    "a": "スカート"
+  },
+  {
+    "q": "sky",
+    "hint": "中学２年　名詞",
+    "a": "空"
+  },
+  {
+    "q": "smile",
+    "hint": "中学２年　名詞",
+    "a": "ほお笑み"
+  },
+  {
+    "q": "snow",
+    "hint": "中学２年　名詞",
+    "a": "雪"
+  },
+  {
+    "q": "soccer",
+    "hint": "中学２年　名詞",
+    "a": "サッカー"
+  },
+  {
+    "q": "song",
+    "hint": "中学２年　名詞",
+    "a": "歌"
+  },
+  {
+    "q": "sound",
+    "hint": "中学２年　名詞",
+    "a": "音"
+  },
+  {
+    "q": "space",
+    "hint": "中学２年　名詞",
+    "a": "宇宙"
+  },
+  {
+    "q": "speech",
+    "hint": "中学２年　名詞",
+    "a": "演説"
+  },
+  {
+    "q": "sport",
+    "hint": "中学２年　名詞",
+    "a": "スポーツ"
+  },
+  {
+    "q": "star",
+    "hint": "中学２年　名詞",
+    "a": "星、スター"
+  },
+  {
+    "q": "stone",
+    "hint": "中学２年　名詞",
+    "a": "石"
+  },
+  {
+    "q": "story",
+    "hint": "中学２年　名詞",
+    "a": "話"
+  },
+  {
+    "q": "street",
+    "hint": "中学２年　名詞",
+    "a": "通り"
+  },
+  {
+    "q": "success",
+    "hint": "中学２年　名詞",
+    "a": "成功"
+  },
+  {
+    "q": "sugar",
+    "hint": "中学２年　名詞",
+    "a": "砂糖"
+  },
+  {
+    "q": "sun",
+    "hint": "中学２年　名詞",
+    "a": "太陽"
+  },
+  {
+    "q": "tea",
+    "hint": "中学２年　名詞",
+    "a": "お茶"
+  },
+  {
+    "q": "team",
+    "hint": "中学２年　名詞",
+    "a": "チーム"
+  },
+  {
+    "q": "test",
+    "hint": "中学２年　名詞",
+    "a": "試験"
+  },
+  {
+    "q": "textbook",
+    "hint": "中学２年　名詞",
+    "a": "教科書"
+  },
+  {
+    "q": "thousand",
+    "hint": "中学２年　名詞",
+    "a": "千"
+  },
+  {
+    "q": "tooth",
+    "hint": "中学２年　名詞",
+    "a": "歯"
+  },
+  {
+    "q": "top",
+    "hint": "中学２年　名詞",
+    "a": "頂上"
+  },
+  {
+    "q": "train",
+    "hint": "中学２年　名詞",
+    "a": "列車"
+  },
+  {
+    "q": "travel",
+    "hint": "中学２年　名詞",
+    "a": "旅行"
+  },
+  {
+    "q": "trip",
+    "hint": "中学２年　名詞",
+    "a": "旅行"
+  },
+  {
+    "q": "TV",
+    "hint": "中学２年　名詞",
+    "a": "テレビ"
+  },
+  {
+    "q": "vacation",
+    "hint": "中学２年　名詞",
+    "a": "休暇"
+  },
+  {
+    "q": "vegetable",
+    "hint": "中学２年　名詞",
+    "a": "野菜"
+  },
+  {
+    "q": "video",
+    "hint": "中学２年　名詞",
+    "a": "ビデオ"
+  },
+  {
+    "q": "voice",
+    "hint": "中学２年　名詞",
+    "a": "声"
+  },
+  {
+    "q": "war",
+    "hint": "中学２年　名詞",
+    "a": "戦争"
+  },
+  {
+    "q": "water",
+    "hint": "中学２年　名詞",
+    "a": "水"
+  },
+  {
+    "q": "wife",
+    "hint": "中学２年　名詞",
+    "a": "妻"
+  },
+  {
+    "q": "wind",
+    "hint": "中学２年　名詞",
+    "a": "風"
+  },
+  {
+    "q": "wood",
+    "hint": "中学２年　名詞",
+    "a": "木材"
+  },
+  {
+    "q": "word",
+    "hint": "中学２年　名詞",
+    "a": "言葉"
+  },
+  {
+    "q": "add",
+    "hint": "中学２年　動詞",
+    "a": "加える"
+  },
+  {
+    "q": "advise",
+    "hint": "中学２年　動詞",
+    "a": "忠告する、助言する"
+  },
+  {
+    "q": "answer",
+    "hint": "中学２年　動詞",
+    "a": "答える"
+  },
+  {
+    "q": "ask",
+    "hint": "中学２年　動詞",
+    "a": "たずねる、頼む"
+  },
+  {
+    "q": "become",
+    "hint": "中学２年　動詞",
+    "a": "～になる"
+  },
+  {
+    "q": "begin",
+    "hint": "中学２年　動詞",
+    "a": "始まる"
+  },
+  {
+    "q": "believe",
+    "hint": "中学２年　動詞",
+    "a": "信じる"
+  },
+  {
+    "q": "borrow",
+    "hint": "中学２年　動詞",
+    "a": "借りる"
+  },
+  {
+    "q": "bring",
+    "hint": "中学２年　動詞",
+    "a": "持って来る"
+  },
+  {
+    "q": "build",
+    "hint": "中学２年　動詞",
+    "a": "建てる"
+  },
+  {
+    "q": "call",
+    "hint": "中学２年　動詞",
+    "a": "電話をかける"
+  },
+  {
+    "q": "care",
+    "hint": "中学２年　動詞",
+    "a": "気にする"
+  },
+  {
+    "q": "carry",
+    "hint": "中学２年　動詞",
+    "a": "運ぶ"
+  },
+  {
+    "q": "change",
+    "hint": "中学２年　動詞",
+    "a": "変わる"
+  },
+  {
+    "q": "clean",
+    "hint": "中学２年　動詞",
+    "a": "掃除する"
+  },
+  {
+    "q": "climb",
+    "hint": "中学２年　動詞",
+    "a": "登る"
+  },
+  {
+    "q": "close",
+    "hint": "中学２年　動詞",
+    "a": "閉じる"
+  },
+  {
+    "q": "cry",
+    "hint": "中学２年　動詞",
+    "a": "泣く"
+  },
+  {
+    "q": "cut",
+    "hint": "中学２年　動詞",
+    "a": "切る"
+  },
+  {
+    "q": "decide",
+    "hint": "中学２年　動詞",
+    "a": "決心する"
+  },
+  {
+    "q": "die",
+    "hint": "中学２年　動詞",
+    "a": "死ぬ"
+  },
+  {
+    "q": "discover",
+    "hint": "中学２年　動詞",
+    "a": "発見する"
+  },
+  {
+    "q": "dislike",
+    "hint": "中学２年　動詞",
+    "a": "嫌う"
+  },
+  {
+    "q": "draw",
+    "hint": "中学２年　動詞",
+    "a": "描く、引く"
+  },
+  {
+    "q": "dress",
+    "hint": "中学２年　動詞",
+    "a": "着る"
+  },
+  {
+    "q": "drive",
+    "hint": "中学２年　動詞",
+    "a": "運転する"
+  },
+  {
+    "q": "dry",
+    "hint": "中学２年　動詞",
+    "a": "乾く"
+  },
+  {
+    "q": "end",
+    "hint": "中学２年　動詞",
+    "a": "終わる"
+  },
+  {
+    "q": "enter",
+    "hint": "中学２年　動詞",
+    "a": "入る"
+  },
+  {
+    "q": "excuse",
+    "hint": "中学２年　動詞",
+    "a": "許す"
+  },
+  {
+    "q": "fail",
+    "hint": "中学２年　動詞",
+    "a": "失敗する"
+  },
+  {
+    "q": "fall",
+    "hint": "中学２年　動詞",
+    "a": "落ちる"
+  },
+  {
+    "q": "feel",
+    "hint": "中学２年　動詞",
+    "a": "感じる"
+  },
+  {
+    "q": "find",
+    "hint": "中学２年　動詞",
+    "a": "見つける、～とわかる"
+  },
+  {
+    "q": "finish",
+    "hint": "中学２年　動詞",
+    "a": "終える"
+  },
+  {
+    "q": "fly",
+    "hint": "中学２年　動詞",
+    "a": "飛行機で行く、飛ぶ"
+  },
+  {
+    "q": "forget",
+    "hint": "中学２年　動詞",
+    "a": "忘れる"
+  },
+  {
+    "q": "grow",
+    "hint": "中学２年　動詞",
+    "a": "成長する、育てる"
+  },
+  {
+    "q": "happen",
+    "hint": "中学２年　動詞",
+    "a": "起こる"
+  },
+  {
+    "q": "hear",
+    "hint": "中学２年　動詞",
+    "a": "聞く"
+  },
+  {
+    "q": "hold",
+    "hint": "中学２年　動詞",
+    "a": "握る、開催する"
+  },
+  {
+    "q": "hope",
+    "hint": "中学２年　動詞",
+    "a": "望む"
+  },
+  {
+    "q": "hunt",
+    "hint": "中学２年　動詞",
+    "a": "狩りをする"
+  },
+  {
+    "q": "hurry",
+    "hint": "中学２年　動詞",
+    "a": "急ぐ"
+  },
+  {
+    "q": "imagine",
+    "hint": "中学２年　動詞",
+    "a": "想像する"
+  },
+  {
+    "q": "invite",
+    "hint": "中学２年　動詞",
+    "a": "招待する"
+  },
+  {
+    "q": "join",
+    "hint": "中学２年　動詞",
+    "a": "参加する"
+  },
+  {
+    "q": "jump",
+    "hint": "中学２年　動詞",
+    "a": "跳ぶ"
+  },
+  {
+    "q": "keep",
+    "hint": "中学２年　動詞",
+    "a": "保つ、～を持ち続ける"
+  },
+  {
+    "q": "kill",
+    "hint": "中学２年　動詞",
+    "a": "殺す"
+  },
+  {
+    "q": "laugh",
+    "hint": "中学２年　動詞",
+    "a": "笑う"
+  },
+  {
+    "q": "lend",
+    "hint": "中学２年　動詞",
+    "a": "貸す"
+  },
+  {
+    "q": "listen",
+    "hint": "中学２年　動詞",
+    "a": "聴く"
+  },
+  {
+    "q": "lose",
+    "hint": "中学２年　動詞",
+    "a": "失う、負ける"
+  },
+  {
+    "q": "love",
+    "hint": "中学２年　動詞",
+    "a": "愛する"
+  },
+  {
+    "q": "mean",
+    "hint": "中学２年　動詞",
+    "a": "意味する"
+  },
+  {
+    "q": "name",
+    "hint": "中学２年　動詞",
+    "a": "名づける"
+  },
+  {
+    "q": "paint",
+    "hint": "中学２年　動詞",
+    "a": "描く、ペンキを塗る"
+  },
+  {
+    "q": "pass",
+    "hint": "中学２年　動詞",
+    "a": "過ぎる、合格する"
+  },
+  {
+    "q": "pay",
+    "hint": "中学２年　動詞",
+    "a": "支払う"
+  },
+  {
+    "q": "pick",
+    "hint": "中学２年　動詞",
+    "a": "選ぶ、摘む"
+  },
+  {
+    "q": "plan",
+    "hint": "中学２年　動詞",
+    "a": "計画する"
+  },
+  {
+    "q": "practice",
+    "hint": "中学２年　動詞",
+    "a": "練習する"
+  },
+  {
+    "q": "push",
+    "hint": "中学２年　動詞",
+    "a": "押す"
+  },
+  {
+    "q": "rain",
+    "hint": "中学２年　動詞",
+    "a": "雨が降る"
+  },
+  {
+    "q": "remember",
+    "hint": "中学２年　動詞",
+    "a": "思い出す、覚えている"
+  },
+  {
+    "q": "rest",
+    "hint": "中学２年　動詞",
+    "a": "休息する"
+  },
+  {
+    "q": "rise",
+    "hint": "中学２年　動詞",
+    "a": "起き上がる、のぼる"
+  },
+  {
+    "q": "sail",
+    "hint": "中学２年　動詞",
+    "a": "走らせる"
+  },
+  {
+    "q": "say",
+    "hint": "中学２年　動詞",
+    "a": "言う"
+  },
+  {
+    "q": "see",
+    "hint": "中学２年　動詞",
+    "a": "見る、わかる"
+  },
+  {
+    "q": "seem",
+    "hint": "中学２年　動詞",
+    "a": "～のように思われる"
+  },
+  {
+    "q": "set",
+    "hint": "中学２年　動詞",
+    "a": "置く"
+  },
+  {
+    "q": "shine",
+    "hint": "中学２年　動詞",
+    "a": "光る、輝く"
+  },
+  {
+    "q": "shop",
+    "hint": "中学２年　動詞",
+    "a": "買い物をする"
+  },
+  {
+    "q": "shout",
+    "hint": "中学２年　動詞",
+    "a": "叫ぶ"
+  },
+  {
+    "q": "show",
+    "hint": "中学２年　動詞",
+    "a": "見せる"
+  },
+  {
+    "q": "sit",
+    "hint": "中学２年　動詞",
+    "a": "座る"
+  },
+  {
+    "q": "skate",
+    "hint": "中学２年　動詞",
+    "a": "スケートをする"
+  },
+  {
+    "q": "ski",
+    "hint": "中学２年　動詞",
+    "a": "スキーをする"
+  },
+  {
+    "q": "sleep",
+    "hint": "中学２年　動詞",
+    "a": "眠る"
+  },
+  {
+    "q": "spend",
+    "hint": "中学２年　動詞",
+    "a": "費やす、過ごす"
+  },
+  {
+    "q": "start",
+    "hint": "中学２年　動詞",
+    "a": "出発する、～を始める"
+  },
+  {
+    "q": "strike",
+    "hint": "中学２年　動詞",
+    "a": "打つ"
+  },
+  {
+    "q": "take",
+    "hint": "中学２年　動詞",
+    "a": "連れて行く、取る"
+  },
+  {
+    "q": "talk",
+    "hint": "中学２年　動詞",
+    "a": "話す"
+  },
+  {
+    "q": "teach",
+    "hint": "中学２年　動詞",
+    "a": "教える"
+  },
+  {
+    "q": "tell",
+    "hint": "中学２年　動詞",
+    "a": "教える、語る"
+  },
+  {
+    "q": "test",
+    "hint": "中学２年　動詞",
+    "a": "試みる"
+  },
+  {
+    "q": "thank",
+    "hint": "中学２年　動詞",
+    "a": "感謝する"
+  },
+  {
+    "q": "think",
+    "hint": "中学２年　動詞",
+    "a": "考える"
+  },
+  {
+    "q": "throw",
+    "hint": "中学２年　動詞",
+    "a": "投げる"
+  },
+  {
+    "q": "turn",
+    "hint": "中学２年　動詞",
+    "a": "曲がる、回る"
+  },
+  {
+    "q": "understand",
+    "hint": "中学２年　動詞",
+    "a": "理解する"
+  },
+  {
+    "q": "wake",
+    "hint": "中学２年　動詞",
+    "a": "目が覚める"
+  },
+  {
+    "q": "watch",
+    "hint": "中学２年　動詞",
+    "a": "見る"
+  },
+  {
+    "q": "wear",
+    "hint": "中学２年　動詞",
+    "a": "着る"
+  },
+  {
+    "q": "win",
+    "hint": "中学２年　動詞",
+    "a": "勝つ"
+  },
+  {
+    "q": "wish",
+    "hint": "中学２年　動詞",
+    "a": "望む"
+  },
+  {
+    "q": "worry",
+    "hint": "中学２年　動詞",
+    "a": "悩ませる"
+  },
+  {
+    "q": "absent",
+    "hint": "中学２年　形容詞",
+    "a": "欠席の"
+  },
+  {
+    "q": "afraid",
+    "hint": "中学２年　形容詞",
+    "a": "恐れて"
+  },
+  {
+    "q": "American",
+    "hint": "中学２年　形容詞",
+    "a": "アメリカの"
+  },
+  {
+    "q": "angry",
+    "hint": "中学２年　形容詞",
+    "a": "怒って"
+  },
+  {
+    "q": "bright",
+    "hint": "中学２年　形容詞",
+    "a": "明るい"
+  },
+  {
+    "q": "brown",
+    "hint": "中学２年　形容詞",
+    "a": "茶色の"
+  },
+  {
+    "q": "clever",
+    "hint": "中学２年　形容詞",
+    "a": "利口な"
+  },
+  {
+    "q": "cloudy",
+    "hint": "中学２年　形容詞",
+    "a": "曇った"
+  },
+  {
+    "q": "dear",
+    "hint": "中学２年　形容詞",
+    "a": "親愛なる"
+  },
+  {
+    "q": "deep",
+    "hint": "中学２年　形容詞",
+    "a": "深い"
+  },
+  {
+    "q": "different",
+    "hint": "中学２年　形容詞",
+    "a": "違った"
+  },
+  {
+    "q": "difficult",
+    "hint": "中学２年　形容詞",
+    "a": "むずかしい"
+  },
+  {
+    "q": "each",
+    "hint": "中学２年　形容詞",
+    "a": "おのおのの"
+  },
+  {
+    "q": "enough",
+    "hint": "中学２年　形容詞",
+    "a": "十分な"
+  },
+  {
+    "q": "few",
+    "hint": "中学２年　形容詞",
+    "a": "少数の"
+  },
+  {
+    "q": "foolish",
+    "hint": "中学２年　形容詞",
+    "a": "愚かな"
+  },
+  {
+    "q": "free",
+    "hint": "中学２年　形容詞",
+    "a": "自由な、ひまな"
+  },
+  {
+    "q": "full",
+    "hint": "中学２年　形容詞",
+    "a": "いっぱいの"
+  },
+  {
+    "q": "great",
+    "hint": "中学２年　形容詞",
+    "a": "すばらしい、広大な"
+  },
+  {
+    "q": "human",
+    "hint": "中学２年　形容詞",
+    "a": "人間の"
+  },
+  {
+    "q": "important",
+    "hint": "中学２年　形容詞",
+    "a": "重要な"
+  },
+  {
+    "q": "interesting",
+    "hint": "中学２年　形容詞",
+    "a": "おもしろい"
+  },
+  {
+    "q": "last",
+    "hint": "中学２年　形容詞",
+    "a": "この前の、最後の"
+  },
+  {
+    "q": "light",
+    "hint": "中学２年　形容詞",
+    "a": "薄い"
+  },
+  {
+    "q": "loud",
+    "hint": "中学２年　形容詞",
+    "a": "大きい"
+  },
+  {
+    "q": "low",
+    "hint": "中学２年　形容詞",
+    "a": "低い"
+  },
+  {
+    "q": "lucky",
+    "hint": "中学２年　形容詞",
+    "a": "好運な"
+  },
+  {
+    "q": "main",
+    "hint": "中学２年　形容詞",
+    "a": "主な"
+  },
+  {
+    "q": "other",
+    "hint": "中学２年　形容詞",
+    "a": "ほかの"
+  },
+  {
+    "q": "own",
+    "hint": "中学２年　形容詞",
+    "a": "自分の"
+  },
+  {
+    "q": "past",
+    "hint": "中学２年　形容詞",
+    "a": "過去の"
+  },
+  {
+    "q": "popular",
+    "hint": "中学２年　形容詞",
+    "a": "人気のある"
+  },
+  {
+    "q": "quiet",
+    "hint": "中学２年　形容詞",
+    "a": "静かな"
+  },
+  {
+    "q": "rainy",
+    "hint": "中学２年　形容詞",
+    "a": "雨降りの"
+  },
+  {
+    "q": "ready",
+    "hint": "中学２年　形容詞",
+    "a": "用意できている"
+  },
+  {
+    "q": "right",
+    "hint": "中学２年　形容詞",
+    "a": "正しい、右に"
+  },
+  {
+    "q": "same",
+    "hint": "中学２年　形容詞",
+    "a": "同じ"
+  },
+  {
+    "q": "special",
+    "hint": "中学２年　形容詞",
+    "a": "特別の"
+  },
+  {
+    "q": "strange",
+    "hint": "中学２年　形容詞",
+    "a": "奇妙な"
+  },
+  {
+    "q": "such",
+    "hint": "中学２年　形容詞",
+    "a": "そのような"
+  },
+  {
+    "q": "sure",
+    "hint": "中学２年　形容詞",
+    "a": "確信して"
+  },
+  {
+    "q": "tired",
+    "hint": "中学２年　形容詞",
+    "a": "疲れて"
+  },
+  {
+    "q": "useful",
+    "hint": "中学２年　形容詞",
+    "a": "役に立つ"
+  },
+  {
+    "q": "usual",
+    "hint": "中学２年　形容詞",
+    "a": "通常の"
+  },
+  {
+    "q": "weak",
+    "hint": "中学２年　形容詞",
+    "a": "弱い"
+  },
+  {
+    "q": "welcome",
+    "hint": "中学２年　形容詞",
+    "a": "ようこそ"
+  },
+  {
+    "q": "well",
+    "hint": "中学２年　形容詞",
+    "a": "健康な"
+  },
+  {
+    "q": "wide",
+    "hint": "中学２年　形容詞",
+    "a": "幅が広い"
+  },
+  {
+    "q": "wonderful",
+    "hint": "中学２年　形容詞",
+    "a": "すばらしい"
+  },
+  {
+    "q": "yellow",
+    "hint": "中学２年　形容詞",
+    "a": "黄色の"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

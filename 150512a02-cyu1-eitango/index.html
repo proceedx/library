@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中学1年英単語　名詞</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>中学1年英単語　名詞</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "afternoon",
+    "hint": "中学1年英単語　名詞",
+    "a": "午後"
+  },
+  {
+    "q": "apple",
+    "hint": "中学1年英単語　名詞",
+    "a": "りんご"
+  },
+  {
+    "q": "April",
+    "hint": "中学1年英単語　名詞",
+    "a": "４月"
+  },
+  {
+    "q": "August",
+    "hint": "中学1年英単語　名詞",
+    "a": "８月"
+  },
+  {
+    "q": "aunt",
+    "hint": "中学1年英単語　名詞",
+    "a": "おば"
+  },
+  {
+    "q": "autumn",
+    "hint": "中学1年英単語　名詞",
+    "a": "秋"
+  },
+  {
+    "q": "bag",
+    "hint": "中学1年英単語　名詞",
+    "a": "カバン"
+  },
+  {
+    "q": "bank",
+    "hint": "中学1年英単語　名詞",
+    "a": "銀行"
+  },
+  {
+    "q": "baseball",
+    "hint": "中学1年英単語　名詞",
+    "a": "野球"
+  },
+  {
+    "q": "basketball",
+    "hint": "中学1年英単語　名詞",
+    "a": "バスケットボール"
+  },
+  {
+    "q": "bat",
+    "hint": "中学1年英単語　名詞",
+    "a": "バット"
+  },
+  {
+    "q": "bed",
+    "hint": "中学1年英単語　名詞",
+    "a": "ベッド"
+  },
+  {
+    "q": "bird",
+    "hint": "中学1年英単語　名詞",
+    "a": "鳥"
+  },
+  {
+    "q": "boat",
+    "hint": "中学1年英単語　名詞",
+    "a": "ボート"
+  },
+  {
+    "q": "book",
+    "hint": "中学1年英単語　名詞",
+    "a": "本"
+  },
+  {
+    "q": "box",
+    "hint": "中学1年英単語　名詞",
+    "a": "箱"
+  },
+  {
+    "q": "boy",
+    "hint": "中学1年英単語　名詞",
+    "a": "少年"
+  },
+  {
+    "q": "bread",
+    "hint": "中学1年英単語　名詞",
+    "a": "パン"
+  },
+  {
+    "q": "breakfast",
+    "hint": "中学1年英単語　名詞",
+    "a": "朝食"
+  },
+  {
+    "q": "brother",
+    "hint": "中学1年英単語　名詞",
+    "a": "兄弟"
+  },
+  {
+    "q": "bus",
+    "hint": "中学1年英単語　名詞",
+    "a": "バス"
+  },
+  {
+    "q": "cake",
+    "hint": "中学1年英単語　名詞",
+    "a": "ケーキ"
+  },
+  {
+    "q": "camera",
+    "hint": "中学1年英単語　名詞",
+    "a": "カメラ"
+  },
+  {
+    "q": "cap",
+    "hint": "中学1年英単語　名詞",
+    "a": "帽子"
+  },
+  {
+    "q": "car",
+    "hint": "中学1年英単語　名詞",
+    "a": "自動車"
+  },
+  {
+    "q": "cat",
+    "hint": "中学1年英単語　名詞",
+    "a": "猫"
+  },
+  {
+    "q": "chair",
+    "hint": "中学1年英単語　名詞",
+    "a": "いす"
+  },
+  {
+    "q": "church",
+    "hint": "中学1年英単語　名詞",
+    "a": "教会"
+  },
+  {
+    "q": "citizen",
+    "hint": "中学1年英単語　名詞",
+    "a": "市民"
+  },
+  {
+    "q": "city",
+    "hint": "中学1年英単語　名詞",
+    "a": "市、都会"
+  },
+  {
+    "q": "clerk",
+    "hint": "中学1年英単語　名詞",
+    "a": "店員"
+  },
+  {
+    "q": "cook",
+    "hint": "中学1年英単語　名詞",
+    "a": "料理人"
+  },
+  {
+    "q": "country",
+    "hint": "中学1年英単語　名詞",
+    "a": "国"
+  },
+  {
+    "q": "cow",
+    "hint": "中学1年英単語　名詞",
+    "a": "雌牛"
+  },
+  {
+    "q": "cup",
+    "hint": "中学1年英単語　名詞",
+    "a": "カップ"
+  },
+  {
+    "q": "daughter",
+    "hint": "中学1年英単語　名詞",
+    "a": "娘"
+  },
+  {
+    "q": "day",
+    "hint": "中学1年英単語　名詞",
+    "a": "日"
+  },
+  {
+    "q": "December",
+    "hint": "中学1年英単語　名詞",
+    "a": "１２月"
+  },
+  {
+    "q": "desk",
+    "hint": "中学1年英単語　名詞",
+    "a": "机"
+  },
+  {
+    "q": "diary",
+    "hint": "中学1年英単語　名詞",
+    "a": "日記"
+  },
+  {
+    "q": "dinner",
+    "hint": "中学1年英単語　名詞",
+    "a": "夕食"
+  },
+  {
+    "q": "doctor",
+    "hint": "中学1年英単語　名詞",
+    "a": "医者"
+  },
+  {
+    "q": "dog",
+    "hint": "中学1年英単語　名詞",
+    "a": "犬"
+  },
+  {
+    "q": "doll",
+    "hint": "中学1年英単語　名詞",
+    "a": "人形"
+  },
+  {
+    "q": "door",
+    "hint": "中学1年英単語　名詞",
+    "a": "ドア"
+  },
+  {
+    "q": "egg",
+    "hint": "中学1年英単語　名詞",
+    "a": "卵"
+  },
+  {
+    "q": "evening",
+    "hint": "中学1年英単語　名詞",
+    "a": "晩"
+  },
+  {
+    "q": "fall",
+    "hint": "中学1年英単語　名詞",
+    "a": "秋"
+  },
+  {
+    "q": "family",
+    "hint": "中学1年英単語　名詞",
+    "a": "家族"
+  },
+  {
+    "q": "father",
+    "hint": "中学1年英単語　名詞",
+    "a": "父"
+  },
+  {
+    "q": "February",
+    "hint": "中学1年英単語　名詞",
+    "a": "２月"
+  },
+  {
+    "q": "field",
+    "hint": "中学1年英単語　名詞",
+    "a": "競技場"
+  },
+  {
+    "q": "fish",
+    "hint": "中学1年英単語　名詞",
+    "a": "魚"
+  },
+  {
+    "q": "floor",
+    "hint": "中学1年英単語　名詞",
+    "a": "床、階"
+  },
+  {
+    "q": "flower",
+    "hint": "中学1年英単語　名詞",
+    "a": "花"
+  },
+  {
+    "q": "Friday",
+    "hint": "中学1年英単語　名詞",
+    "a": "金曜日"
+  },
+  {
+    "q": "friend",
+    "hint": "中学1年英単語　名詞",
+    "a": "友人"
+  },
+  {
+    "q": "fruit",
+    "hint": "中学1年英単語　名詞",
+    "a": "果物"
+  },
+  {
+    "q": "garden",
+    "hint": "中学1年英単語　名詞",
+    "a": "庭"
+  },
+  {
+    "q": "gate",
+    "hint": "中学1年英単語　名詞",
+    "a": "門"
+  },
+  {
+    "q": "girl",
+    "hint": "中学1年英単語　名詞",
+    "a": "少女"
+  },
+  {
+    "q": "glass",
+    "hint": "中学1年英単語　名詞",
+    "a": "コップ"
+  },
+  {
+    "q": "hand",
+    "hint": "中学1年英単語　名詞",
+    "a": "手"
+  },
+  {
+    "q": "homework",
+    "hint": "中学1年英単語　名詞",
+    "a": "宿題"
+  },
+  {
+    "q": "hospital",
+    "hint": "中学1年英単語　名詞",
+    "a": "病院"
+  },
+  {
+    "q": "hotel",
+    "hint": "中学1年英単語　名詞",
+    "a": "ホテル"
+  },
+  {
+    "q": "hour",
+    "hint": "中学1年英単語　名詞",
+    "a": "時間"
+  },
+  {
+    "q": "house",
+    "hint": "中学1年英単語　名詞",
+    "a": "家"
+  },
+  {
+    "q": "January",
+    "hint": "中学1年英単語　名詞",
+    "a": "１月"
+  },
+  {
+    "q": "Japan",
+    "hint": "中学1年英単語　名詞",
+    "a": "日本"
+  },
+  {
+    "q": "July",
+    "hint": "中学1年英単語　名詞",
+    "a": "７月"
+  },
+  {
+    "q": "June",
+    "hint": "中学1年英単語　名詞",
+    "a": "６月"
+  },
+  {
+    "q": "kitchen",
+    "hint": "中学1年英単語　名詞",
+    "a": "台所"
+  },
+  {
+    "q": "lemon",
+    "hint": "中学1年英単語　名詞",
+    "a": "レモン"
+  },
+  {
+    "q": "letter",
+    "hint": "中学1年英単語　名詞",
+    "a": "手紙"
+  },
+  {
+    "q": "library",
+    "hint": "中学1年英単語　名詞",
+    "a": "図書館"
+  },
+  {
+    "q": "lunch",
+    "hint": "中学1年英単語　名詞",
+    "a": "昼食"
+  },
+  {
+    "q": "mail",
+    "hint": "中学1年英単語　名詞",
+    "a": "郵便"
+  },
+  {
+    "q": "man",
+    "hint": "中学1年英単語　名詞",
+    "a": "男の人"
+  },
+  {
+    "q": "map",
+    "hint": "中学1年英単語　名詞",
+    "a": "地図"
+  },
+  {
+    "q": "March",
+    "hint": "中学1年英単語　名詞",
+    "a": "３月"
+  },
+  {
+    "q": "May",
+    "hint": "中学1年英単語　名詞",
+    "a": "５月"
+  },
+  {
+    "q": "meal",
+    "hint": "中学1年英単語　名詞",
+    "a": "食事"
+  },
+  {
+    "q": "milk",
+    "hint": "中学1年英単語　名詞",
+    "a": "牛乳"
+  },
+  {
+    "q": "minute",
+    "hint": "中学1年英単語　名詞",
+    "a": "分"
+  },
+  {
+    "q": "mitt",
+    "hint": "中学1年英単語　名詞",
+    "a": "ミット"
+  },
+  {
+    "q": "Monday",
+    "hint": "中学1年英単語　名詞",
+    "a": "月曜日"
+  },
+  {
+    "q": "month",
+    "hint": "中学1年英単語　名詞",
+    "a": "月"
+  },
+  {
+    "q": "morning",
+    "hint": "中学1年英単語　名詞",
+    "a": "朝"
+  },
+  {
+    "q": "mother",
+    "hint": "中学1年英単語　名詞",
+    "a": "母"
+  },
+  {
+    "q": "night",
+    "hint": "中学1年英単語　名詞",
+    "a": "夜"
+  },
+  {
+    "q": "noon",
+    "hint": "中学1年英単語　名詞",
+    "a": "正午"
+  },
+  {
+    "q": "notebook",
+    "hint": "中学1年英単語　名詞",
+    "a": "ノート"
+  },
+  {
+    "q": "November",
+    "hint": "中学1年英単語　名詞",
+    "a": "１１月"
+  },
+  {
+    "q": "nurse",
+    "hint": "中学1年英単語　名詞",
+    "a": "看護婦"
+  },
+  {
+    "q": "October",
+    "hint": "中学1年英単語　名詞",
+    "a": "１０月"
+  },
+  {
+    "q": "office",
+    "hint": "中学1年英単語　名詞",
+    "a": "事務所"
+  },
+  {
+    "q": "orange",
+    "hint": "中学1年英単語　名詞",
+    "a": "オレンジ"
+  },
+  {
+    "q": "parent",
+    "hint": "中学1年英単語　名詞",
+    "a": "親"
+  },
+  {
+    "q": "park",
+    "hint": "中学1年英単語　名詞",
+    "a": "公園"
+  },
+  {
+    "q": "pen",
+    "hint": "中学1年英単語　名詞",
+    "a": "ペン"
+  },
+  {
+    "q": "pencil",
+    "hint": "中学1年英単語　名詞",
+    "a": "鉛筆"
+  },
+  {
+    "q": "piano",
+    "hint": "中学1年英単語　名詞",
+    "a": "ピアノ"
+  },
+  {
+    "q": "picture",
+    "hint": "中学1年英単語　名詞",
+    "a": "絵、写真"
+  },
+  {
+    "q": "pilot",
+    "hint": "中学1年英単語　名詞",
+    "a": "パイロット"
+  },
+  {
+    "q": "plane",
+    "hint": "中学1年英単語　名詞",
+    "a": "飛行機"
+  },
+  {
+    "q": "player",
+    "hint": "中学1年英単語　名詞",
+    "a": "選手"
+  },
+  {
+    "q": "pot",
+    "hint": "中学1年英単語　名詞",
+    "a": "ポット"
+  },
+  {
+    "q": "racket",
+    "hint": "中学1年英単語　名詞",
+    "a": "ラケット"
+  },
+  {
+    "q": "room",
+    "hint": "中学1年英単語　名詞",
+    "a": "部屋"
+  },
+  {
+    "q": "rose",
+    "hint": "中学1年英単語　名詞",
+    "a": "バラ"
+  },
+  {
+    "q": "Saturday",
+    "hint": "中学1年英単語　名詞",
+    "a": "土曜日"
+  },
+  {
+    "q": "school",
+    "hint": "中学1年英単語　名詞",
+    "a": "学校"
+  },
+  {
+    "q": "season",
+    "hint": "中学1年英単語　名詞",
+    "a": "季節"
+  },
+  {
+    "q": "September",
+    "hint": "中学1年英単語　名詞",
+    "a": "９月"
+  },
+  {
+    "q": "sheep",
+    "hint": "中学1年英単語　名詞",
+    "a": "羊"
+  },
+  {
+    "q": "singer",
+    "hint": "中学1年英単語　名詞",
+    "a": "歌手"
+  },
+  {
+    "q": "sister",
+    "hint": "中学1年英単語　名詞",
+    "a": "姉妹"
+  },
+  {
+    "q": "son",
+    "hint": "中学1年英単語　名詞",
+    "a": "息子"
+  },
+  {
+    "q": "spring",
+    "hint": "中学1年英単語　名詞",
+    "a": "春"
+  },
+  {
+    "q": "stamp",
+    "hint": "中学1年英単語　名詞",
+    "a": "切手"
+  },
+  {
+    "q": "station",
+    "hint": "中学1年英単語　名詞",
+    "a": "駅"
+  },
+  {
+    "q": "store",
+    "hint": "中学1年英単語　名詞",
+    "a": "店"
+  },
+  {
+    "q": "student",
+    "hint": "中学1年英単語　名詞",
+    "a": "学生"
+  },
+  {
+    "q": "summer",
+    "hint": "中学1年英単語　名詞",
+    "a": "夏"
+  },
+  {
+    "q": "Sunday",
+    "hint": "中学1年英単語　名詞",
+    "a": "日曜日"
+  },
+  {
+    "q": "supper",
+    "hint": "中学1年英単語　名詞",
+    "a": "夕食"
+  },
+  {
+    "q": "table",
+    "hint": "中学1年英単語　名詞",
+    "a": "テーブル"
+  },
+  {
+    "q": "tape",
+    "hint": "中学1年英単語　名詞",
+    "a": "テープ"
+  },
+  {
+    "q": "teacher",
+    "hint": "中学1年英単語　名詞",
+    "a": "先生"
+  },
+  {
+    "q": "tennis",
+    "hint": "中学1年英単語　名詞",
+    "a": "テニス"
+  },
+  {
+    "q": "Thursday",
+    "hint": "中学1年英単語　名詞",
+    "a": "木曜日"
+  },
+  {
+    "q": "time",
+    "hint": "中学1年英単語　名詞",
+    "a": "時"
+  },
+  {
+    "q": "tomorrow",
+    "hint": "中学1年英単語　名詞",
+    "a": "明日"
+  },
+  {
+    "q": "town",
+    "hint": "中学1年英単語　名詞",
+    "a": "町"
+  },
+  {
+    "q": "tree",
+    "hint": "中学1年英単語　名詞",
+    "a": "木"
+  },
+  {
+    "q": "Tuesday",
+    "hint": "中学1年英単語　名詞",
+    "a": "火曜日"
+  },
+  {
+    "q": "uncle",
+    "hint": "中学1年英単語　名詞",
+    "a": "おじ"
+  },
+  {
+    "q": "village",
+    "hint": "中学1年英単語　名詞",
+    "a": "村"
+  },
+  {
+    "q": "walk",
+    "hint": "中学1年英単語　名詞",
+    "a": "散歩"
+  },
+  {
+    "q": "wall",
+    "hint": "中学1年英単語　名詞",
+    "a": "壁"
+  },
+  {
+    "q": "watch",
+    "hint": "中学1年英単語　名詞",
+    "a": "腕時計"
+  },
+  {
+    "q": "Wednesday",
+    "hint": "中学1年英単語　名詞",
+    "a": "水曜日"
+  },
+  {
+    "q": "week",
+    "hint": "中学1年英単語　名詞",
+    "a": "週"
+  },
+  {
+    "q": "window",
+    "hint": "中学1年英単語　名詞",
+    "a": "窓"
+  },
+  {
+    "q": "winter",
+    "hint": "中学1年英単語　名詞",
+    "a": "冬"
+  },
+  {
+    "q": "woman",
+    "hint": "中学1年英単語　名詞",
+    "a": "女性"
+  },
+  {
+    "q": "work",
+    "hint": "中学1年英単語　名詞",
+    "a": "仕事、作品"
+  },
+  {
+    "q": "yard",
+    "hint": "中学1年英単語　名詞",
+    "a": "中庭"
+  },
+  {
+    "q": "year",
+    "hint": "中学1年英単語　名詞",
+    "a": "年"
+  },
+  {
+    "q": "three",
+    "hint": "中学1年英単語　名詞",
+    "a": "3"
+  },
+  {
+    "q": "four",
+    "hint": "中学1年英単語　名詞",
+    "a": "4"
+  },
+  {
+    "q": "two",
+    "hint": "中学1年英単語　名詞",
+    "a": "2"
+  },
+  {
+    "q": "one",
+    "hint": "中学1年英単語　名詞",
+    "a": "1"
+  },
+  {
+    "q": "six",
+    "hint": "中学1年英単語　名詞",
+    "a": "6"
+  },
+  {
+    "q": "five",
+    "hint": "中学1年英単語　名詞",
+    "a": "5"
+  },
+  {
+    "q": "subject",
+    "hint": "中学1年英単語　名詞",
+    "a": "科目、題目"
+  },
+  {
+    "q": "danger",
+    "hint": "中学1年英単語　名詞",
+    "a": "危険"
+  },
+  {
+    "q": "eighteen",
+    "hint": "中学1年英単語　名詞",
+    "a": "18"
+  },
+  {
+    "q": "class",
+    "hint": "中学1年英単語　名詞",
+    "a": "学級、授業"
+  },
+  {
+    "q": "nine",
+    "hint": "中学1年英単語　名詞",
+    "a": "9"
+  },
+  {
+    "q": "thirty",
+    "hint": "中学1年英単語　名詞",
+    "a": "30"
+  },
+  {
+    "q": "west",
+    "hint": "中学1年英単語　名詞",
+    "a": "西"
+  },
+  {
+    "q": "right",
+    "hint": "中学1年英単語　名詞",
+    "a": "右、権利"
+  },
+  {
+    "q": "seventeen",
+    "hint": "中学1年英単語　名詞",
+    "a": "17"
+  },
+  {
+    "q": "place",
+    "hint": "中学1年英単語　名詞",
+    "a": "場所"
+  },
+  {
+    "q": "north",
+    "hint": "中学1年英単語　名詞",
+    "a": "北"
+  },
+  {
+    "q": "east",
+    "hint": "中学1年英単語　名詞",
+    "a": "東"
+  },
+  {
+    "q": "ninety",
+    "hint": "中学1年英単語　名詞",
+    "a": "90"
+  },
+  {
+    "q": "twelve",
+    "hint": "中学1年英単語　名詞",
+    "a": "12"
+  },
+  {
+    "q": "way",
+    "hint": "中学1年英単語　名詞",
+    "a": "道、方法"
+  },
+  {
+    "q": "fifty",
+    "hint": "中学1年英単語　名詞",
+    "a": "50"
+  },
+  {
+    "q": "sixty",
+    "hint": "中学1年英単語　名詞",
+    "a": "60"
+  },
+  {
+    "q": "thirteen",
+    "hint": "中学1年英単語　名詞",
+    "a": "13"
+  },
+  {
+    "q": "seventy",
+    "hint": "中学1年英単語　名詞",
+    "a": "70"
+  },
+  {
+    "q": "age",
+    "hint": "中学1年英単語　名詞",
+    "a": "年齢、時代"
+  },
+  {
+    "q": "number",
+    "hint": "中学1年英単語　名詞",
+    "a": "数"
+  },
+  {
+    "q": "color",
+    "hint": "中学1年英単語　名詞",
+    "a": "色"
+  },
+  {
+    "q": "eighty",
+    "hint": "中学1年英単語　名詞",
+    "a": "80"
+  },
+  {
+    "q": "south",
+    "hint": "中学1年英単語　名詞",
+    "a": "南"
+  },
+  {
+    "q": "lot",
+    "hint": "中学1年英単語　名詞",
+    "a": "たくさん"
+  },
+  {
+    "q": "eight",
+    "hint": "中学1年英単語　名詞",
+    "a": "8"
+  },
+  {
+    "q": "sixteen",
+    "hint": "中学1年英単語　名詞",
+    "a": "16"
+  },
+  {
+    "q": "ten",
+    "hint": "中学1年英単語　名詞",
+    "a": "10"
+  },
+  {
+    "q": "fifteen",
+    "hint": "中学1年英単語　名詞",
+    "a": "15"
+  },
+  {
+    "q": "fourteen",
+    "hint": "中学1年英単語　名詞",
+    "a": "14"
+  },
+  {
+    "q": "line",
+    "hint": "中学1年英単語　名詞",
+    "a": "線、列"
+  },
+  {
+    "q": "eleven",
+    "hint": "中学1年英単語　名詞",
+    "a": "11"
+  },
+  {
+    "q": "present",
+    "hint": "中学1年英単語　名詞",
+    "a": "プレゼント"
+  },
+  {
+    "q": "nineteen",
+    "hint": "中学1年英単語　名詞",
+    "a": "19"
+  },
+  {
+    "q": "chance",
+    "hint": "中学1年英単語　名詞",
+    "a": "機会"
+  },
+  {
+    "q": "seven",
+    "hint": "中学1年英単語　名詞",
+    "a": "7"
+  },
+  {
+    "q": "half",
+    "hint": "中学1年英単語　名詞",
+    "a": "半分"
+  },
+  {
+    "q": "forty",
+    "hint": "中学1年英単語　名詞",
+    "a": "40"
+  },
+  {
+    "q": "twenty",
+    "hint": "中学1年英単語　名詞",
+    "a": "20"
+  },
+  {
+    "q": "thing",
+    "hint": "中学1年英単語　名詞",
+    "a": "こと・物"
+  },
+  {
+    "q": "meter",
+    "hint": "中学1年英単語　名詞",
+    "a": "メートル"
+  },
+  {
+    "q": "left",
+    "hint": "中学1年英単語　名詞",
+    "a": "左"
+  },
+  {
+    "q": "science",
+    "hint": "中学1年英単語　名詞",
+    "a": "科学"
+  },
+  {
+    "q": "name",
+    "hint": "中学1年英単語　名詞",
+    "a": "名前"
+  },
+  {
+    "q": "arrive",
+    "hint": "中学1年英単語　動詞",
+    "a": "到着する"
+  },
+  {
+    "q": "buy",
+    "hint": "中学1年英単語　動詞",
+    "a": "買う"
+  },
+  {
+    "q": "catch",
+    "hint": "中学1年英単語　動詞",
+    "a": "とらまえる"
+  },
+  {
+    "q": "collect",
+    "hint": "中学1年英単語　動詞",
+    "a": "集める"
+  },
+  {
+    "q": "come",
+    "hint": "中学1年英単語　動詞",
+    "a": "来る"
+  },
+  {
+    "q": "cook",
+    "hint": "中学1年英単語　動詞",
+    "a": "料理する"
+  },
+  {
+    "q": "dance",
+    "hint": "中学1年英単語　動詞",
+    "a": "踊る"
+  },
+  {
+    "q": "do",
+    "hint": "中学1年英単語　動詞",
+    "a": "する"
+  },
+  {
+    "q": "drink",
+    "hint": "中学1年英単語　動詞",
+    "a": "飲む"
+  },
+  {
+    "q": "eat",
+    "hint": "中学1年英単語　動詞",
+    "a": "食べる"
+  },
+  {
+    "q": "enjoy",
+    "hint": "中学1年英単語　動詞",
+    "a": "楽しむ"
+  },
+  {
+    "q": "get",
+    "hint": "中学1年英単語　動詞",
+    "a": "得る、着く"
+  },
+  {
+    "q": "give",
+    "hint": "中学1年英単語　動詞",
+    "a": "与える"
+  },
+  {
+    "q": "go",
+    "hint": "中学1年英単語　動詞",
+    "a": "行く"
+  },
+  {
+    "q": "have",
+    "hint": "中学1年英単語　動詞",
+    "a": "持っている"
+  },
+  {
+    "q": "help",
+    "hint": "中学1年英単語　動詞",
+    "a": "助ける"
+  },
+  {
+    "q": "know",
+    "hint": "中学1年英単語　動詞",
+    "a": "知っている"
+  },
+  {
+    "q": "learn",
+    "hint": "中学1年英単語　動詞",
+    "a": "学ぶ、覚える"
+  },
+  {
+    "q": "leave",
+    "hint": "中学1年英単語　動詞",
+    "a": "去る"
+  },
+  {
+    "q": "like",
+    "hint": "中学1年英単語　動詞",
+    "a": "好む"
+  },
+  {
+    "q": "live",
+    "hint": "中学1年英単語　動詞",
+    "a": "住む、生きる"
+  },
+  {
+    "q": "look",
+    "hint": "中学1年英単語　動詞",
+    "a": "見る"
+  },
+  {
+    "q": "make",
+    "hint": "中学1年英単語　動詞",
+    "a": "作る"
+  },
+  {
+    "q": "meet",
+    "hint": "中学1年英単語　動詞",
+    "a": "会う"
+  },
+  {
+    "q": "move",
+    "hint": "中学1年英単語　動詞",
+    "a": "動く"
+  },
+  {
+    "q": "need",
+    "hint": "中学1年英単語　動詞",
+    "a": "必要とする"
+  },
+  {
+    "q": "open",
+    "hint": "中学1年英単語　動詞",
+    "a": "開ける"
+  },
+  {
+    "q": "play",
+    "hint": "中学1年英単語　動詞",
+    "a": "遊ぶ"
+  },
+  {
+    "q": "put",
+    "hint": "中学1年英単語　動詞",
+    "a": "置く"
+  },
+  {
+    "q": "read",
+    "hint": "中学1年英単語　動詞",
+    "a": "読む"
+  },
+  {
+    "q": "ride",
+    "hint": "中学1年英単語　動詞",
+    "a": "乗る"
+  },
+  {
+    "q": "run",
+    "hint": "中学1年英単語　動詞",
+    "a": "走る"
+  },
+  {
+    "q": "sell",
+    "hint": "中学1年英単語　動詞",
+    "a": "売る"
+  },
+  {
+    "q": "send",
+    "hint": "中学1年英単語　動詞",
+    "a": "送る"
+  },
+  {
+    "q": "sing",
+    "hint": "中学1年英単語　動詞",
+    "a": "歌う"
+  },
+  {
+    "q": "speak",
+    "hint": "中学1年英単語　動詞",
+    "a": "話す"
+  },
+  {
+    "q": "stand",
+    "hint": "中学1年英単語　動詞",
+    "a": "立つ"
+  },
+  {
+    "q": "stay",
+    "hint": "中学1年英単語　動詞",
+    "a": "滞在する"
+  },
+  {
+    "q": "stop",
+    "hint": "中学1年英単語　動詞",
+    "a": "止める"
+  },
+  {
+    "q": "study",
+    "hint": "中学1年英単語　動詞",
+    "a": "勉強する"
+  },
+  {
+    "q": "swim",
+    "hint": "中学1年英単語　動詞",
+    "a": "泳ぐ"
+  },
+  {
+    "q": "try",
+    "hint": "中学1年英単語　動詞",
+    "a": "こころみる"
+  },
+  {
+    "q": "use",
+    "hint": "中学1年英単語　動詞",
+    "a": "使う"
+  },
+  {
+    "q": "visit",
+    "hint": "中学1年英単語　動詞",
+    "a": "訪問する"
+  },
+  {
+    "q": "wait",
+    "hint": "中学1年英単語　動詞",
+    "a": "待つ"
+  },
+  {
+    "q": "walk",
+    "hint": "中学1年英単語　動詞",
+    "a": "歩く"
+  },
+  {
+    "q": "want",
+    "hint": "中学1年英単語　動詞",
+    "a": "欲しい"
+  },
+  {
+    "q": "wash",
+    "hint": "中学1年英単語　動詞",
+    "a": "洗う"
+  },
+  {
+    "q": "work",
+    "hint": "中学1年英単語　動詞",
+    "a": "働く"
+  },
+  {
+    "q": "write",
+    "hint": "中学1年英単語　動詞",
+    "a": "書く"
+  },
+  {
+    "q": "that",
+    "hint": "中学1年英単語　動詞",
+    "a": "あの"
+  },
+  {
+    "q": "these",
+    "hint": "中学1年英単語　動詞",
+    "a": "これらの"
+  },
+  {
+    "q": "fine",
+    "hint": "中学1年英単語　動詞",
+    "a": "すばらしい、元気な"
+  },
+  {
+    "q": "red",
+    "hint": "中学1年英単語　動詞",
+    "a": "赤い"
+  },
+  {
+    "q": "nice",
+    "hint": "中学1年英単語　動詞",
+    "a": "すばらしい"
+  },
+  {
+    "q": "sad",
+    "hint": "中学1年英単語　動詞",
+    "a": "悲しい"
+  },
+  {
+    "q": "green",
+    "hint": "中学1年英単語　動詞",
+    "a": "緑の"
+  },
+  {
+    "q": "big",
+    "hint": "中学1年英単語　動詞",
+    "a": "大きい"
+  },
+  {
+    "q": "all",
+    "hint": "中学1年英単語　動詞",
+    "a": "すべての"
+  },
+  {
+    "q": "slow",
+    "hint": "中学1年英単語　動詞",
+    "a": "遅い"
+  },
+  {
+    "q": "strong",
+    "hint": "中学1年英単語　動詞",
+    "a": "強い、じょうぶな"
+  },
+  {
+    "q": "high",
+    "hint": "中学1年英単語　動詞",
+    "a": "高い"
+  },
+  {
+    "q": "all",
+    "hint": "中学1年英単語　代名詞",
+    "a": "みんな"
+  },
+  {
+    "q": "everyone",
+    "hint": "中学1年英単語　代名詞",
+    "a": "みんな"
+  },
+  {
+    "q": "her",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼女を"
+  },
+  {
+    "q": "hers",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼女のもの"
+  },
+  {
+    "q": "herself",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼女自身"
+  },
+  {
+    "q": "himself",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼自身"
+  },
+  {
+    "q": "his",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼のもの"
+  },
+  {
+    "q": "his",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼の"
+  },
+  {
+    "q": "it",
+    "hint": "中学1年英単語　代名詞",
+    "a": "それを"
+  },
+  {
+    "q": "its",
+    "hint": "中学1年英単語　代名詞",
+    "a": "それの"
+  },
+  {
+    "q": "itself",
+    "hint": "中学1年英単語　代名詞",
+    "a": "それ自身"
+  },
+  {
+    "q": "myself",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私自身を"
+  },
+  {
+    "q": "nothing",
+    "hint": "中学1年英単語　代名詞",
+    "a": "何も～ない"
+  },
+  {
+    "q": "our",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私たちの"
+  },
+  {
+    "q": "ours",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私たちのもの"
+  },
+  {
+    "q": "ourselves",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私たち自身を"
+  },
+  {
+    "q": "she",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼女は"
+  },
+  {
+    "q": "something",
+    "hint": "中学1年英単語　代名詞",
+    "a": "何か"
+  },
+  {
+    "q": "that",
+    "hint": "中学1年英単語　代名詞",
+    "a": "あれは"
+  },
+  {
+    "q": "their",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼らの"
+  },
+  {
+    "q": "theirs",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼らのもの"
+  },
+  {
+    "q": "themselves",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼ら自身"
+  },
+  {
+    "q": "these",
+    "hint": "中学1年英単語　代名詞",
+    "a": "これらは"
+  },
+  {
+    "q": "this",
+    "hint": "中学1年英単語　代名詞",
+    "a": "これは"
+  },
+  {
+    "q": "us",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私たちを"
+  },
+  {
+    "q": "we",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私たちは"
+  },
+  {
+    "q": "what",
+    "hint": "中学1年英単語　代名詞",
+    "a": "何"
+  },
+  {
+    "q": "whose",
+    "hint": "中学1年英単語　代名詞",
+    "a": "だれの"
+  },
+  {
+    "q": "yours",
+    "hint": "中学1年英単語　代名詞",
+    "a": "あなたのもの、あなたがたのもの"
+  },
+  {
+    "q": "yourself",
+    "hint": "中学1年英単語　代名詞",
+    "a": "あなた自身"
+  },
+  {
+    "q": "everybody",
+    "hint": "中学1年英単語　代名詞",
+    "a": "だれでもみな"
+  },
+  {
+    "q": "he",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼は"
+  },
+  {
+    "q": "who",
+    "hint": "中学1年英単語　代名詞",
+    "a": "だれ"
+  },
+  {
+    "q": "her",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼女の"
+  },
+  {
+    "q": "those",
+    "hint": "中学1年英単語　代名詞",
+    "a": "あれらは"
+  },
+  {
+    "q": "them",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼らを"
+  },
+  {
+    "q": "which",
+    "hint": "中学1年英単語　代名詞",
+    "a": "どちら"
+  },
+  {
+    "q": "most",
+    "hint": "中学1年英単語　代名詞",
+    "a": "ほとんど"
+  },
+  {
+    "q": "everything",
+    "hint": "中学1年英単語　代名詞",
+    "a": "すべてのもの"
+  },
+  {
+    "q": "both",
+    "hint": "中学1年英単語　代名詞",
+    "a": "両方"
+  },
+  {
+    "q": "none",
+    "hint": "中学1年英単語　代名詞",
+    "a": "何も～ない"
+  },
+  {
+    "q": "him",
+    "hint": "中学1年英単語　代名詞",
+    "a": "彼を"
+  },
+  {
+    "q": "they",
+    "hint": "中学1年英単語　代名詞",
+    "a": "それらは、彼らは"
+  },
+  {
+    "q": "it",
+    "hint": "中学1年英単語　代名詞",
+    "a": "それは"
+  },
+  {
+    "q": "someone",
+    "hint": "中学1年英単語　代名詞",
+    "a": "だれか"
+  },
+  {
+    "q": "you",
+    "hint": "中学1年英単語　代名詞",
+    "a": "あなたは、あなたがたは"
+  },
+  {
+    "q": "nobody",
+    "hint": "中学1年英単語　代名詞",
+    "a": "だれも～ない"
+  },
+  {
+    "q": "me",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私を"
+  },
+  {
+    "q": "your",
+    "hint": "中学1年英単語　代名詞",
+    "a": "あなたの、あなたがたの"
+  },
+  {
+    "q": "my",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私の"
+  },
+  {
+    "q": "you",
+    "hint": "中学1年英単語　代名詞",
+    "a": "あなたがたを"
+  },
+  {
+    "q": "mine",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私のもの"
+  },
+  {
+    "q": "I",
+    "hint": "中学1年英単語　代名詞",
+    "a": "私は"
+  },
+  {
+    "q": "some",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "いくつかの"
+  },
+  {
+    "q": "poor",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "貧乏な、かわいそうな"
+  },
+  {
+    "q": "short",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "短い、背が低い"
+  },
+  {
+    "q": "bad",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "悪い"
+  },
+  {
+    "q": "large",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "大きい、広い"
+  },
+  {
+    "q": "yet",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "まだ"
+  },
+  {
+    "q": "best",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "一番良い"
+  },
+  {
+    "q": "fast",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "速い"
+  },
+  {
+    "q": "honest",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "正直な"
+  },
+  {
+    "q": "early",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "早い"
+  },
+  {
+    "q": "junior",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "年下の、下級の"
+  },
+  {
+    "q": "busy",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "忙しい"
+  },
+  {
+    "q": "tall",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "背の高い"
+  },
+  {
+    "q": "dark",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "暗い、黒い"
+  },
+  {
+    "q": "slowly",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "ゆっくりと"
+  },
+  {
+    "q": "cool",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "涼しい"
+  },
+  {
+    "q": "already",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "すでに"
+  },
+  {
+    "q": "old",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "年をとった、古い"
+  },
+  {
+    "q": "yesterday",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "昨日"
+  },
+  {
+    "q": "up",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "上へ"
+  },
+  {
+    "q": "this",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "この"
+  },
+  {
+    "q": "hungry",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "空腹の"
+  },
+  {
+    "q": "well",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "よく、じょうずに"
+  },
+  {
+    "q": "new",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "新しい"
+  },
+  {
+    "q": "easy",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "やさしい、気楽に"
+  },
+  {
+    "q": "happy",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "幸福な、楽しい"
+  },
+  {
+    "q": "so",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "そんなに"
+  },
+  {
+    "q": "later",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "後で"
+  },
+  {
+    "q": "sorry",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "残念な"
+  },
+  {
+    "q": "careful",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "注意深い"
+  },
+  {
+    "q": "warm",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "温暖な"
+  },
+  {
+    "q": "those",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "あれらの"
+  },
+  {
+    "q": "why",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "なぜ"
+  },
+  {
+    "q": "little",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "小さい、幼い"
+  },
+  {
+    "q": "o'clock",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "～時"
+  },
+  {
+    "q": "soon",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "すぐに"
+  },
+  {
+    "q": "there",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "そこに"
+  },
+  {
+    "q": "clean",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "きれいな"
+  },
+  {
+    "q": "black",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "黒い"
+  },
+  {
+    "q": "every",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "毎～"
+  },
+  {
+    "q": "blue",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "青い"
+  },
+  {
+    "q": "hot",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "暑い"
+  },
+  {
+    "q": "next",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "次の、隣の"
+  },
+  {
+    "q": "able",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "できる、有能な"
+  },
+  {
+    "q": "famous",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "有名な"
+  },
+  {
+    "q": "TRUE",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "ほんとうの"
+  },
+  {
+    "q": "long",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "長い"
+  },
+  {
+    "q": "white",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "白い"
+  },
+  {
+    "q": "small",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "小さな"
+  },
+  {
+    "q": "much",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "多量の"
+  },
+  {
+    "q": "rich",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "金持ちの、豊かな"
+  },
+  {
+    "q": "cold",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "冷たい、寒い"
+  },
+  {
+    "q": "many",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "多くの"
+  },
+  {
+    "q": "usually",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "ふつう"
+  },
+  {
+    "q": "how",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "どのくらい"
+  },
+  {
+    "q": "today",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "今日、現在"
+  },
+  {
+    "q": "always",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "いつも"
+  },
+  {
+    "q": "home",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "家を"
+  },
+  {
+    "q": "sometimes",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "時々"
+  },
+  {
+    "q": "fast",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "速く"
+  },
+  {
+    "q": "often",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "しばしば"
+  },
+  {
+    "q": "also",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "もまた"
+  },
+  {
+    "q": "ill",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "病気の"
+  },
+  {
+    "q": "very",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "非常に"
+  },
+  {
+    "q": "sick",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "病気で"
+  },
+  {
+    "q": "not",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "～でない"
+  },
+  {
+    "q": "no",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "いいえ"
+  },
+  {
+    "q": "early",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "早く"
+  },
+  {
+    "q": "together",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "一緒に"
+  },
+  {
+    "q": "again",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "再び"
+  },
+  {
+    "q": "ago",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "前"
+  },
+  {
+    "q": "much",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "ずっと、たいへん"
+  },
+  {
+    "q": "too",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "～もまた、～すぎる"
+  },
+  {
+    "q": "glad",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "うれしい"
+  },
+  {
+    "q": "yes",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "はい"
+  },
+  {
+    "q": "where",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "どこに"
+  },
+  {
+    "q": "young",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "若い"
+  },
+  {
+    "q": "far",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "遠くに、はるかに"
+  },
+  {
+    "q": "kind",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "親切な"
+  },
+  {
+    "q": "now",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "今"
+  },
+  {
+    "q": "beautiful",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "美しい"
+  },
+  {
+    "q": "here",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "ここに"
+  },
+  {
+    "q": "good",
+    "hint": "中学1年英単語　形容詞・副詞",
+    "a": "良い"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

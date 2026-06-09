@@ -1,0 +1,9540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyJHEibunpoFull</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📝</span>
+  <h1>EasyJHEibunpoFull</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "１　　be動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　　be動詞とは　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原形がbeである動詞を　→　be動詞という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原形の意味とは　　→　　英語の動詞のもとの形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　　be動詞は５つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が単数形で時制が現在形のとき　　→　　is, am",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が複数形で時制が現在形のとき　　→　　are",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が単数形で時制が過去形のとき　　→　　was",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が複数形で時制が過去形のとき　　→　　were",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "使用例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）助動詞（do,does,can,will,must,may）のあと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I will be seventeen years old next year.（私は来年１7歳になる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）to不定詞のtoのあと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I  want to be a pilot.（私は パイロットになりたい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）命令文は動詞の原形で始める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Be kind to old people.（老人には親切にしなさい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　　be動詞の意味",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞には　３つの意味がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）～です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I am a student.（私は生徒です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）（人や生物が）いる　　（物が）ある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The book is on the table.（本は　テーブルの上にある）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）（～に）なる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I want to be a pilot.（私はパイロットになりたい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　　be動詞の注意すべき用法の例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）There is, there are　　→　　～がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There is a large pond near my house.（家の近くに大きな池がある）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）Here is　　→　　ここに～がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Here is a present for you.（ここにあなたへのプレゼントがあります）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）be busy（忙しい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「彼女は日曜日忙しい」　　→　She is busy on Sunday.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "５　　be動詞の書換え　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）「～がある」there is, there areは　　have, hasで書き換える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私の街には２つ図書館があります",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There are two libraries in our town.　　　→　　　Our town has two libraries.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）「～が上手だ」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼はテニスが上手です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He is a good tennis player.　　　　→　　He plays tennis well.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "６　　be動詞を使った英作文の例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）「名古屋　には訪れるべき場所がたくさんあります」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There are a lot of places to visit in Nagoya.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）「私はテニスクラブに入っていました」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I was a member of the tennis club.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語の文章の順番として　①主語②動詞③他の語　がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この②の位置に来る動詞が　　２種類ある　　その一つが　be動詞である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が一人や一つの単数を表している場合は　　基本的に　　→　 is を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "①　渡辺さんは③英語の教師②です　　　①Mr Watanabe　②is ③an English teacher.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「渡辺さん」を「私」に変えると　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "①私は③英語の教師②です　　　　①I ②am ③an English teacher.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「私」を「私たち」に変えると　　主語は２人以上になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "We are English teachers.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞は①主語と③他の語が同じ場合に使う言葉",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "①I　＝　③an English teacher",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "上の例文をそれぞれ過去形にすると　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Mr 　Watanabe was an English teacher.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I was an English teacher.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "We were English teachers.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文章が現在で　　主語が I 　　you 以外の単数の時　　be動詞は is を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2.　　一般動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞以外のすべての動詞を　　→　　一般動詞という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞の例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "走る run　　食べる eat　　見る look　　泳ぐ swim 　手伝う help 　笑う smile 　勉強する study　　読む read",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "欲しい want ・・など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞の過去形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞（do動詞）の過去形の文は　下記のようになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "基本的には、一般動詞（do動詞）の過去形は、その単語の後ろに　　→　　ed を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私はきのう警察に電話しました　　　I called the police yesterday.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文をつくるとき、don't,　doesn't　didn't　を動詞の前に置く、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文　　→　　You don't speak English.（あなたは英語を話しません）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問文をつくるとき、Do,Does,Didを文頭に置く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問文　　→　　Do you speak French?（あなたは　フランス語を話しますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２、他動詞と自動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞を使った英文では、肯定文の語順は主語＋動詞＋（目的語）＋副詞句（修飾語句）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　　I study 　French every day.（私は毎日　フランス語を勉強します）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語は「～は」にあたる語、　　動詞は「～する」にあたる語、　　目的語は「～を（または～に）」にあたる語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目的語のある文で使われる動詞を  他動詞  という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例えばhave　　　→　　I have a notebook. （私は　ノートを持っています）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "他動詞は　動詞の後に「～を」、「～に」にあたる目的語が必要",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目的語を必要としない動詞が  自動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例としてはrun　　　→　　I 　run. （私は走る）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3.　　否定文・疑問文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文は　　→　　be動詞+notの形になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　　I am not reading a 　notebook.（私は　ノートを読んでいません）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞を使う文章の否定文（～ではない）は、動詞の次に 　→　　not を置けばよい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は今いそがしくはない　　　　I am not busy.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞と not をプラスした　短縮形がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　is not = isn't 　are not = aren't 　was not = wasn't 　　were not = weren't",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞の否定文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞（do動詞）を使う文章の否定文（～ではない）は、その一般動詞のすぐ前に　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "do not＝don't　 　　does not＝doesn't　　did not=didn't　を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私たちはあの町には住んでいません　　We do not live in that city.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "次の文は主語が１人だから　　→　太郎　はお母さんのお手伝いをしません　　Taro　 doesn't help her mother.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "don't に s が付いた doesn't で  does not でもよい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "そのバスは８時には到着しませんでした　　The bus didn't arrive at eight.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去形の否定文だから　 didn't にする　　 did not でもよい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問文は　　→　文頭にbe動詞を出す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞を使う文章の疑問文は、動詞を主語のすぐ前に置いて、文の最後に　　→　？をつけると完成",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Are you reading a book?（あなたは本を読んでいますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたは　医者です　　　　　You 　are a docter.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたは　医者ですか　　　　→　　　Are you a docter?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この疑問文の答え方は　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "はい、そうです Yes, I am. 　　　いいえ、ちがいます No, I am not. または　No, I'm not.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There is (are) ～　～がある、いる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この文章では主語が～の部分以降にある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There is a dog under the tree",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "木の下に　犬がいます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この文の主語は「犬」　　 a dog となっているので、主語が単数になるからbe動詞は 　→　　is になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "猫が２匹以上、複数いたら　　　→　　　　There are two dogs under the tree",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去形の時は、それぞれ is → was 　are → were",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問文では、それぞれのbe動詞を there の前にもってくる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Are there any balls in the box?　　　箱の中にはボールが入っていますか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, there are.　　 はい、入っています　　No, there aren't.　　　　　いいえ、入っていません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞を使う文章の疑問文（～ですか）は、その一般動詞のすぐ前に　→　do を書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は英語を話します　　I speak English",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「私は」を「あなたは」に変えて疑問文にすると　　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたは　フランス語を話しますか　　　Do you speak 　French　?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, I do.　　　はい、話します　　　　No, I do not (don't).　　いいえ、話しません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞の疑問文では、主語とbe動詞を入れ替えるが、一般動詞の場合は、 do という言葉を主語の前に付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太郎はこの車を運転します　　　Taro　drives this car.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これを疑問文にすると　　→　Does 　Taro　drive this car?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes,he does. 　　　はい、します　　　　　　No,he does not (doesn't).　　 いいえ、しません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "do動詞の疑問文は do 　だが、 does という単語になっている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "do動詞に s を付ける必要のある場合は、それが疑問文になると do に s を付けて　→　 does になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "o で終わる単語の場合は es を付ける　　だから、 do に sを付けたら drives の s はなくなる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一郎は先週川で泳ぎましたか　Did 　Ichiro　swim in the river?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "do動詞だけを使う過去疑問文は主語が何であっても、全て　→　 did を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "4.　　疑問詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞は、　→　what, which, who, whose, where, when, why, howの　８個　ある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語の疑問文で疑問詞が使われる場合は、　→　基本的には疑問詞がその英文の一番前にくる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたのご両親はどこに住んでいますか　　Where do your parents live?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼らはそこで何をしているのですか　　What are they doing there?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたはいつ　フランスに行ったのですか　　When did you go to Â France?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "When の後が通常の疑問文の形になっていなければいけない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞が主語の場合の疑問文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞が主語の場合と、そうでない場合の答え方がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語でない場合",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あの背の高い男はだれですか  Who is that tall man?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私の　英語の先生です  He is my english　 teacher.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語の場合",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "だれがあなたのフランス語の先生ですか  Who is your 　french　 teacher?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あの背の高い先生です  That tall man is (our 　english　teacher).",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どちらが馬ですか、これですか　それともあれですか  Which is a horse, this or that?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あれです  That is (a cow).",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "what, which, who, whoseは、目的語や主語などになったり（代名詞的な用法）、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名詞を修飾したり（形容詞的な用法）する疑問詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "where, when, why, howは、動詞を修飾する（副詞的な用法）疑問詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "howは、単独でも使われるが、他の単語と一緒に用いて特別の意味を表すことが多い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "what, which, who, whose（疑問詞の代名詞的な用法・形容詞的な用法）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "what（何、何を、何が、何の）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "whatは「何」だけでなく、　　→　「何を（目的語）」、「何が（主語）」、「何の」の３種類がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What did you buy?（あなたは何を買ったのか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What happened to you?（何が起こったのですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What color do you like best?（あなたは何色（何の色）が一番好きですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What subject do you like best?（あなたは何の科目が一番好きですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Which（どっち、どっちを、どっちが、どっちの）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "whichも「どっち」以外に、「どっちを」、「どっちが」、「どっちの」の３種類がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Which bag is yours?（どちらのかばんがあなたのものですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "who（だれ、だれが）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "whoは、「だれですか？」と聞く以外は、「だれが＋動詞」で主語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Who is that boy?（あの少年はだれですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Who helps her?（だれが彼女を手伝うのか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Taro does.（太郎です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "whose（だれの、だれのもの）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Whose camera is this?（これはだれのカメラですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Whose is this camera?（このカメラはだれのものですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "where, when, why, how（疑問詞の副詞的な用法）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Where（どこで）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Where did he live?（彼はどこに住んでいましたか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He lived in 　Nagoya.（彼は名古屋に住んでいました）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "When（いつ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "When did you visit his house?（あなたはいつ彼の家を訪ねましたか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I visit his house last month.（私は先月彼の家を訪ねました）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Why（なぜ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Why did she go to the shop?（なぜ彼女はその店へ行ったのですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Because she wanted to buy a new book.（新しい　本を買いたかったからです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あるいは、To buy a new book.（新しい本を買うためです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Whyで尋ねられたときは、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "答えは、（１）Because ～（なぜなら　　→　　からです）　　（２）To ～（　　→　　するためです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How（どうやって）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How do you go to school?（あなたはどうやって学校へ行くのですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I go to school by bike.（私は自転車で学校へ行きます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Howの特別な用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Howは特定の形容詞や副詞とくっついて、特別の意味をもった疑問文をつくる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How many＋名詞の複数形（数を尋ねる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How many pencils do you have?（あなたは何本の鉛筆を持っていますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have five.（私は5本持っています）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How much（量を尋ねる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How much is this book?（この本の値段はいくらですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It is 　three dollars.（3ドルです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How old（年齢を尋ねる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How old is your father?（あなたのお父さんは何歳ですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He is fifty.（５０歳です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How tall（身長を尋ねる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How tall are you?（あなたの身長はどれくらいですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I am 160 centimeters tall.（１6０センチです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How long（期間を尋ねる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How long have you lived in 　Tokyo?（あなたはどれくらいの間　東京に住んでいますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have lived in Osaka for three years.（私は３年間住んでいます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How often（回数を尋ねる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How often did you go to Canada?（あなたは何度　カナダへ行きましたか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I went there two times.（私は2回行きました）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How far（距離を尋ねる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How far is it from here to the station?（ここから駅までどれくらいの距離がありますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It is about 　three kilometers.（約3キロです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How about（相手の意向を尋ねる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How about a cup of 　coffee?（コーヒーを一杯どうですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, please.（はい、お願いします）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞をふくむ慣用表現",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Why don't you ～?（～しませんか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Why don't you join our party?（パーティに参加しませんか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What is the matter with you?（どうしたのですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What is wrong with you?（どうしたのですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）あなたは手に何を持っていますか　　ノートを持っています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What do you have in your hand? I have a notebook.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）誰が窓をわったのですか　アンデーです",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Who broke the window? 　　Andy did.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）彼はいつ帰りますか彼は　10時にもどります",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "When will he come back? He will come back at 　ten.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）なぜ学校を休んだのですか風邪をひいていたからです",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Why were you absent from school? Because I had a cold.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（５）あなたは何冊の本を持っていますか5冊持っています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How many books do you have? I have five books.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "5.　　命令文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令とは、　→　通常、目の前にいる人に言うことから、命令文には主語がない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語で命令文を書く場合は、最初に動詞がくる　　そのとき　動詞はいつも原形になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　英語の勉強をしなさい　　Study English.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "お年寄りには親切にしなさい　　Be kind old people.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「親切な」というのは動詞ではないので、その単語の前にbe動詞が必要",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "そして原形にするから Ｂe となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文とは、　→　動詞の原形で始まる文章で、「命令」や「依頼」を表す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　Listen to me, 　Tom.（私の言うことを聞きなさい、トム）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Be quiet here.（ここでは静かにしなさい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「どうか～してください」というときはpleaseを文頭か文末（文末のときはコンマが必要）に置く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　Please stand up.（お立ちください）　　　または　Stand up, please.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定の命令文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定の命令文　　　→　　「～するな、～してはいけません」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　その動物にはさわるな　　Don't touch the animal.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ていねいに言う時には、同じように please を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　どうぞ私のことを忘れないでください　　Please don't forget me.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～しましょう」（勧誘）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一緒に「～しよう」と誘うときは、Let'sを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　Let's watch TV after dinner.（夕食後テレビを見ましょう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "誘われたとき、答え方はlet'sを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　Let's play baseball.（野球をしましょう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, let's./No, let's not.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文,＋and、命令文,＋or",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文,＋and　　→　　「～しなさい、そうすれば（よいことが起こります）」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　Hurry up, and you will catch the bus.（急ぎなさい、そうしたら　バスに間に合います）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文,＋or　　→　　「～しなさい、そうしないと（よくないことが起こります）」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　Hurry up, or you will miss the bus.（急ぎなさい、そうしないとバスに乗り遅れます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文の書き換え",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）命令文＝You must",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文は、相手に「～しなければならない」と命令する文だから",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文頭がYou mustである文と意味は同じ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　Be careful when you cross the street.（道を渡るときは注意しなさい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＝You must be careful when you cross the street.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）Don't～＝You must not",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文＝You mustだから、否定命令文＝You must not　となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　Don't be late for school.（学校には遅れるな）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＝You mustn't be late for school.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）please＝Will you～? Won't you～?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文の文末にwill youやwon't youをつけると、「～してくれませんか」と丁寧な言い方になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　Open the window, please.　　　　　＝　　　Open the window,will you?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）Let's＝Shall we～?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～しましょう」と誘うとき、Let'sのかわりにShall we～?を使うこともできる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Let's join us.（私たちと一緒にしませんか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＝Shall we join us?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "同じような意味を表す表現に、How about ～ing?や、Why don't we ～?がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　Let's go to the zoo after school.（放課後、　動物園に行きましょう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Shall we go to the park after school?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How about going to the park after school?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Why don't we go to the park after school?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（５）命令文,＋and(or)～＝If ～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文,＋and(or)～「　　→　　しなさい、そうすれば（そうしないと）～」は、If～「もし～したら（しなかったら）」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "で言い換えることができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　Turn to the left, and you will see the 　ｓtreet　.（左に曲がりなさい、そうしたら　道が見えます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＝　If you turn to the left, you will see the street.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）窓を開けてください",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Open the window, please.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）老人には親切にしなさい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Be kind to old people.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）かさを持っていくのを忘れないでください",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Don't forget to take an umbrella with you.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）全力をつくしなさい、そうすれば成功するでしょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Do your best, and you will succeed.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "6.　　３人称・単数・現在（３単現）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が３人称・単数で、現在のことを述べるとき、　→　一般動詞は原形ではなくs(es)をつけた形にする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　I speak English.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He speaks English.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "話している本人を　→　１人称といい、それを聞いている相手を　→　２人称という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が１人称でも２人称でもないときが　→　３人称",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "また、主語が単数形でないときは動詞にs(es)はつけない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　Taro plays tennis.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Taro and I play tennis.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３人称・単数の代表的な語は、he,she,itとTomなどの人名",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が３人称で単数のときだけ、動詞にs(es)をつけないといけない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太郎は毎週月曜日　図書館で勉強します　　　Taro studies in the library every Monday.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "単語の最後のアルファベットが　o,s,ch,sh,x の場合は es を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go→goes　　pass→passes　　watch→watches　　wash→washes　　box→boxes　　try→tries　　fly→flies",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "carry→carries　　play→plays　　pay→pays　　enjoy→enjoys",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "s(es)のつけ方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）普通は、sだけをつける　　例：play→plays",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）動詞の語尾がs,sh,ch,x,oのとき、esをつける　　例：wash→washes",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）動詞の語尾が子音＋yのときはyをiにかえてesをつける　　例：study→studies",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文章の表す内容が現在のことで、主語が I 、you 以外の単数の時、一般動詞には 　　→　　s を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "7.　進行形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在進行形・過去進行形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行中の動作や状態を表す用法を　→　進行形という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞+動詞のing形を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～している」、「～していた」と訳する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～している」と今進行中の動作を表す　→　現在進行形と、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～していた」と過去進行中であった動作を表す　→　過去進行形とがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　She is playing tennis now.（彼女は今テニスをしています）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She was playing tennis at that time.（彼女はその時テニスをしていました）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在進行形か過去進行形かはbe動詞で決まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "is(am),are+～ingと、be動詞が現在形のとき、「～している」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "was,were+～ingと、be動詞が過去形のとき、「～していた」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "基本的な問題では、文末の副詞句で現在進行形か（文末にnow）、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去進行形か（文末にthen（その時）、at that time（その時））がわかることがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語の基本では、その語順として、主語、動詞の順番になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この動詞に当たる部分には、be動詞と一般動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形（～している）では、この二つの動詞を同時に使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その語順と使い方は①主語　②be動詞　③動詞＋ing となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ボクは今フランス料理を作っています　I am cooking French food　now.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トムとナンシーは公園で絵を描いています　　Tom and Nancy are writing pictures in the park.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "do動詞にingを付ける場合　普通はそのまま ing を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "play→playing 　read→reading 　sing→singing",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "単語の語尾が e の時は e を取って ing を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "close→closing　 take→taking 　have→having",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "語尾が a,i,u,e,o＋a,i,u,e,o以外の文字の場合は、そのa,i,u,e,o以外の文字を重ねて ing を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "sit→sitting 　swim→swimming 　run→running",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形を過去形にする場合には、そのdo動詞ではなくbe動詞を過去形に変える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼はここでビールを飲んでいました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　He was drinking (some) beer here.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形の疑問文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形の疑問文(～しているのですか）は　→　be動詞を主語の前に書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太郎さんは今歴史の勉強をしているのですか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　Is Mr.Taro studing history now?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これに答える時は、　当然　be動詞を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　はい、しています　　Yes, he is.　　　　　　　　　いいえ、していません　　No,he isn't（is not).",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形の否定文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形の否定文（～してはいません）は、　→　be動詞の部分に not を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その人たちは、その時、その月を見ていませんでした",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　Those people were not　watching the moon then.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "8.　　過去形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去のできごとを表現したいとき、　→　英語では動詞の過去形を用いる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I walk to school every day.（私は毎日学校へ歩いていきます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I walked to school yesterday.（私は昨日学校へ歩いていきました）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞は、過去形の作り方によって２種類ある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "規則動詞　　→　　動詞の原形にedをつけると過去形にる例：play→played",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不規則動詞　　→　　動詞の原形とは別の形を過去形として使う例：go→went",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "規則動詞のedのつけ方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）多くの動詞は原形にedをつける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）動詞の語尾がeのときは、dをつける　　例：like→liked",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）動詞の語尾が子音＋yのときは、yをiにかえてedをつける　　例：study→studied",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）動詞の語尾が短母音＋子音のときは、子音を重ねてedをつける　　例：stop→stopped",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "短母音とは「短く読む」「伸ばさないで読む」母音（a,i,u,e,o）のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "stopだと、日本語のストップの「ッ」に近い音だが、これが短母音の例である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不規則動詞の作り方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "do,doesとdid",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞の否定文・疑問文をつくるとき、現在形のときはdoか、主語が３人称・単数のときはdoes、過去形のときはdidを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "注意すべき用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞と一般動詞でほぼ同じ意味を表せる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　彼はピアノが上手です　　He is a good pianist.　　　　He plays the piano well.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は英語を教えています　　He is our English teacher.　　　　He teaches us English.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "他動詞と自動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "他動詞（目的語をとる）として使われることが多い一般動詞　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "answer　答える　　ask　尋ねる　　bring　持ってくる　　build　建てる　buy　買う　　call　呼ぶ　　carry　運ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "catch　捕らえる　　clean　掃除する　　cut　切る　　do(does)　～をする　　draw　描く　drink　飲む",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "drive　運転する　　eat　食べる　　find　見つける　　finish　終える　　forget　忘れる　　get　得る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "give　与える　　have　持つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "hear　聞く　　help　助ける　　hope　希望する　　invite　招待する　　know　知っている　　learn　学ぶ　　leave　去る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "lend　貸す　　let　～させる　　like　～を好きだ　　lose　失う　　love　愛する　　make　作る　　meet　会う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "name　名づける　　need　必要とする　　play　遊ぶ　　please　喜ばせる　　put　置く　　read　読む　　ride　乗る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "see　見る　　sell　売る　　send　送る　　show　見せる　　sing　歌う　　speak　話す　　spend　費やす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "study　勉強する　　take　とる　　teach　教える　　tell　言う　　thank　感謝する　　think　考える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "throw　投げる　understand　理解する　　use　使う　　visit　訪ねる　　want　～がほしい　　wash　洗う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "watch　見る　　write　書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自動詞として使われることが多い一般動詞　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（自動詞はその後に前置詞（in,at,toなど）が必要なものがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例：～に到着する arrive at など）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "arrive　到着する　　become　～になる　　come　来る　　cook　料理する　cry　泣く　　fall　落ちる　　fly　飛ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go　行く　keep　保つ　　listen　聞く　　live　住む　　look　見える　rain　雨が降る　　rise　昇る　　run　走る　　say　言う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "shout　叫ぶ　　sit　すわる　　sleep　眠る　　smile　ほほえむ　stand　立つ　　stop　とまる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "stay　滞在する　　swim　泳ぐ　talk　話す　　try　試す　　turn　まがる　　wait　待つ　walk　歩く　　work　働く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "他動詞・自動詞２通りで使われる一般動詞　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "begin　始まる・始める　　break　壊す・壊れる　close　閉める・閉まる　　grow　育てる・育つ　open　開ける・開く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "start　始める・始まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "9.　名詞の複数形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "複数形　とは　　2つ以上のものを複数という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "複数のものを言う時には名詞（物の名前）を複数形にするる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名詞の複数形の作り方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　普通の単語　　　　　　　　 →　sをつける\t例）book 　→　books",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　s,sh,ch,x,oで終わる語は　→　esをつける\t例）bus 　 → buses",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３ 　子音字＋y　で終わる語は　→　yをiに変えてesをつける　　子音字というのは母音　以外のアルファベットのこ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例）city 　→　cities",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４ 不規則に変化する語\t例）man 　→　men　　　woman →　women　　　child 　→ children",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "《基本文》　　I have two books. （私は２冊の本を持っています）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have a　book.　　 　　私は(１冊の）本を持ってます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→　複数にすると",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have two books.　　　私は2冊の本を持ってます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2つ以上の時には名詞の後ろに(e)s がつく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "複数形の例　　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a pen\ttwo pens　　　three pens　　　　four pens　five pens",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a glass　two glasses　three glasses　four glasses　five glasses",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "two（２つ）以上になると後ろにくる名詞を複数形にすると　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "cat 　→ cats",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "notebook → notebooks",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "desk 　　　→ desks",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "orange 　 → oranges",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "friend 　　→ friends",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "chair 　　 → chairs",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3冊のノート　　 three notebooks",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "6本の鉛筆 　　six pencils",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "7脚のイス　　　seven chairs",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2人の赤ちゃん two babies",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "10.　代名詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人と物を表す代名詞（人称代名詞）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "代名詞とは名詞の代わりに使われる言葉で、例えば、人の名前が「あきら君」で、すでにその人のことが分かっている場合",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "に、「彼」と言ったりする言葉のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１人称とは、自分（私）のことや、自分を含めた自分側（私たち）のことをさす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２人称とは、相手（あなた）のことや、複数の相手側（あなたたち）のことをさす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３人称とは、１人称・２人称以外の全てをさす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主格　　→　　主語になり、文の最初に置き、「～は」「～が」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "所有格　　→　　直後の名詞にかかり、「～の」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目的格　　→　　動詞の目的語になって「～を」「～に」と訳す場合と、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前置詞の後に置かれて前置詞の目的語になる場合がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～のもの」と訳すのが　→　所有代名詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～自身」と訳すのが　→　再帰代名詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "itの所有格its「その」　　→　　普通、「その」と訳す場合のほとんどはtheである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "itsを使うのは、I have a dog. Its name is Pochi.（私は犬を飼っているその名前はポチだ）くらいしかない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「彼女の」のherと「彼女を」のher、「彼の」のhisと「彼のもの」のhisは同じつづりである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どちらの意味であるかは、語の置かれた位置や前後の意味から判断する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "意味",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私たち",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなた、\nあなたたち",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼女",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "それ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼ら\n彼女ら\nそれら",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "its と it's の説明",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は大きい猫を飼っています　　He has a big cat.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その頭は黒色です　　Its head is black.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後の英文の Its は、前の英文の dog をさす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "11.　形容詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞・・・人や物などの大きさや性質、状態などを表す言葉のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　old（古い）、new（新しい）など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is a new book.　　これは新しい本です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This book is new.　　　この本はあたらしい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "違いを注意する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is ～　　　　　　→　これは～です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This　○○ is ～　　→　この○○は～　です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is a new book.のようにisの後ろに名詞がくるとき",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→a,anを入れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これは一つの新しい本です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This book is new.のようにisの後ろに名詞がこないとき",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→a,anは入れない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "12.　文型",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（文の要素）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　主語 （動作をする人や物をあらわす言葉、～は、～が）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（ S )",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　動詞 （動作や状態をあらわす言葉）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "( V )",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　目的語(動詞の後にくる名詞で～を～に）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "( O )",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　補語　(主語や目的語と等しい関係になるもの）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "( C )",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "5文型",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第1文型　　S ＋ V",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第2文型　　　S ＋ V ＋ C",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第3文型　　　S ＋ V ＋ O",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第4文型　　　S ＋ V ＋ O ＋ O",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第5文型　　　S ＋ V ＋ O ＋ C",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "５文型は５種類あり、どの文型にも　S ＋ Vは入っている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜第３文型＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "S＋V＋O",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "↓",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語＋動詞＋目的語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He gave a present to her.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語 動詞　　目的語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は彼女にプレゼントをあげました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "My brother bought the book for me.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語　　　　動詞　　　目的語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私の兄は私にその本を買ってくれました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜第４文型＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "S＋V＋O＋O",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "↓",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語＋動詞＋目的語＋目的語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　He showed me a book.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は私に本を見せてくれました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Your father cooked us　some cookies.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたのお父さんは私たちにクッキーを作ってくれました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜第３文型と第４文型の書きかえはどこが変わるのか＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He　 gave / 　　me　 　　/ a present.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He　 gave / a present 　/ to me.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は私にプレゼントをくれました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前置詞の使い方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "forを使う動詞　ｆind , choose , buy , get , make , cook　など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "to を使う動詞　give , show , send , teach , tell 　など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "of を使う動詞　ask",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜第5文型＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "SV O C",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語　動詞 目的語 補語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語(S)というのは～は、が　　となる動作の主人公",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞(V)というのは～をする　　となる動作を表す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "～です　や　～ある、いる　というbe動詞の場合もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目的語(O)というのは　～を、に　となる動作の対象である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "補語(C)というのは第5文型では、Oと等しい関係になる言葉である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例１　　I call the dog Ken.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私はその犬をケンと呼びます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "the dog＝Ken",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例２　　　He named his son Kenta.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は息子をケンタと名づけました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "his son＝Kenta",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例３　　　The news made us unhappy.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "そのニュースは私たちを悲しくさせた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "us=unhappy",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "13.　　CAN",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜Can の基本＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "can +　動詞の原形　　　　～することができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "《基本文》 I can swim very well.　　私はとても上手に泳げます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例1",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I swim in the sea.　　　　　　私は海で泳ぎます　　→　　　現在形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I can swim in the sea.　 　　私は海で泳げます　　→　主語の後ろに　　can　が入り、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その後ろに動詞の原形　がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例２",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She makes a cake well.　　　　　　彼女はケーキを上手に作ります",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She can make a cake well.　　　　彼女はケーキを上手に作れます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語は　　She　、つまり　　三人称単数",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三人称単数　の場合は　　一般動詞に(e)ｓをつける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "上の文では　　She makes ・・・　と　　make　に　　s　がついている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "《基本文》　You can't swim well.　　 　　　あなたは上手に泳げません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Can you swim well ? 　　　　　あなたは上手に泳げますか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, I can./No, I can't.　　　　はい泳げます/いいえ泳げません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この　　Can　というのは　助動詞　である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この　　Can　を初めとする助動詞は否定文・疑問文の作り方が基本的にbe動詞の文と同じ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜be動詞の文の場合＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文の作り方　→　　　be動詞　の後ろにnotを入れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問文の作り方　→　　　be動詞　を文頭に出す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "答え方　　　　　　　→　　　be動詞　を使って答える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜Canの文の否定文と疑問文＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文の作り方：　　Can　の後ろにnotを入れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問文の作り方：　　Can　を文頭に出す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "答え方　　　　　　　→　　　Can　を使って答える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "肯定文　→　You can swim well.　　　　　あなたは上手に泳げます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文　→　You can't swim well.　　　　あなたは上手に泳げません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "(can not)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問文　→　Can you swim well ? 　　　　あなたは上手に泳げますか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "答え方　→　Yes, I can./No, I can't.　　はい泳げます/いいえ泳げません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "答え方は　　はい/いいえ　で答えるので　　Yes/No　で始まり、その後ろには　　I　がくる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "1.　未来",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語(S)というのは～は、が　　となる動作の主人公",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "未来",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞(V)というのは～をする　　となる動作を表す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "willは未来を表す助動詞なので、willの後に動詞の原形を置く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "※～です　や　～ある、いる　というbe動詞の場合もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目的語(O)というのは　～を、に　となる動作の対象である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は今日は忙しいです  I am busy today.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "補語(C)というのは第5文型では、Oと等しい関係になる言葉である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "will の直後にbe動詞がくると,、当然にその原形である be になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例１　　I call the dog Ken.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私はその犬をケンと呼びます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～するつもりだ」が優先で、「～するつもりだ」ではおかしいときに「～だろう」と訳する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "the dog＝Ken",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "未来形の疑問文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例２　　　He named his son Kenta.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は息子をケンタと名づけました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "明日は雨が降るでしょう  It will rain tomorrow. =　It is going to rain tomorrow.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "his son＝Kenta",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "はい、降るでしょう　  Yes, it will.    いいえ、降らないでしょう  　No, it will not(won't).",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例３　　　The news made us unhappy.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "そのニュースは私たちを悲しくさせた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "us=unhappy",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be going toはbe動詞の文だから、否定文はbe動詞の規則に従う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He isn't going to wash his car this afternoon.   （彼は今日の午後、車を洗わないだろう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "shall",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "未来を表す助動詞にはwill以外に　　→　shallがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）私は夕食前に　仕事をすませる予定です  I will finish my work before dinner.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）あなたは来週何をするつもりですか   What are you going to do next week?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）コーヒーをもう一杯いかがですか   Will you have another cup of coffee?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "未来形を表す文章では、主語に関係なく、動詞は必ず原形になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2.　動名詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動名詞とは一般動詞（do動詞）に　　　→　 ing を付けた形の動詞のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形は、～している、という意味で使わるが、動名詞は、～すること、という意味",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She is swimming in the river now.　　　彼女は今川で泳いでいます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "※ be動詞+動詞ing の形になっているので、進行形の「～している」と　訳する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動名詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I like swimming in the river.　　ぼくは川で泳ぐの(泳ぐこと）が好きです",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He is good at drawing pictures.　　彼は絵を描くことが得意です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Collecting books is very interesting.　　本を集めることはとてもおもしろいです",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動名詞と不定詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動名詞は不定詞の名詞的用法と同じ、～すること、という意味をあらわす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その意味で英文を書く場合には、どちらでも選ぶことができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　ぼくたちは　川で泳ぐのが好きです　　We like swimming (to swim) in the river.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "like の後ろに　～すること、となる言葉をつける場合は、動名詞でも不定詞でも良い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "しかし、finish や enjoy の後ろに　～すること、となる言葉をつける場合は動名詞しか付けられない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼女はやっと　仕事をやり終えました　　She finished doing her work at last.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ひろしは昨日　日本の音楽をきくことを楽しんだ　　Hiroshi enjoyed listening toJapanese　music yesterday.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不定詞しか付けられないものもある　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は　富士山に登りたいです　　　I want to climb Mt Fuji",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "また、stop のように、動名詞と不定詞のどちらかを付けることによって、その意味が変わる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼はタバコを吸うのをやめました　　He stopped smoking.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼はタバコを吸うために立ち止まりました　　He stopped to smoke.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１．「～すること」という意味で動名詞だけを後ろに付けられる動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "enjoy 　finish 　stop 　・・・など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２．「～すること」という意味で不定詞だけを後ろに付けられる動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "want　 hope 　wish 　・・・など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３．「～すること」という意味で動名詞と不定詞の両方を後ろに付けられる動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "like　 start 　begin 　・・・など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3.　不定詞1",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不定詞とは、動詞の意味をもちながら、名詞や形容詞、副詞の働きをする言葉で不定詞の形は 　→　　to+動詞の原形 である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不定詞・動名詞・分詞のはたらき",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語の文は、原則として、「主語＋動詞＋～」の形となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "このときの動詞（述語動詞）は、「～する」という意味　　I read a book.（私は本を「読む」）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ところが、動詞の形を変えることで、名詞のはたらき（主語や目的語や補語になる）をさせたり、形容詞のはたらき",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（名詞を修飾する）をさせたり、副詞のはたらき（動詞や形容詞を修飾する）をさせたりすることができるようになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞の形を変える方法は、不定詞（to＋動詞）、動名詞（動詞＋ing）、分詞（現在分詞と過去分詞）の３つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不定詞・動名詞・分詞の３つは、動詞を、名詞や形容詞や副詞のはたらきをする別のものに、かえる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動名詞は、動詞にingをつけることで、動詞に名詞のはたらきをさせる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "分詞は、動詞に形容詞のはたらきをさせる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不定詞にすると、動詞は、名詞のはたらきも、形容詞のはたらきも、副詞のはたらきも、できるようになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不定詞の３用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞の前にtoをつけて（to＋動詞の原形・・・to不定詞と呼ぶことがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不定詞にすると、「～する」の意味であった動詞が、（１）「～すること」となって名詞のはたらきを",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "したり、（２）「～するための」となって形容詞のはたらきをしたり、（３）「～するために」や、「～して」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "となって副詞のはたらきをしたりするようになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）を不定詞の名詞的用法、（２）を形容詞的用法、（３）を副詞的用法という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名詞的用法（～すること）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　私は音楽をきくことが好きです　　I like to listen to music.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼の母は　カナダに行きたがっています　　His mother wants to go Canada.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名詞的用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「to＋動詞の原形」で、「～すること」の意味になり、名詞と同じはたらき（名詞＝主語・目的語・補語になる）をする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　To speak English is difficult.（英語を話すことはむずかしい・・・to speak 「話すこと」が、主語　）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I like to play tennis.（私はテニスをすることが好きだ・・・to play 「すること」が、動詞likeの目的語）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "My hobby is to collect stamps.（私の趣味は切手を集めることだ・・・to collect 「集めること」が、補語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "like to ～　「～することが好きだ」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "begin to ～　「（～することを始める）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "hope to ～　「～することを望む」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "副詞的用法（～するために）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　彼らは食料を買うためによくその店に行きいます　　They often go to the store to buy some food.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は彼女に会えてうれしいです　　I am glad to see her.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞的用法（～するための）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　何か　飲むものが欲しいですか　　Do you want anything to drink?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼にはやるべき仕事がたくさんある　　He has a lot of work to do.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "4.　助動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "助動詞とは、動詞を助ける言葉　で　　英語では主語の次に来る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "助動詞が英文に入ってくる時の順番は、主語+助動詞+動詞の原形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語の助動詞には、次のものがある　　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "will ～でしょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "would　I would like ～　Would you ～　Would you like ～ など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "can ～できる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "could　～できた（can の過去形）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "may　～してもよい、～かもしれない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "shall　Shall I ～　Shall we～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "should　～すべきだ（shall の過去形）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "must ～しなければならない、～にちがいない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "また、英文に助動詞がある場合は、必ず動詞は原形になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "助動詞の意味",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "can （１）～できる（可能）、（２）～してもよい（許可）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　I can start at once.（すぐに出発できます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Can I help you?（（お店で）いらっしゃいませ＝あなたのお手伝いをしてもいいですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Can I ?は「してもいいですか」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "may （１）～してもよい（許可）、（２）～かもしれない（推量）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　May I call you?（あなたに電話をしてもいいですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You may be happy.（あなたは幸せかもしれません）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "may beは圧倒的に「～かもしれない」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "must （１）～しなければならない（義務）、（２）～にちがいない（義務）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　You must be quiet here.（ここでは静かにしなければならない）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You must be a teacher.（あなたは先生にちがいない）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "must beは圧倒的に「～にちがいない」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "should （１）～するべきだ（義務）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ほとんどの本では「～すべきだ」と書いてあるが、かたい表現で口語では使わないから、「～するべきだ」とする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "had better （１）～したほうがよい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　You had better speak more faster.（もっと　早く話したほうがよい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You had better not speak fast.（早口で話さないほうがよい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "助動詞の疑問文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "助動詞を使う文章の疑問文は、主語の前に助動詞を置けば完成する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　私たちはここで　野球の練習をすることができますか　　Can we practice 　baseball here?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, you can. 　No, you can not (can't または cannot).",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼女は今日　カナダに出発しなければなりませんか　　Must she leave for Canada today?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, she must.　　はい、今日出発しなければなりません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "No, she doesn't have to.　　いいえ、今日出発しなくてもいいです",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "助動詞の否定文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "助動詞を使う文章の否定文は、その助動詞の後に 　　→　not を付けます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　あなたはそこへ１人で行くべきではない　　You should not (shouldn't) go there alone.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "can の否定の短縮形には can't や cannot がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "can の過去形は could で、同じように not をその後ろにつける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　私たちはその質問に答えることができませんでした　　We could not (couldn't) answer the question.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたたちはその話を信じてはいけません　　You must not (msutn't) believe that story.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたたちはその話を信じなくてもいいです　　You don't have to believe that story.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が I , you 以外の単数の時は doesn't have to になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "must notとdon't have to",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You must stand up.（立たないといけない）の否定文をつくるとき、助動詞の否定文のつくり方にしたがって",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You must not stand up.とすると、「立ってはいけない」という禁止のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日本語だと、「立たないといけない」の反対は「立つ必要はない」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語では、「～する必要はない」、「～しなくてもよい」は、don't have toを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "だから、You must stand up.の否定文は、You don't have to stand up.（立つ必要はありません）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "can 　の過去形は　　→　could",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去形の時はbe動詞の部分を過去形にする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　彼はとてもじょうずに踊ることができました　　He was able to dance very well. 　　= 　He could dance very well.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "must = have to",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "will must とすることもできないので、この場合には必ず have to を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ケントと　私はその会議に参加しなければならないでしょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　Kent and I will have to join the meeting.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語が I , you 以外の単数の時に　will を使う必要のない時は　　→　 has toになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　彼女はすぐに決断しなければなりません　　She has to decide at once.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "must mustには過去形がないので、must=have toから、haveの過去形を用いてhad toをmustの過去の文に使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　I must go there.（そこへ行かないといけない）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I had to go there.（そこへ行かないといけなかった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "同意文書き換え",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）～できる（can=be able to）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I can swim.　　＝　　I am able to swim.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）～しなければならない（must=have to）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I must study hard.　＝　I have to study hard.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～できる」のとき、canとbe able toのどちらを使ってもかまわない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "同様に、「～しなければならない」もmustとhave toのどちらでもよい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ところが、英語の大事な決まりとして、「１つの英文には１個の助動詞しか使えない」という規則がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "このとき、can=be able toを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She will be able to swim next year.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "同じように、You must go there alone.にnext yearをつけて全文を書き換えると、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You will have to go there alone next year.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）命令文＝You must",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Be quiet.（静かにしなさい）　＝　You must be quiet.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）～してはいけない（Don't=You must not）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文＝You mustですから、「～してはいけない」は、Don't=You must notの両方で書くことができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Don't run in the room.（　部屋で走ってはいけない）　＝　You must not run in the room.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "～したい　would like to",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～したい」という表現には、want toがあるが、より上品な（ひかえめな）語がwould like toである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I would like to have another cup of coffee.（コーヒーをもう一杯いただけますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）あなたの本を使ってもいいですか　どうぞ　Can I use your book? Sure.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）お話してもいいですかはい、もちろん　May I talk to you? Yes, of course.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）あなたは毎日一生懸命勉強しなければいけません　You must study hard every day.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）私たちは　人々には親切にするべきです　We　ｓhould be kind to  people.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は　日本語を教えることができます　　I can teach 　Japanese",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼はむかし逆立ちをができました　　He could stand on his hands a long time ago.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたは明日までにその仕事を終えなければなりません　　You must finish the work by tomorrow.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "5.　比較",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原級・比較級・最上級を使う表現",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞と副詞の原級・比較級・最上級である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原級を使った表現　as＋原級＋as",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as＋原級＋as　　　「～と同じくらい・・・だ」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　She is as old as I.（彼女は私とおない年です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He runs as fast as you.（彼はあなたと同じくらい速く走る）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "not as＋原級＋asは、「～ほど・・・ではない」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This notebook is not as interesting as that one.（この　ノートはあの　ノートほどおもしろくありあません）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文末の「あの本」のほうがおもしろく、主語の「この本」のほうが負けているということになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級を使った表現　～erまたはmore～＋than・・・",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級（～erまたはmore～）＋than・・・　　　「・・・より～だ」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　He is older than I.（彼は私より年上だ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He runs faster than you.（彼はあなたより速く走る）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文法的には音節が２つでmore mostをつけるものもあるが、３つ以上の音節がある単語は長い単語と考える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "音節とは、　　→　日本語で「くるま」は「く・る・ま」と一字一字を分けた音のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２音節の単語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "clever → cleverer → cleverest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これもmore most をつけて言う場合もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（clever →clev・er と、分けることができます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "useful → more useful → most useful",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３音節の単語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "interesting → more interesting → most interesting",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "beautiful → more beautiful → most beautiful",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級で文を作ると時は　比較級＋than・・の形で、「・・・より　　　だ」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は私より背が高いです　　He is taller than I.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最上級を使った表現　the＋～estまたはmost～＋in(of)・・・",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最上級（the＋～estまたはmost～＋in(of)・・・）で、「・・・の中でもっとも～だ」という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　She is the oldest in her family.（彼女は家族の中で一番年上だ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He runs the fastest of the four.（彼は４人の中で一番速く走る）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「最も～だ」の最上級の文では、原則としてtheが必要だが、副詞の最上級に限ってtheをつけないことがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最上級で文を作ると　the ＋最上級＋ in (of) ・・・　「・・・の中で一番　　　」という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　彼はこのクラスの中で一番背が高い  He is the tallest in this class.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞・副詞の比較級・最上級の作り方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）（おもに１音節の）短い形容詞・副詞の比較級・最上級",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）（ほとんどの２音節以上の）長い形容詞・副詞の比較級・最上級",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）不規則な変化をする形容詞・副詞の比較級・最上級",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級を強調するmuch",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級の前にmuchを置くと、「・・・より、ずっと～だ」の意味となる（veryは使えない）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　Tom is much taller than Kelley.（トムは　ケリーよりずっと背が高い）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最上級the＋～est＋in(of)・・・の、inとofの使い分け",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「in＋場所・範囲を表す単数の語」、「of＋複数の語」の決まりがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in・・・in our class, in my family, in Japan",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "of・・・of all, of the three",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "allと「数」のときof、その他はinと覚えてもよい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "注意すべき比較表現",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）２倍、３倍、・・・の言い方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "twice as ～ as, three times as ～ as, four times as ～ as・・・で、２倍、３倍、４倍・・・を表すことができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　Australia is about twenty times as large as Japan.（オーストラリアは日本の約２０倍の大きさです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）ＡとＢではどちらが～ですか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "物のとき・・・Which is larger, Tokyo or Osaka?（東京と大阪ではどちらが大きいですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人のとき・・・Who runs faster, Tom or Kelley?（トムとケリーではどちらが速く走りますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Which(Who)＋比較級, A or B?と覚えるとよい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）最上級＝比較級＋than＋any＋other＋単数形（他のどの～よりも・・・だ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最上級と同じ意味を、比較級＋than＋any＋other＋単数形で表すことができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　Mt. Fuji is the highest mountain in Japan.（富士山は日本で最も高い山だ）　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Mt. Fuji is higher than any other mountain in Japan.（富士山は日本のほかのどの山よりも高い）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "同じ意味を、No other mountain is higher than Mt. Fuji.でも表すことができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）one of the＋最上級＋複数形（最も～のうちの一つだ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Kyoto is one of the oldest cities in the world.（京都は世界で最も古い都市の一つだ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（５）as ～ as possible, as ～ as ・・・ can（できるだけ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Let's start as early as possible.（できるだけ早く出発しましょう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "=Let's start as early as we can.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較を使っていない英文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "健太は背がたかい　　Kenta is tall.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これを as ～ as を使って他の人（もの）と比べる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as と as の間には形容詞や副詞の原級（原形）が入る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "健太はボブと同じくらい背が高い　　Kenta is as tall as Bob.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（６）likeと比較級・最上級",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "likeを修飾する副詞はmuchですが（I like apples very much.）、比較級・最上級の文では、muchの",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級・最上級（more, most）ではなくてwellの比較級・最上級であるbetter, bestをもちいる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I like apples better than oranges.（私はオレンジよりりんごのほうが好きです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較の文、特に書き換えの問題では、形容詞・副詞の対義語を知らないと解けないので下記に記載する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞・副詞の対義語　　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "big 大きい…small 小さい　　busy 忙しい…free ひまな　　cold 寒い…hot 暑い　　cool 涼しい…warm 暖かい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "different 異なった…same 同じ　　difficult 難しい…easy 簡単な　　early 早い…late 遅い　　far 遠い…near 近い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "fast 速い…slow 遅い　　good よい…bad 悪い　　high 高い…low 低い　　large 大きい…small 小さい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "long 長い…short 短い　　many たくさんの(数)…few 少しの（数）　　much たくさんの(量)…little 少しの（量）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "new 新しい…old 古い　　old 年とった…young 若い　ｒich 裕福な…poor 貧しい　　short 低い…tall 高い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "early 早く…late 遅く　　fast 速く…slowly ゆっくりと　　quickly 速く…slowly ゆっくりと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）私は犬より　猫のほうが好きだ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I like cats better than dogs.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）ビリー　はクラスの男の子の中で一番背が高い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Billey is the tallest of all the boys in his class.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）私は彼ほど上手に泳げない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I can't swim as well as he.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）この自転車とあの自転車ではどちらが大きいですか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Which is bigger, this bike or that one?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級と最上級",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級とは「～より～だ」という表現で、最上級とは「一番（最も）～だ」という表現",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級や最上級は、形容詞または副詞の単語を次のようになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級の基本はそれらの単語の後ろに er を、最上級は est を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "old → older → oldest 　　　　slow → slower → slowest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "short → shorter → shortest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "単語の後ろが e になっているものは、比較級であれば r を、最上級であれば st 付けるだけ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "large → larger → largest 　　　　late → later → latest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "wide → wider → widest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "単語の後ろが y で終わっているものは比較級であれば y を i に変えてer を、最上級であれば est 付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "happy → happier → happiest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "pretty → prettier →　prettiest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "early → eralier →eraliest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "単語の最後の文字を重ねる場合もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "big → bigger →　biggest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "sad → sadder → saddest",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "単語のつづりが長い比較級では more を、最上級では most を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞を使った比較",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞による比較の文では下記になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太郎と　一郎ではどちらが年上ですか　　Who is older, Taro or Ichiro?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「どちらが」となっていても、この場合には人を比べているので which ではなく who を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一郎です　　 Ichiro is.（Ichiro is older than Taro.)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "答え方は、主語を聞いているので、 It is  Ichiro. としないようにする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これらの本の中でどれが一番簡単ですか　　Which is the easiest of these books?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これです　　This one is. (one は book の言い換え）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その他の比較",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比較級や最上級の変化で特別な形になる場合がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "good（よい） → better(より良い） → best(最も良い）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "well（上手に） → better（より上手に）→ best（最も上手に）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一郎は上手に英語を話すことができます  Ichiro can speak English well",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "--＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一郎は　太郎より上手に英語を話すことができます  Ichiro can speak English better than　Taro.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "--＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一郎はみんなの中で一番上手に英語を話すことができます  Ichiro can speak English (the) best of all.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "many（たくさん[数]） → more → most",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "much (たくさん[量］）→ more → most",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この2つの比較級と最上級は同じ形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブラウンさんはたくさんお金を持っています  Mr Brown has much money.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "--＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブラウンさんは私よりたくさんお金を持っています  Mr Brown has more money than I.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "--＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブラウンさんは世界で一番たくさんお金を持っています　　Mr Brown has the most money in the world.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この国ではこれは他のどの車よりも人気があります",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is more popular than any other car in this country.　　=　 This is the most popular car in this country.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "このような形すれば、比較級の形で最上級の意味を表すことができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "また any other の後の語句は、単数形になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "6.　接続詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語の接続詞には、語と語、句と句（語のグループ）、文と文（主語＋動詞＋～）を対等につなぐもの（等位接続詞）と、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文の中に節（他の文）を入れ込むもの（従属接続詞）とがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "等位接続詞（語と語、句と句、文と文を対等につなぐ接続詞）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "and, or, but, soは、２つのもの（語・句・文）を対等に結びつけるはたらきをする接続詞である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "and は、よく「～と」や「そして」の意味で使われる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太郎と一郎は高校生です　　Taro and Ichiro are high school students.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「そうすれば」という意味もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一生けんめい勉強しなさい、そうすればあなたのお父さんも喜ぶでしょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Study hard, and your father will be happy.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "or は「それとも」「または」のような意味がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたは　名古屋出身ですかそれとも　岩手ですか　　Are you from Nagoya or Iwate?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「さもないと」という意味がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一生けんめい働きなさい、さもないとあなたのお父さんは悲しむでしょう　　Work hard, or your father will be sad.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "but は「～しかし」「でも」といった意味がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は　母親の手伝いをしましたが、お金はくれませんでした　　I helped my mother, but he didn't give me any money.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "語と語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Please lend me a pencil and a notebook.（私に鉛筆と　ノートを貸してください）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "句と句",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You may take something to drink or something to eat.（あなたは何か飲むものか何か食べるものをとってよい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文と文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She was very poor, but he was happy.（彼女は貧しかった、しかし幸せだった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She was rich, so he was very happy.（彼女は富んでいた、それでとても幸せだった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "連語の等位接続詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "both A and B（ＡもＢも両方）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He can speak both English and Japanese.（彼は英語も　日本語も両方話すことができる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "either A or B（ＡかＢのどちらか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You may use either this machine or that one.（あなたはこの機械かあの機械かのどちらかを使用できる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "使ってよい）命令文, and～（・・・しなさい、そうすれば～）と、命令文, or～（・・・しなさい、そうしないと～）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Hurry up, and you will catch the bus.（急ぎなさい、そうすれば　バスに間に合うでしょう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Hurry up, or you will miss the bus.（急ぎなさい、そうしないと　バスに乗り遅れるでしょう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "not only A but also B（ＡだけでなくＢも）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Schweitzer was not only a doctor but also a servant.（シュバイツァーは医者であるだけでなく奉仕者でもあった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "従属接続詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１つの文（主節）の中にもう１つの文（従属節）を入れ込むはたらきをする接続詞を従属接続詞という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名詞のはたらきをする節（名詞節）を導く接続詞（中学校で習うのはthatだけ）と、副詞のはたらきをする節を導く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "接続詞（when, while, till, before, after, as soon as, if, because, though, so ～ that・・・）とがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "接続詞 that",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "that は「あれ」や「あの」という意味が、これも文と文をつなぐ接続詞として使われる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I think. 私は思います",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "A smartphone is very useful. 　スマートフォンはとても便利です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この２つの英文を that を使って１つにすることができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I think that a smartphone is very useful.　　私は　スマートフォンはとても便利だと思います",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語はとてもむずかしいと思います　　I think that English is very difficult.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２つの文が that でつながれる場合は、基本的な動詞においては次のものに限られている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "We know (that) soccer isn't very popular in Japan.　　私たちは日本ではサッカーはあまり人気がないことを知っています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She hopes (that) the man will be punished.　　彼女はその人が罰せられることを望んでいます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "基本的には that の前の動詞である think, know, hope などが過去形になると that より後ろの文章の動詞も過去形になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I think (that) Mr Mori is a policeman.　　森さんは警察官だと思う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "--＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I thought (that) Mr  Mori was a policeman.　　森さんは警察官だと思った",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "副詞節を導く接続詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "時を表す従属接続詞（when, while, until, till, before, after, as soon as）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "when（～の時）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "When I was a child, I wanted to become a driver.　　　（私は子どものとき、運転手になりたかった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "when は「いつ」という意味で疑問文に使われる単語だが、「～のとき」の意味で、接続詞として使われることがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私が家に帰ってきたとき、娘は寝ていました　　①　When I came home , my daughter was sleeping.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "when のついた文を後ろにつくこともある　　②　My daughter was sleeping when I came home.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I was very happy when I found this letter.　　　私はこの手紙を見つけたとき、私はとてもうれしかった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "when はいつもそのうしろにある文にくっついている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "while（～の間）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "While I stayed in Tokyo, I visited many temples.（私は　東京に滞在中、多くの寺院を訪れた）　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "During my stay in Tokyo, I visited many temples.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "till（～まで）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You may stay here until(till) it stops raining.（雨がやむまでここにいていいですよ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "before（～の前に）, after（～の後に）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Clean your classroom before you go out.（外出する前に　教室を掃除しなさい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You may go out after you clean your  classroom.（教室の掃除をした後　外出していいです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as soon as（～するとすぐに）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "As soon as I got to the station, the bus started.（私が駅に着くとすぐに　バスは出発した）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "条件を表す従属接続詞 if（もし～ならば）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I won't go out if it rains tomorrow.（もし明日雨なら外出はしないつもりだ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "時と条件を表す接続詞に導かれる文では、未来のことでもwillを使わず、現在形を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原因を表す従属接続詞 because（なぜなら）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She helped her mother because he looked very tired.（お母さんがとても疲れているようにみえたから彼女は母さんを手伝った）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He couldn't go out because he was sick.　　　　彼は病気だったので、出かけられませんでした",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "譲歩を表す従属接続詞 though（～だけれども）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Though it was raining, I went shopping.（雨が降っていたが、私は買い物に出かけた）　＝　　It was raining, but I went shopping.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "程度を表す連語の接続詞 so ～　that ・・・（とても～だから・・・）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He was so rich that he bought a new car.（彼はとても金持ちだから新しい　車を買った）　＝　He was rich enough to buy a new car.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He was so poor that he could not buy a car.（彼はとても貧しかったので車を買えなかった）　＝　He was too poor to buy a car.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は野球とサッカーが好きだ、しかし　母はそれらを好きではない　I like baseball and football, but my mother doesn't like them.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は野球をすることはとてもおもしろいと思う　　I think that playing baseball is a lot of fun.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私が帰宅したとき、　父は台所で料理をしていた　When I came home, my father was cooking in the kitchen.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私はとても疲れていたので外出できなかった　　I was so tired that I couldn't go out.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "if「もし～なら」 も同じ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もし明日暇なら私に会いに来てください　Come and see me if you are free tomorrow.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "We will go to the park if it is sunny tomorrow.　　もし明日晴れたら、私たちは公園に行きます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "7.　受動態（受け身）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "他の人や物から動作を受けるときの表現の　「～される」　は受動態で　「受け身」とも言う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英文の形は<be動詞＋動詞の過去分詞>となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語は　オーストラリアで使われています　　English is used in Australia",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態が過去形になる場合はbe動詞を過去形にし、「～された」というような",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あの建物は去年こわされた　　That building was broken last year.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態には「～に（よって）」というような意味で by がよく使われる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これらの歌は若い人たちに（よって）愛されています　　These songs are loved by young people.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "未来形の受動態は <will be 動詞の過去分詞>の形で「～されるでしょう」のような",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "たくさんの人々がこの場所を訪れるでしょう　　Many people will visit this place.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "--＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この場所はたくさんの人々に訪れられるでしょう　　This place will be visited by many peoole.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "能動態の文が、主語＋動詞＋目的語であるとき、受動態にするには、目的語を主語にして",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文頭に出し、動詞をbe動詞＋過去分詞にし、主語をby＋行為者（目的格）にする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I use this book.（私はこの本を使う）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This book is used by me.（この本は私に使われる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態の疑問文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態の疑問文はbe動詞が使われているので、be動詞を主語の前に持ってくる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これらの写真は　東京で撮られました　　These pictures were taken in 　Tokyo　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これらの写真は　東京で撮られましたか　　Were these pictures taken in 　Tokyo　?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "未来形では will だけを主語の前にもってくる　　　be動詞よりも will が優先する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態の文は、be動詞を使った文なので、疑問文を作るときはbe動詞の規則に従う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "English is spoken in many countries.（英語は多くの国で話される）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（疑問文）Is English spoken in many countries?（英語は多くの国で話されますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態の否定文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（否定文）French is not spoken in many countries.（フランス語は多くの国で話されません）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態の否定文はbe動詞が使われているので、be動詞の後ろに notを書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態の文は、be動詞を使った文なので、否定文を作るときはbe動詞の規則に従う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "短縮形も使うことができる　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あれらの写真は　名古屋で撮られたものではありません　　Those pictures were not (weren't) taken in Nagoya.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by＋行為者を示さない受動態",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態は、「主語＋be動詞＋過去分詞＋by＋行為者」の形であるのが基本だが、行為者が",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「そこにいる人々」であったり、「そこの誰かであって誰であるかはあまり意味がない」ときは、by＋行為者は省略する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "People speak English and French in Canada.（カナダでは人々は英語とフランス語を話す）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態にすると、　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "English and French are spoken in Canada.・・・by peopleは不要",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "They sell books at that shop.（あの店では　本を売っています）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態にすると、　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Books are sold at that shop.・・・by themは不要",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "We can see Mt. Fuji from here.（ここから富士山を見ることができます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態にすると、　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Mt. Fuji can be seen from here.・・・by usは不要",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語＋動詞＋目的語＋目的語（第４文型）の文の受動態",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "My brother gave me this present.（兄が私にこのプレゼントをくれた）のように、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～に」と「・・・を」の、２つの目的語がある文の場合、それぞれを主語にする受動態の文ができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～に」を主語にして、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I was given this present by my brother.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「・・・を」を主語にして、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This present was given me by my brother.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "または、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This present was given to me by my brother.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by以外の前置詞を使う受動態",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be known to（～に知られている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be covered with（～におおわれている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be filled with（～でみたされている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be made of（～で（材料）できている） と be made from（～で（原料）できている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・The story is known to everyone.（その話はみなに知られている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・The top of the mountain is covered with snow.（その山の頂上は雪でおおわれている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・My　 bag is filled with books.（私のかばんは本で一杯だった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・The desk is made of metal.（その机は　金属でできている・・・金属（材料）でできている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・Juice is made from oranges.（ジュースはオレンジから作られる・・・オレンジ（原料）から作られる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "気持ちや感情を表す表現",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be interested in（～に興味がある）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be surprised at（～に驚く）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be pleased with（～が気に入っている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be satisfied with（～に満足している）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・I am interested in the history of England.（私は英国の歴史に興味がある）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・She was surprised at the news.（彼女はその知らせに驚いた）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・She is pleased with the home.（彼女はその　家が気に入っている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・I am satisfied with my new car.（私は新しい　車に満足している）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "特別な受動態",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "受動態の形をしているが、受動態の意味ではなく、通常の文もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "僕は外国の文化に興味があります　　I am interested in foreign cultures.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（be動詞＋interested in ～ ～に興味がある）と覚える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私たちはその知らせに驚いた　　We were surprised at the news.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（be動詞＋surprised at ～ ～に驚く）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「～に（よって）」の部分に by 以外の単語が使われる場合もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その歌手は世界中の人々に知られています　　The singer is known to people in the world.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "そのドアは　金属で作られています　　The door is made of metal.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）彼女はみんなに好かれている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She is loved by everyone.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）アメリカでは英語が話されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "English is spoken in America.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）その箱は一郎によって作られたのですか　　いいえ一郎によってつくられたのではありません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Was this book made by Ichiro? No. It wasn't made by Ichiro.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）私の兄は　野球に興味がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "My brother is interested in　play　baseball.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "8.　There is ～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There is の肯定文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　 １　There is 　 a　 notebook on the desk.　　机の上に１冊のノートがあります",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　There are two notebooks on the desk.　机の上に２冊のノートがあります",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後ろに単数がくるならbe動詞はis、複数がくるならareを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There is の否定文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　肯定文：　There are 　some books on the table.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文：　There aren't any books on the table.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞の文を否定文にするときにはbe動詞の後ろにnotを入れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "注意：not any ～　＝　no ～　→　一つも～ない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文の訳 　　　　　テーブルの上には一冊も本がありません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "同じ内容の書きかえ　There are no books on the table.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・There is(are)　～　の文の疑問文の作り方は be動詞の文の場合と同じなので",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Is(Are)　there ～？　となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・答え方は　there を使って",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, there is(are).No, there isn't(aren't) 　となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・疑問詞のある疑問文の語順は",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞　＋　普通の疑問文 となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜書きかえのパターン＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　There are 365 days in a year.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＝A year has 365 days.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１年は　365日あります）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　There are three rooms in the house.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＝The house has three rooms.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（その家には3つの部屋があります）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　There was a big Typhoon last year",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＝We had a big Typhoon last year.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（昨年　大台風がありました）.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "基本的には　持っている　という言い方に変える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "1.　現在完了",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在完了形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在完了は継続や完了、経験をあらわすために使われる言葉",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "have(has) + 動詞の過去分詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在完了では、このhave は「持っている」という意味ではない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去分詞とは、動詞が変化をする時の1つの決まった形のもので、動詞は「原形・過去・過去分詞」のように変化する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "今現在の状況を述べる英文は現在形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去の動作や状態を述べる英文は過去形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去にした行為や状態が現在までつながっていることを述べる英文が現在完了形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在完了形は、主語＋have(has)＋過去分詞＋～の形になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　He has had breakfast.（彼は朝食を食べたところだ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問文は、have(has)を文頭に出す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Has he had breakfast?（彼は朝食を食べたところですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問文の作り方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "They have stayed in Japan for two months.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→　現在完了の疑問文は have(has) を主語の前におく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼らは　日本に2ヶ月間滞在していますか　　Have they stayed in Japan for two months?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→　答え方 は　→　 Yes, they have. 　No, they have not(haven't).",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼女はその本をもう読みましたか　　Has she read the book yet.　　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, she has.　　　No, she has not(hasn't).　　yet は疑問文では「もう」という意味",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文は　　→　主語＋have(has)＋not＋過去分詞＋～の語順になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　He has not had breakfast.（彼は朝食をまだ食べていない）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去から現在までの、つながっている行為や状態を表す場合として、　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）ある行為や状態が終わったことが今・現在に影響を与えているとき　　→　「～したところだ」「～してしまった」（完了・結果",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）過去に始めた行為、始まった状態が今・現在まで続いているとき　　→　「ずっと～している」（継続）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）ある行為をしたということが今・現在の自分の経験になっているとき　→　「～したことがある」（経験）、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "の３つがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文の作り方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在完了の否定文は 　　→　　have(has) の後ろに not を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　彼はまだ　仕事をしていません　　He has not(hasn't) done his work yet.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "yet は、否定文では「まだ」という意味",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "否定文では never（一度も～ない） などの否定語を付けて表す場合もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　ぼくは　車　を一度も見たことがありません　　I have never seen a　car.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "特にnever は否定を強調する時に使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "完了「～したところだ」・結果「～してしまった」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "完了を表す現在完了",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "完了とは、　→　過去のある時点に始まった動作などが、すでに完了したことをあらわすもので　　「～したところだ」「～して",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "しまった」などのような意味になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　彼女はちょうどその　宿題を終えたところです　　She has just finished the homework.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山田先生は　カナダに行ってしまいました　　Mr Yamada has gone to Canada.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "just（ちょうど） , already（すでに） などの単語が have(has) と 動詞の過去分詞の間に入ることがよくある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これらは現在完了を強調する言葉となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "just（ちょうど）, already（もう、すでに）, yet（（疑問文で）もう、（否定文で）まだ）などの副詞をともなうことが多い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "完了",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He has just come home.（彼はちょうど帰宅したところだ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She has already eaten breakfast.（彼女はもう　朝食を食べたところだ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Have you finished your work yet?（あなたはもう　仕事を終えたか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I haven't my 　work yet.（私はまだ宿題を終えていない）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "結果",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have lost my　notebook.（私は　ノートをなくしてしまった（今、ノートはない））",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He has gone to Canada.（彼は　カナダに行ってしまった（今、ここにはいない））",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "継続「ずっと～している」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "継続を表す現在完了",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在完了の継続とは、過去のある時点から、ちょうど今現在まで続いている状態を言う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "継続だから、意味は「ずっと～している」「ずっと～である」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　私は２０年間　カナダに住んでいる　　I have lived in Canada　for 20 years.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「ずっと」という日本語がなくても、「２０年前から今まで」ということをあらわしているので現在完了を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は先週からずっと病気です　　　He has been sick since last week.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "since（～から）, for（～の間）, How long（どれくらいの期間）などが多い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　She has been sick in bed since last week.（彼女は先週からずっと病気で寝ている）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How long have you lived in this area?（あなたはこの地域にどれくらいの間住んでいますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have lived here for ten years.（私はここに１０年間住んでいます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語独特の表現",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「死んだ」という表現を英語では現在完了形で表すことがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　He died two years ago.（彼は2年前に亡くなった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He has been dead for two years.（彼は2年間死んだという状態である）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Two years have passed since he died.（彼が死んでから2年たった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "経験「～したことがある」",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "経験を表す現在完了",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "経験とは、過去のある時点から現在に至るまでの経験（そのまま）をあらわし、「～したことがある」のような意味になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　私は宇宙人と話をしたことがあります　　I have talked with an alien.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼の父親は　南極に行ったことがあります　　His father has been to the Antarctic.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "have been to～　には「～へ行ったことがある」の意味と　　「～へ行ってきたところだ」の意味がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これは前後の文脈などで判断する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "before（以前に）, once（一度）, twice（二度）, three times（三度）, ever（今までに）, never（今まで一度もない）などが多い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have seen him before.（私は以前彼に会ったことがある）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How many times have you been to France?（あなたは何度　フランスに行ったことがありますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have been there three times.（私は三回　フランスに行ったことがあります）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Have you ever read the book?（その本を今までに読んだことがありますか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have never read such an interesting book.（私はこんなおもしろい本を今までに読んだことがない）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在完了形と過去形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在完了形は、はっきりと過去に限定する語とは一緒に使えない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "はっきりと過去に限定する語・・・yesterday, last ～, ～ago, When",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これらの語があるときは、過去形を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I studied English two years ago.（私は２年前に英語を勉強した）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ただし、sinceがあれば、「過去のある時点から」という意味になり、現在完了形と一緒に使える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　I have studied Japanese since two years ago.（私は２年前から　日本語を勉強しています）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "have been to～　と　　have gone to～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "経験と完了のときhave been to、結果を表すときにhave gone toを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　I have been to America before.（私は以前アメリカに行ったことがある（今はここにいる）・・・経験）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have just been to the shop.（私はちょうどその店に行ってきたところだ（今はここにいる）・・・完了）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He has gone to America.（彼はアメリカに行ってしまった（今、ここにはいない）・・・結果）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "still（まだ）と現在完了形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "副詞のstill（まだ）が文中にあるとき、過去の行為・状態が「まだ」今も続いている意味から、現在完了形に書き換えられることが多い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　She went to Canada two years ago, and she is still there now.（彼女は２年前カナダに行って、まだそこにいる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＝　　She has been in Canada for two years.（彼女は２年間ずっとカナダにいる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I was sick last Monday, and I am still sick now.（私は先週の金曜日に病気だった、まだ今も病気だ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＝　　 have been sick since last Monday.（私は先週の金曜日からずっと病気だ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）私はちょうど　仕事を終えたところだ　　I have just finished my work.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）私は　本をなくしてしまった　　I have lost my book.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）あなたはもうその本をよみましたかいいえ、まだ読んでいません　　Have you read the book yet? No, I haven't read it yet.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）あなたはどれくらいの期間、　東京に住んでいますか私は３年間ここに住んでいます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How long have you lived in Tokyo? I have lived here for three years.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（５）あなたは今までに東京へ行ったことがありますかはい私は３回行ったことがあります",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Have you ever been to Tokyo? Yes. I have been there three times.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2.　不定詞2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不定詞とは、動詞の意味をもちながら、名詞や形容詞、副詞の働きをする言葉　　　不定詞の形は",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→　 to+動詞の原形 である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞を使った不定詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞と不定詞をいっしょに使うときもある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "how to ＋動詞の原形　（どのように　　　すべきか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私はその歌の歌いかたを知りません　　I don't know how to sing the song.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "what to ＋動詞の原形　（何を　　　すべきか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "何を持ってきたらよいのか教えてください　　Tell me what to bring.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "when to ＋動詞の原形　（いつ　　　すべきか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼らはそこへいつ行くべきか分かりませんでした　　They didn't know when to go there.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "where to ＋動詞の原形　（どこで［へ］　　　すべきか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私たちはどこで練習するべきか話し合った　　We discussed where to practice.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "which to ＋動詞の原形　（どれを　　　すべきか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ケン　はどれを選ぶべきか考えました　　Ken thought which to choose.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その他の不定詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞+目的語＋to～　の形であらわされるのは不定詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この動詞の部分に使われるのは次のような３つがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "1.　ask ～ to・・・　 ～に・・・するように頼む",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "母は僕に車を洗うように頼みました　　My mother asked me to wash the car.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2.　tell ～ to・・・　 ～に・・・するように言う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "お母さんは毎日私たちに勉強するように言います　　My mother told us to study every day.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3.　want ～ to・・・　 ～に・・・してもらいたい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私はあなたに医者になってもらいたい　　I want you to become a doctor.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ここでは、英文の目的語は me, us, you",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You must tell your cat to be quiet.　　「あなたの猫に静かにするように言いなさい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）私は英語を勉強するために　カナダに行きたい　　I want to go to Canada to study English.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）私は今日しなければならない多くの宿題がある　　I have a lot of homework to do today.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）彼は彼の　母を見送るために駅に行った　　He went to the station to see off his mother.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）私はその知らせを聞いて驚いた　　I was surprised to hear the news.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3.　分詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "分詞とは　→　動詞がある形に変化したものを言う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在分詞とは動詞に ing が付いたもので、進行形の時に使う　→　studying , running sleeping など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在分詞は、be動詞と並べて使えば進行形としても使われるが、現在分詞１つでは形容詞の役割をするものとして使われる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞とは　　→　　日本語で「楽しい」「おもしろい」「大きい」など、言い切りの形（終止形）で最後に「い」が付く言葉",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　「美しい鳥」は a beautiful bird",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "分詞は、この beautiful のように使えるので、これを flying 「飛んでいる」に変えると a flying bird 「飛んでいる鳥」というようにできる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "つまり、現在分詞の意味は「～している・・・」となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a sleeping animal 　眠っている動物　　　working people 　働いている人たち",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "上の例文では、現在分詞は修飾される語の前に書かれているが、下記のように修飾される語の後に来る場合もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　The people working there are all Japanese.　　そこで働いている人たちはみんな　日本人です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The animal sleeping in the box is not a cat.　　箱の中で眠っている動物は　猫ではありません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "このように、他の語（ここではin the box)といっしょに名詞（ここではanimal)を修飾する場合は修飾される語の後にくる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この場合の現在分詞は関係代名詞とそれに続くbe動詞を省略したものとも言える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The animal (which is) sleeping in the box is not a cat.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カッコの中の言葉を使うと関係代名詞のある文章になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ここであつかうのは、単独で名詞を修飾する、形容詞的用法としての現在分詞である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "また、動詞は、原形－過去形－過去分詞と活用する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名詞を修飾する現在分詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在分詞（動詞＋ing）は、名詞の前か後に置かれて、名詞を修飾する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形と同様に、「～している」と訳する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　Look at the sleeping baby.（眠っている赤ちゃんをみなさい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在分詞sleeping（眠っている）が、名詞babyの前に置かれて、babyを修飾している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Look at the baby sleeping 　in the car.（車の中で眠っている赤ちゃんをみなさい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この文では、名詞babyの後ろに置かれたsleeping on the bed（ベッドで眠っている）がひとかたまりの句になって、babyを修飾している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在分詞が１語で名詞を修飾するときは名詞の前、現在分詞が他の語をともなって２語以上で名詞を修飾するときは",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名詞の後に置かれる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　That singing girl is my sister.（あの歌っている少女は私の妹です・・・１語だけの現在分詞は名詞girlの前に置く）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The woman standing by the door is my aunt.（ドアのそばに立っている女の人は私のおばさんです",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・・・現在分詞をふくむ２語以上の句　　standing by the doorは名詞womanの後ろに置く）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去分詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "分詞には、現在分詞だけではなく、過去分詞がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般的に動詞は、現在形、過去形、過去分詞形の変化があり、過去分詞形は現在完了や受動態で使われている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "意味は「～された・・・」「～した・・・」のようになり、現在分詞と同様に、形容詞の役割をする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a broken car 　　　　こわれた自動車",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a stolen watch 　　　盗まれた時計",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在分詞と同じ様に修飾される語の後に来る場合もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　The car broken in the accident was very expensive.　　その事故でこわれた車はとても高かった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "このように、他の語（ここではin the accident)といっしょに名詞（ここではcar)を修飾する場合は修飾される語の後にくる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去分詞もまた関係代名詞とそれに続くbe動詞を省略したものとも言える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The car (which was) broken in the accident was very expensive.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去分詞は、have＋過去分詞で現在完了形になるほか、さらに、be 動詞＋過去分詞で受動態になったり、単独で名詞を修飾したりする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ここでは　単独で名詞を修飾する、形容詞的用法としての過去分詞である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There was a broken glass on the table.（テーブルの上にわれたコップがあった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去分詞brokenが、名詞glassの前に置かれて、glassを修飾している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Look at the mountain covered with ice.（氷でおおわれた山を見てごらん）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この文では、名詞mountainの後ろに置かれたcovered with snow（雪でおおわれた）がひとかたまりの句になって、mountainを修飾している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "つまり、過去分詞が１語で名詞を修飾するときは名詞の前、過去分詞が他の語をともなって２語以上で名詞を修飾するときは名詞の後に置かれる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is a used car.（これは使われた車（中古車）です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I bought a car made in France.（私は　フランスでつくられた車を買った）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）あの走っている少年は私の友人だ　　That running boy is my friend.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）私はむこうで走っている少年を知っている　　I know the boy running over there.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）そのこわれたカメラは私のものだ　　The broken camera is mine.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）トムによってこわされた時計は私のだ　　The camera broken by Tom is mine.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "4.　　間接疑問",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文の中に疑問文をふくんだものを間接疑問文という",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "これは２つの文がくっついて１つの文になっているのが特徴である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Do you know? 　あなたは知っていますか　　　　　　Where does he live?　　　彼はどこに住んでいますか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Do you know where he lives?　　　あなたは彼がどこに住んでいるか知っていますか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "where he lives の部分は、通常の疑問文なら上のような where does he live 形になるが、その前に Do you know の文があるため、このような肯定文の形になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "また、疑問文といっても疑問文にならない場合もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I don't know. 　　私は知りません　　　　What is this?　　　　　これは何ですか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I don't know what this is.　　私はこれが何か知りません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "間接疑問と疑問詞＋to",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "間接疑問文と疑問詞＋toの文は相互に書き換えることができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She knows where to go.（彼女はどこへ行ったらよいかを知っている）　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "She knows where she should go.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Please tell me how I can make a bread.（どうしたら 　パンを作ることができるかを私に教えてください）　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Please tell me how to make a cake.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗記文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は彼が誰であるかを知っている　　I know who he is.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼女がどこに住んでいるかを知っていますか　　Do you know where 　ｓhe lives?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたは何をしたいのかを私に教えてください　　Please tell me what you want to do.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私はいつ出発できるのだろう　　I wonder when I can start.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は彼がなぜそんなことを言ったのか理解できない　I can't understand why he said such a thing.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この質問になんて答えたらよいのかわかりません　　I don't know how I should answer this question.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "5.　関係代名詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現在分詞や過去分詞以外で名詞を後ろから修飾できるものとして、関係代名詞がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞の文の訳し方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　関係代名詞を探す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　その前にある名詞は修飾される言葉（先行詞）になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　関係代名詞の後ろの部分は先行詞を修飾している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have a friend who can speak English very well.　　の場合",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　I have a friend who can speak English very well.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "↑",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　I have a friend　/　who can speak English very well.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "↑",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前半の意味は　　私は友達がいます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　I have a friend　/　who can speak English very well.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "↑",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この部分が先行詞を修飾",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語をとても上手に話せる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "合体すると　　　　　　　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は英語がとても上手に話せる友達がいます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語に関係代名詞が入る場合",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The boy who is playing tennis　/　　is　　/　Taro.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "(主語）　　　　　　　　　　　　　（動詞）　 （補語）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "テニスをしている少年は　　　　　　 　　です　　　太郎",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "わかりやすくすると　　　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "テニスをしている少年は太郎です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜関係代名詞の種類＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞\t　　　主格（～は）　　　所有格（～の）　　目的格（～を、に）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人\t　　　　　who　　　　　　　　　　　　　　　　　　　　　　　　whom",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人以外　　\twhich　　　　　　　　　　whose　　　　　　　　　　which",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "両方\t　　　　　that　　　　　　　　　　　　　　　　　　　　　　　　that",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜関係代名詞の選び方＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞の後ろにどんな言葉がきているかで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "格（主格、所有格、目的格）が決まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後ろにくる言葉",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主格\t　　(助）動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "所有格　\t名詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目的格\t　　主語＋動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例１　I have a friend (　　 ) has two bicycles.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は2台の自転車を持っている友達がいます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カッコの後ろにhasがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主格",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞は？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "friendだから　　人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "“who”",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have a friend who has two bicycles.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例２　Do you know the girl ( 　　) mother is a doctor?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたはお母さんが医者であるその少女を知っていますか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カッコの後ろにmotherがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "所有格",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→　　（先行詞がどんな時も所有格の場合は同じ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "“whose”",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Do you know the girl whose mother is a doctor?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（　　　　　　　所有格ではthatは使えない）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例３　He has the book (　　 ) I want to read.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼は私が読みたい本を持っています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後ろに I want がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目的格",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞は？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "the book　だから　　人以外",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→　　（表から）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "“which”",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（　所有格以外ならどれでも使える“that”も可）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He has the book which I want to read.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞を使って１つの文を作る方法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　２つの文で共通の部分に線を引く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　普通名詞を先行詞とし、代名詞から関係代名詞を選ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　先行詞まで書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　３の後ろに選んだ関係代名詞を入れて、もう一つの文から代名詞をとって後ろに続ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例１　　　　　　主格の関係代名詞の場合",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have a friend.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He is a teacher.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　　共通の部分に線を引く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have a friend.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He is a teacher.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　　普通名詞を先行詞とし、代名詞から関係代名詞を選ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞　　　　→　　friend　　→　　　人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞　→　　He　→　　彼は　→　　主格　→　　who",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（先行詞が人で主格）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　　先行詞まで書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have a friend",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　　３の後ろに選んだ関係代名詞を入れて、もう一つの文から",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "代名詞をとって後ろに続ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have a friend who is a teacher.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（私は先生である友達がいます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例２　目的格の関係代名詞の場合",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is the woman.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I met her yesterday.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　　This is the woman.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I met her yesterday.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　　先行詞　　　　→　　woman　　→　　　人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞　→　　her　→　　彼女に　→　　目的格　→　　whom",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（先行詞が人で目的格）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　　This is the woman.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　　This is the woman whom I met yesterday.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（こちらは私が昨日会った女の人です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜主語の中に関係代名詞が入るパターン＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例１",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The boy is Taro. 　　　　　 　　　　その少年は太郎です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He is reading in the room 　　　彼は部屋で読書をしています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　２つの文で共通の部分に線を引く（片方は代名詞になる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "共通部分は、　　The boy　と　　He",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　（普通）名詞を先行詞とし、代名詞から関係代名詞を選ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞　　　 → 　　The boy　　→　　　人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞　→ 　　He　　→　　　彼は　　→　　　主格　　→　　　who",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　先行詞まで書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The boy　　　（先行詞は　　The boy　なので、ここまで）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　３の後ろに選んだ関係代名詞を入れて、もう一つの文から",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "代名詞をとって後ろに続ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The boy who is reading in the room",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "５　最後に残っている単語をつなげる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The boy who is reading in the room is Taro.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "部屋で読書をしている少年は　太郎です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例２",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The man is my father.　　　 　　その男性は私の父です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He is cooking in the kitchen. 　　彼は台所で料理をしています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　２つの文で共通の部分に線を引く（片方は代名詞になる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "共通部分は、　　The man　と　　He",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　（普通）名詞を先行詞とし、代名詞から関係代名詞を選ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞　　　　→　　　The man　　→　　　人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞　→　　　He　　→　　　彼は　　→　　　主格　　→　　　who",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　先行詞まで書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The man",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　３の後ろに選んだ関係代名詞を入れて、もう一つの文から",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "代名詞をとって後ろに続ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The man who is cooking in the kitchen",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "５　最後に残っている単語をつなげる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The man who is cooking in the kitchen is my father.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "台所で料理をしている男の人は私の父です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞の省略",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目的格の関係代名詞の場合に省略できる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目的格の場合は、　　関係代名詞＋主語＋動詞　の形になって",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "いたものが、そこから関係代名詞が抜けるから、文の途中で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語＋動詞　の形になっている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例）This is the notebook which I want to read.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is the notebook I want to read.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "省略されているところを見つけるには",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文の途中で“主語＋動詞”になっているところ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "を見つける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The fish (which) I caught yesterday was very big.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語＋動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Will you show me the report you wrote yesterday ?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語＋動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The man Taro is talking with is my brother.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語＋動詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "1.　thatの特別用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "thatを優先的に使うときは",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・先行詞に形容詞の最上級や序数が入っている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・先行詞にall , every , no , anyが入っている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・先行詞にthe only , the very , the sameが入っている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・先行詞に人と人以外を表す言葉が両方入っている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "・WhoやWhichで始まる疑問文の中で関係代名詞を使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "序数とは　順序をあらわす言い方のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Taro is the boy who can run the fastest in his class.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最上級が使われていてthatを使うのは、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞に形容詞の最上級が使われている時",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この文では、先行詞は最上級が入っていないただの“the boy”で、",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最上級は後ろの修飾部分で使われている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "“all, every, no, any”そのものが単独で使われているときも",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "“everything, everybody, everyone, nothing, anyone, anything”などの場合も含まれる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2.　ｔhatの特別用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "thatの特別用法の3つ目は先行詞に　　the only（唯一の）　　　the very（まさに）　　　the same（同じ）　が入っているとき",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "the　がつく時のは　　→　　　序数（the first, the second）の時",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞の最上級（the ＋ est）の時",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "the only, the very, the sameがついている時がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3.　thatの特別用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疑問詞の　　who　や　which　で始まる分の場合は　　thatを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "who　や　　which　は関係代名詞にもある単語なので、一つの文で同時に使うと分かりにくい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Who is the girl who is reading by the window?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Who is the girl that is reading by the window?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Which is the car which you use every day ?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Which is the car that you use every day ?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞に人と人以外の言葉が同時に入っている場合",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先行詞が人の場合と人以外の場合のどちらに合わせるかで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞が変わるので、どちらでも使えるthatを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞を含んだ英作文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　日本語を　ブロックで切っていく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　関係代名詞を使って修飾されている部分を探す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　文全体の主語と動詞を書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　関係代名詞を使っている部分を最後につなげる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例1）　　私は英語を話せる友達がいます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　　　　　　　日本語を　かたまりで区切る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は　/　英語を話せる友達が　/　います",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　関係代名詞を使って修飾されている部分を探す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英語を話せる　→　友達",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "友達　←　英語を話せる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a friend who can speak English",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　文全体の主語と動詞を書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語　→　　私は",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞　→　　います　→　　持っています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　関係代名詞を使っている部分を最後につなげる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have a friend who can speak English.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例２）　　私はテニスをしているあの少年を知っています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　　　　　　　日本語をブロックで区切る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私は　/　テニスをしているあの少年を　/　知っています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　関係代名詞を使って修飾されている部分を探す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "テニスをしている　→　あの少年",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "長い主語に関係代名詞が入る文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント　--＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "まずは　ブロックで切っていき、関係代名詞が入る　ブロックに注意して文を組み立てていく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英作文の基本は、　　主語＋動詞　の順序である　　疑問文では変化するので注意する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太郎と話をしている女の人は私の母です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太郎と話をしている女の人は　/　私の母　/　です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太郎と話をしている女の人は　/　私の母　/　です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１番　　　　　　　　　　　　　　3番　　　　2番　　（←英語で並べるときの順番）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→　　（これを英語の順番にかえると・・・）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "女の人　←　太郎と話をしている　/　です　/　私の母",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→　　（これを英語に直すと・・・）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The woman who is talking with Taro / is / my mother",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（主語）　　　　　　　　　　　　（動詞）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The woman who is talking with Taro is my mother.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あの少女　←　野球をしている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "that girl who is playing baseball",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　文全体の主語と動詞を書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語　→　　私は",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞　→　　知っています　→　　know",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "４　関係代名詞を使っている部分を最後につなげる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I know that boy who is playing baseball.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（関係代名詞）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The boy who is playing baseball over there is Taro.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（現在分詞）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "The boy 　　　　 playing tennis over there is Taro.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "※関係代名詞を使った文の場合を現在分詞を使って書きかえると",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　関係代名詞は消える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　現在分詞の中に　　～している　という意味があるので",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進行形の形にする必要がない　　be動詞　をカット",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞 + be動詞　をカットする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去分詞を使った文を関係代名詞で書きかえる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜過去分詞を使った文＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is a picture taken by her.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（これは彼女によってとられた写真です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜関係代名詞とbe動詞を使って書きかえた文＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is a picture which was taken by her.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（これは彼女によってとられた写真です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞+過去分詞は受動態",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "とられた写真　なのでbe動詞は過去形にする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞はthatも可",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜関係代名詞の目的格を使って書きかえた文＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is a picture which heｒ took.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（これは彼女がとった写真です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼女がとった写真　なのでtakeは過去形にする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞はthatも可",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜関係代名詞の目的格を省略して書きかえた文＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is a picture he took.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（これは彼女がとった写真です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関係代名詞の目的格は省略できる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "6.　代名詞2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "代名詞とは名詞の代わりに使われる言葉で、例えば、人の名前が「○○君」で、すでにその人のことが",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "分かっている場合に、「彼」と言ったりすること",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "代名詞＋self（再帰代名詞）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "代名詞に self を付けると　→　「～自身で」という意味になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼はこれらの箱を自分（自身）で作りました　　He made these boxes himself.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私はひとりごとを言った　　　I said to myself.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "代名詞の特別用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "one は通常「１」を表す単語だが、これは「人」や「もの」を表す言葉のくり返しにも使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼らの家はすてきです　　Their house is wonderful. 　　　私も家が欲しいです　　　I want one too.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "複数形の場合は s を付ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "こちらの花が好きですか、それともあちらのですか　　Do you like these flowers or those ones.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "it は時刻、日付、曜日、天気などを表す、特別な文の主語になる働きもする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "今日は　雨です　　It is rainy today.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "今、2時半です　　It's 　two thirty now.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "昨日はとても暑かったです　　It was very hot yesterday.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "◆その他 it, they, you, we などが日本語に訳せないのもある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I know a very little store in that towm. 　　私はその町にあるとても　小さな店を知っています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Do they sell anything (that) you want?　　そこは欲しいものは何でも売っているのですか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英問英答と代名詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人名や物が繰り返し出てくるとき、繰り返しを避けて代名詞をもちいる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "特に、英語の問いに英語で答えるときは代名詞に言い換えないといけない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Is Masahiko a student?（雅彦は学生ですか）　　→　　Yes, she is.（はい、そうです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Is this a book?　　→　　　No, it isn't.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "thisとthat（指示代名詞）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "近くにあるものをさして「これは」というときはthis、離れた位置にあるものをさして「あれは」というときはthatを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "thisの複数形はthese（これらは）、thatの複数形はthose（あれらは）　（itの複数形はthey）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "this,theseには「この」、「これらの」、that,thoseには「あの」、「あれらの」という意味もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is my notebook.（これは私のノートです）　　This pen is mine.（このペンは私の（もの）です）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "～self（再帰代名詞）の用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "He said to himself,",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Please take care of yourself.（お大事にご自愛ください）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Make yourself at home.（くつろいでください）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "itの注意する用法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（１）時間・時刻",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It is just two o'clock.（2時ちょうどです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（２）天候",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It rains a lot here.（ここは雨がよく降ります）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（３）距離",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How far is it from here to the station?（ここから駅までどれくらいの距離ですか）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It is 7 kilometers.（7　ｋｍです）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（４）明暗",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It was dark.（暗かった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（５）It is ～ for 　　→　　 to ～の構文で、形式主語として",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It is important for us to study Japanese.（私たちは　日本語を学ぶことが重要だ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「それ」というときの、itとone",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ある特定のものそのものを指すときはit、それそのものではなくて同じ種類に属するものを指すときはoneを使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "That bag is nice. I'll buy it.（あのかばんは素敵だあれを買うつもりだ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "My car is old. I want a new one.（私の自動車は古い　　　新しいのがほしい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その他の注意すべき代名詞（不定代名詞）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "another（もう一つ別のもの）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I don't like this book. Show me another.（この本は好きではありませんもう一つ別のを見せてください）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "one, the other（２つのうちの１つは～、もう一つは～）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I have two uncles. One is a doctor and the other is a teacher.（私には２人のおじがいる一人は医者で、もう一人は教師だ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "some（～もいる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Some of them couldn't speak Japanese.（彼らのうちの何人かは日本語を話せなかった）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "特定の人や物をささない代名詞（不定代名詞）には、他に、all（すべての人・物）、each（それぞれの人・物）、both（両方の人・物）などがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人称代名詞以外の代名詞リスト　→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all すべて　　another もうひとつ　　any いくらか　　anyone だれか　　anything なにか　　many （数が）たくさん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "most 大部分,たいてい　　much （量が）たくさん　　one 人、もの　　other(s) ほかの人、ほかのもの　　some いくらか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "someone だれか　　something 何か　　that あれ　　these これら　　this これ　　those あれら",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "7.　形容詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞は　　人や物などの大きさや性質、状態などを表す言葉である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　　　old（古い）、new（新しい）などがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "よく使われる形容詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "big 　　＜--＞　small　 大きい　　　＜--＞　　　小さい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "new 　＜--＞　old\t　　新しい　　　＜--＞　　　古い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "young 　＜--＞　old\t　若い　　　　＜--＞　　　年をとった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "tall 　＜--＞　short\t　背の高い　　＜--＞　　　背の低い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "long 　＜--＞　short\t　長い　　　　＜--＞　　　短い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "nice\tすてきな",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "good\tよい、うまい、上手な",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "easy\t簡単な",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "beautiful\t美しい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "interesting\tおもしろい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is a new house.　　　　これは新しい家です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This house is new.　　　　　この家はあたらしい(です)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "8.　副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "副詞とは　　動詞、形容詞、副詞を修飾する品詞である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞というのは　　名詞　つまり　　物の名前　を修飾する言葉",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例として　　　本　とか　　机　、他に　　家　　　アメリカ　などを修飾(説明）する言葉のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "美しい花　　　　　かわいい犬　　　　　速い車　　　　→　　　これらが　　形容詞　である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞は　｢走る　　　食べる　　　寝る　　　勉強する　など　　→　　動きを表す言葉である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "副詞　は　　→　　　　副詞　を修飾する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "1.　形容詞を修飾する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "とても美しい花",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "とても　→　美しい　のように｢美しい　は形容詞だから　　とても　は形容詞を修飾している副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2.　形容詞を修飾する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "少し小さい洋服",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "少し　→　小さい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "｢小さい　は形容詞だからこの　　少し　は形容詞を修飾している副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞を修飾する場合、英語では　　動詞を修飾する場合　が多い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞を修飾する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "速く走る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この場合　　　走る　という動詞を修飾しているから　　副詞である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "動詞を修飾する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "上手に泳ぐ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "泳ぐ　という動詞を修飾しているから　　副詞　である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "副詞を修飾する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "とても上手に走る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "とても　→　上手に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "とても　は　　上手に　という副詞を修飾している副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "副詞とは　　動詞、形容詞、副詞を修飾(説明)する品詞(言葉)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "副詞とは　　動詞、形容詞、副詞を修飾(説明)する品詞(言葉)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "《基本文》　　You speak English well.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（あなたは上手に英語を話します）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "よく出てくる副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "fast\t速く（スピードが速いということ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "early\t早く（時間が早いということ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "well\tよく、うまく、上手に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "very\tとても",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "1　I know that girl very well.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "(私はあの少女をとてもよく知っています）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2　I swim fast.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（私は速く泳ぎます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3　You get up early.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "(あなたは早く起きます）※ get up 起きる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "1の　　very well　　(とてもよく）は動詞の　　know　　(知っている）を修飾してる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "とてもよく → 知っている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "だから動詞を修飾しているので副詞になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "泳ぐ　は動詞だからこの　　fast　も副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3も同様で　　early　の　　早く　は　　起きる　という意味の　　get up　(動詞）を修飾してる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→　つまり、動詞を修飾してるから副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この　　very　は　　well　という副詞を修飾する副詞である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "よく出てくる副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "fast\t速く（スピードが速いということ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "well\tよく、うまく、上手に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "very\tとても",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "《基本文》　　 I always get up early.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（私はいつも早く起きます）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "頻度を表す副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "時々　　　　　 sometimes",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "しばしば、よく　　　　often",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "普通は　　　　　　usually",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "いつも　　　　　　　　 always",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "4つの　　頻度を表す副詞　　がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "頻度というのは　　どれだけの回数なのか　を表す言葉のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "頻度を表す副詞の使い方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be動詞の文　　 →　be動詞の後ろに入れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞の文　 →　一般動詞の前に入れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "9.　前置詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "時間に関する前置詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前置詞（at, on, in）の使い分け",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at　--＞　時間の前につける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　at seven  7時に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on　--＞ 日付や曜日の前につける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　on April 10 　　4月10日に　　　　on Monday 月曜日に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in　--＞　月、季節、年の前につける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　in  April   4月に　　in autumn  秋に　　in 2012  2012年に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　　　I get up at six every morning.　　　私は毎朝6時に起きます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I was born on July 10th.　　　　　　　 　　私は７月10日に生まれました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I was born in August.　　　　　　　　　　 　　私は8月に生まれました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前置詞（for と during）の使い分け",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "for　--＞　　不特定の期間\t例）for three days 　　　　　　　　3日間",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "during　--＞特定の期間\t例）during summer vacation　夏休みの間",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　　　I live in Hawaii for three years.　　　　　　　　　私はハワイに３年間住んでいます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Taro stayed in Hawaii during his holiday.　　　太郎は休暇中ハワイに滞在しました",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前置詞　（by と till (until)） の使い分け",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by 　--＞ ～までに(期限)を表す\t例）by tomorrow 　 明日までに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "till　--＞　～までずっと(until) 継続を表す\t例）till tomorrow　　明日までずっと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　　　I must finish my homework by tomorrow.　　　私は明日までに宿題を終わらせなければならない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I must stay home till tomorrow.　　　　　　 　　私は明日までずっと家にいなければならない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "場所を表す前置詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "場所を表す前置詞　（at , in , on )",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at　\t狭い場所の前につける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in　\t広い場所の前につける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on　\t接触している時に使う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at　　は　“狭い場所”　の前につける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in　　は　“広い場所”　の前につける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in Saitama city 　　さいたま市で（に）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in America 　　　　　アメリカで（に）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on　　は接触している時には全て使える前置詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント　　　　　　　　　　狭い場所と広い場所の違いは？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "見渡すことのできる広さ　　　　→　狭い場所",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　　　かど、駅、図書館など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "見渡しきれないくらいの大きさ　→　広い場所",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例　　　　　市、町、村、国など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "場所を表す前置詞　（under と over)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "under　\t　　～の下に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "over　\t　　～の上に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント　--＞　　　under　 　→　　　（接触しないで）～の下に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "over　　　→　　　（接触しないで）～の上に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "場所を表す前置詞　（by と on）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by　\t　　～のそばに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "near　\t　　～の近くに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント　--＞　　　by　 　 　→　　　（目の前にあるくらいの距離感で）～のそばに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "near　　→　　　（目の前というほどではないけども）～の近くに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前置詞の between と among",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "between　\t　　2つのものの間",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "among　\t　　3つ以上のものの間",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント　--＞　　between A and B　　→　　　A　と　B　の間（2つの間）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "among　　　　　　　　 →　　　（3つ以上）の間",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜around＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント　--＞　　　around　　→　　　～の周りを（に）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "10.　感嘆文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "感嘆文１",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How + 形容詞(副詞) （+ 主語 + 動詞） !",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "なんて～なんだろう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例１　How beautiful this flower is　!　　この花はなんてきれいなんだろう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How beautiful！　　なんてきれいなんだろう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主語+動詞　が省略されることもある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例２ 　How fast his brother can run!",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "彼のお兄さんはなんて速く走れるんだろう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ここで使われている　　fast　は　　速く　という意味の副詞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜感嘆文２＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What + a(an) + 形容詞 + 名詞 + 主語 + 動詞 !",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "なんて～なんだろう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（Whatで始まる感嘆文の特徴）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　名詞が入る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　名詞の前は形容詞だけ（副詞は入らない）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "３　　　a,an　が形容詞の前に入る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（但しこれは主語（後ろの名詞も）が単数のときだけ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜注意点＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　形容詞が母音で始まるときには　　an　を入れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　主語（後ろの名詞も）が複数のときは　　a,an　は使わない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "感嘆文の書きかえ（HowとWhatを入れかえる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　　　What　の文にある名詞を　　How　の主語の中に入れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What a beautiful flower this is !",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How beautiful this flower is !",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "感嘆文の英作文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日本文を分解して　　名詞　があるなら　　What　で、なければ　　How　ではじめる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名詞があるときは　　形容詞　のうしろにある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例１　　　　　　これは / なんて / きれいな / 花 / なんでしょう\n\n\n　　　　 ↑　　　　　　　　 　　↑　　　　 ↑\n　　　 主語　　　　　　　　　形容詞　 　名詞 \n\n名詞があるから　　What　ではじめる　　 \n　　　　　　　　　 　　　→　　\nWhat a beautiful flower this is !",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例２　　この花は / なんて / きれい / なんでしょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "形容詞があるけど後ろに名詞がないから　　How　で始める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "→",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How beautiful this flower is !",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "interesting　　　easy　　　old　のように　　　　　　母音ではじまる形容詞には気をつける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "単数の時には　　an　になることに注意する\n\n　　　　　　　 　　What　で始まるときに注意が必要",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例１　　　　　これは / なんて / 面白い / 本 / なのでしょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "11.　付加疑問",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般動詞の付加疑問文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　　　　　　　付加疑問文は代名詞に変える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Taro walks to school every day　/ , doesn't he ?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　　　　　　　前半が肯定文なら後半は否定、前半が否定文なら後半は肯定",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Taro walks to school every day　/ , doesn't he ?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "付加疑問文の答え方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes　が　　いいえ　で、　　No　が　　はい　になる時がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポイント　--＞前半が　　　　　　否定文　　　　の時に注意！",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前半が　　　　　　肯定文　　　　の時は　　Yes/No　は通常の　　はい/いいえ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes＋肯定形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "No ＋否定形",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１　Mr.Watanabe teaches us English, doesn't he ?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "渡辺先生は私たちに英語を教えてくれるのですね",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, he does. 　　　　　/ 　No, he doesn't.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "はい教えてくれます　　　　　　いいえ教えてくれません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前半が　　　　　　肯定文　　　　の時なので、　　Yes/No　は通常通り",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "２　Your father doesn't like cooking, does he ?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたのお父さんは料理が好きではないのですね",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Yes, he does. 　　　/ 　No, he doesn't.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "いいえ好きです　　　　　　　はい好きではありません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前半が　　　　　　否定文　　　　なので、　　Yes/No　の意味が　　いいえ/はい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "と逆になっている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "＜特殊な付加疑問文＞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Study harder, will you ? 　　　　　　　 　　一生懸命勉強しなさいね",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Let's go to the movie, shall we ? 　　　映画に行きましょうね",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命令文の場合　　　--＞　　　will you ?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "但し、前半が肯定の場合　　won't you　も可",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Let's の文の場合　--＞　　　shall we ?",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたは　/　上手に　/　英語を　/　話します",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あなたは　/　話します　/　英語を　/　上手に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You / speak / English / well.",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "wellというのがよく、うまく、上手にという意味の副詞である",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

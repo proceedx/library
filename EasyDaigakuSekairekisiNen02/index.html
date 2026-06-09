@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyDaigakuSekairekisiNen02</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #2c3e50;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #2c3e50;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #2c3e50;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #2c3e50;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">🎓</span>
+  <h1>EasyDaigakuSekairekisiNen02</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

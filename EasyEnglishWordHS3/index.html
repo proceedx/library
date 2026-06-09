@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高校3年必須英単語    副詞</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📖</span>
+  <h1>高校3年必須英単語    副詞</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "aloud",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "声に出して"
+  },
+  {
+    "q": "altogether",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "完全に"
+  },
+  {
+    "q": "barely",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "かろうじて"
+  },
+  {
+    "q": "commonly",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "一般に"
+  },
+  {
+    "q": "consequently",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "その結果"
+  },
+  {
+    "q": "deliberately",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "故意に"
+  },
+  {
+    "q": "effectively",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "効果的に"
+  },
+  {
+    "q": "essentially",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "本質的に"
+  },
+  {
+    "q": "firmly",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "堅く、堅固に"
+  },
+  {
+    "q": "increasingly",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "ますます"
+  },
+  {
+    "q": "literally",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "文字通りに"
+  },
+  {
+    "q": "practically",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "実質的に、ほとんど"
+  },
+  {
+    "q": "primarily",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "主として"
+  },
+  {
+    "q": "readily",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "すぐに"
+  },
+  {
+    "q": "regardless",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "かかわらず、関係なく"
+  },
+  {
+    "q": "regularly",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "規則的に、定期的に"
+  },
+  {
+    "q": "roughly",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "大雑把に"
+  },
+  {
+    "q": "socially",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "社会的に"
+  },
+  {
+    "q": "steadily",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "着実に"
+  },
+  {
+    "q": "traditionally",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "伝統的に"
+  },
+  {
+    "q": "undoubtedly",
+    "hint": "高校3年必須英単語    副詞",
+    "a": "疑いなく"
+  },
+  {
+    "q": "disadvantage",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "不利、デメリット"
+  },
+  {
+    "q": "dispute",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "争議、口論"
+  },
+  {
+    "q": "division",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "分割、部門"
+  },
+  {
+    "q": "divorce",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "離婚"
+  },
+  {
+    "q": "document",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "文書"
+  },
+  {
+    "q": "ecology",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "生態"
+  },
+  {
+    "q": "economics",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "経済学"
+  },
+  {
+    "q": "editor",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "編集者"
+  },
+  {
+    "q": "emotion",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "感情"
+  },
+  {
+    "q": "emperor",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "皇帝、天皇"
+  },
+  {
+    "q": "enterprise",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "会社、事業"
+  },
+  {
+    "q": "enthusiasm",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "情熱、熱意"
+  },
+  {
+    "q": "equality",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "平等"
+  },
+  {
+    "q": "era",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "時代"
+  },
+  {
+    "q": "exception",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "例外"
+  },
+  {
+    "q": "executive",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "幹部、重役"
+  },
+  {
+    "q": "expense",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "費用、出費"
+  },
+  {
+    "q": "explosion",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "爆発"
+  },
+  {
+    "q": "extinction",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "絶滅"
+  },
+  {
+    "q": "facility",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "施設、設備"
+  },
+  {
+    "q": "fairy",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "妖精"
+  },
+  {
+    "q": "flame",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "炎"
+  },
+  {
+    "q": "fortune",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "運、財産"
+  },
+  {
+    "q": "foundation",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "土台、設立"
+  },
+  {
+    "q": "frontier",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "国境、辺境"
+  },
+  {
+    "q": "fund",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "資金、基金"
+  },
+  {
+    "q": "funeral",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "葬式"
+  },
+  {
+    "q": "fur",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "毛皮"
+  },
+  {
+    "q": "furniture",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "家具、調度品"
+  },
+  {
+    "q": "garbage",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "ゴミ、くず"
+  },
+  {
+    "q": "gene",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "遺伝子"
+  },
+  {
+    "q": "globe",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "地球"
+  },
+  {
+    "q": "grave",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "墓、深刻な"
+  },
+  {
+    "q": "ground",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "根拠、理由"
+  },
+  {
+    "q": "harmony",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "調和"
+  },
+  {
+    "q": "harvest",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "収穫、～を収穫する"
+  },
+  {
+    "q": "honor",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "名誉、敬意"
+  },
+  {
+    "q": "hunger",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "飢え、空腹"
+  },
+  {
+    "q": "immigration",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "移住"
+  },
+  {
+    "q": "impulse",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "衝動"
+  },
+  {
+    "q": "incident",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "事件"
+  },
+  {
+    "q": "infant",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "幼児"
+  },
+  {
+    "q": "inhabitant",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "居住者、生息動物"
+  },
+  {
+    "q": "injury",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "けが"
+  },
+  {
+    "q": "insect",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "昆虫"
+  },
+  {
+    "q": "insight",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "洞察"
+  },
+  {
+    "q": "instinct",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "本能"
+  },
+  {
+    "q": "institution",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "制度、慣習"
+  },
+  {
+    "q": "instrument",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "道具、器具"
+  },
+  {
+    "q": "insurance",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "保険"
+  },
+  {
+    "q": "introduction",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "紹介、導入"
+  },
+  {
+    "q": "investment",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "投資"
+  },
+  {
+    "q": "liberty",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "自由"
+  },
+  {
+    "q": "limitation",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "制限、制約"
+  },
+  {
+    "q": "load",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "積み荷、～を積む"
+  },
+  {
+    "q": "location",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "位置、場所"
+  },
+  {
+    "q": "logic",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "論理、理屈"
+  },
+  {
+    "q": "lord",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "封建君主"
+  },
+  {
+    "q": "lung",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "肺"
+  },
+  {
+    "q": "luxury",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "贅沢、贅沢品"
+  },
+  {
+    "q": "mail",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "郵便、～を投函する"
+  },
+  {
+    "q": "mammal",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "哺乳動物"
+  },
+  {
+    "q": "mineral",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "鉱物"
+  },
+  {
+    "q": "minority",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "少数派"
+  },
+  {
+    "q": "mood",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "気分"
+  },
+  {
+    "q": "motive",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "動機"
+  },
+  {
+    "q": "myth",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "神話"
+  },
+  {
+    "q": "neighbor",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "近所の人"
+  },
+  {
+    "q": "nerve",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "神経"
+  },
+  {
+    "q": "obligation",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "義務"
+  },
+  {
+    "q": "orbit",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "軌道"
+  },
+  {
+    "q": "output",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "生産量、産出量"
+  },
+  {
+    "q": "owner",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "所有者"
+  },
+  {
+    "q": "participant",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "参加者"
+  },
+  {
+    "q": "passion",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "熱望、強い関心"
+  },
+  {
+    "q": "patience",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "辛抱強さ、忍耐"
+  },
+  {
+    "q": "perception",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "洞察、知覚"
+  },
+  {
+    "q": "perspective",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "見地、視座"
+  },
+  {
+    "q": "pile",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "積み重ね、「山」"
+  },
+  {
+    "q": "pioneer",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "開拓者、先駆者"
+  },
+  {
+    "q": "poison",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "毒"
+  },
+  {
+    "q": "portion",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "部分"
+  },
+  {
+    "q": "possession",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "所有、所有物"
+  },
+  {
+    "q": "preference",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "好み"
+  },
+  {
+    "q": "prejudice",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "先入観、偏見"
+  },
+  {
+    "q": "privilege",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "特権"
+  },
+  {
+    "q": "profession",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "職業"
+  },
+  {
+    "q": "pronunciation",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "発音"
+  },
+  {
+    "q": "prospect",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "見通し、見込み"
+  },
+  {
+    "q": "punishment",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "罰"
+  },
+  {
+    "q": "pursuit",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "追跡、追求"
+  },
+  {
+    "q": "ray",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "光線"
+  },
+  {
+    "q": "recognition",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "その人だとわかること"
+  },
+  {
+    "q": "reference",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "言及、参照"
+  },
+  {
+    "q": "reflection",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "反映、反射"
+  },
+  {
+    "q": "relief",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "安堵、軽減"
+  },
+  {
+    "q": "requirement",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "要求される事柄、必要なもの"
+  },
+  {
+    "q": "resident",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "居住者"
+  },
+  {
+    "q": "ritual",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "儀式"
+  },
+  {
+    "q": "root",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "根、根源、～を根づかせる"
+  },
+  {
+    "q": "sacrifice",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "犠牲、～を犠牲にする"
+  },
+  {
+    "q": "scholar",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "学者"
+  },
+  {
+    "q": "seed",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "種子"
+  },
+  {
+    "q": "servant",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "使用人、お手伝い"
+  },
+  {
+    "q": "shade",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "日陰"
+  },
+  {
+    "q": "shame",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "恥、不名誉、残念なこと"
+  },
+  {
+    "q": "shelter",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "避難、避難場所"
+  },
+  {
+    "q": "shore",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "岸、海岸"
+  },
+  {
+    "q": "similarity",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "類似"
+  },
+  {
+    "q": "site",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "場所、用地"
+  },
+  {
+    "q": "specialist",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "専門家、専門医"
+  },
+  {
+    "q": "statistics",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "統計"
+  },
+  {
+    "q": "steam",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "蒸気"
+  },
+  {
+    "q": "strip",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "細長い一片、～をはぎ取る"
+  },
+  {
+    "q": "stuff",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "モノ"
+  },
+  {
+    "q": "suburb",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "郊外"
+  },
+  {
+    "q": "tale",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "お話"
+  },
+  {
+    "q": "telescope",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "望遠鏡"
+  },
+  {
+    "q": "tension",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "緊張"
+  },
+  {
+    "q": "territory",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "領土"
+  },
+  {
+    "q": "text",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "本文、書かれたもの"
+  },
+  {
+    "q": "tide",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "潮、風潮"
+  },
+  {
+    "q": "tip",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "先、先端"
+  },
+  {
+    "q": "tone",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "音、音色"
+  },
+  {
+    "q": "traffic jam",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "交通渋滞"
+  },
+  {
+    "q": "tragedy",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "悲劇"
+  },
+  {
+    "q": "trail",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "通った跡、でこぼこ道"
+  },
+  {
+    "q": "trait",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "特性、特徴"
+  },
+  {
+    "q": "transportation",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "輸送"
+  },
+  {
+    "q": "trap",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "わな、～をわなにかける"
+  },
+  {
+    "q": "treasure",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "宝、財宝"
+  },
+  {
+    "q": "trial",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "裁判、試み"
+  },
+  {
+    "q": "trick",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～をだます、手品、こつ"
+  },
+  {
+    "q": "unemployment",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "失業"
+  },
+  {
+    "q": "version",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～版、別形式"
+  },
+  {
+    "q": "virtue",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "徳、美徳、長所"
+  },
+  {
+    "q": "volunteer",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "ボランティア、志願兵"
+  },
+  {
+    "q": "voyage",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "航海"
+  },
+  {
+    "q": "wage",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "賃金"
+  },
+  {
+    "q": "weapon",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "武器"
+  },
+  {
+    "q": "Westerner",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "西洋人、西部に住む人"
+  },
+  {
+    "q": "acknowledge",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～の存在を認める"
+  },
+  {
+    "q": "adjust",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を調節する、順応する"
+  },
+  {
+    "q": "advise",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～にアドバイスする"
+  },
+  {
+    "q": "amuse",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を楽しませる"
+  },
+  {
+    "q": "analyze",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を分析する"
+  },
+  {
+    "q": "assure",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～に～だとして安心させる"
+  },
+  {
+    "q": "astonish",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～をびっくりさせる"
+  },
+  {
+    "q": "beg",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を乞う"
+  },
+  {
+    "q": "bend",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を曲げる"
+  },
+  {
+    "q": "blink",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "まばたきをする、まばたき"
+  },
+  {
+    "q": "bow",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "お辞儀をする、お辞儀"
+  },
+  {
+    "q": "broadcast",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を放送する"
+  },
+  {
+    "q": "burst",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "破裂する、～を破裂させる"
+  },
+  {
+    "q": "bury",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を埋める"
+  },
+  {
+    "q": "capture",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を捕える"
+  },
+  {
+    "q": "cease",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～をやめる、終わる"
+  },
+  {
+    "q": "celebrate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を祝う"
+  },
+  {
+    "q": "characterize",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を特徴づける"
+  },
+  {
+    "q": "cling",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "しがみつく、固執する"
+  },
+  {
+    "q": "commit",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "を犯す"
+  },
+  {
+    "q": "confine",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を限る、～を閉じこめる"
+  },
+  {
+    "q": "confirm",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を確認する"
+  },
+  {
+    "q": "confront",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を直面させる"
+  },
+  {
+    "q": "constitute",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を構成する"
+  },
+  {
+    "q": "convert",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を変える、変わる"
+  },
+  {
+    "q": "cultivate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を耕作する、～を栽培する"
+  },
+  {
+    "q": "cure",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を治療する"
+  },
+  {
+    "q": "dare",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "思い切って～する、生意気にも～する"
+  },
+  {
+    "q": "delay",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を遅らせる"
+  },
+  {
+    "q": "deliver",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を配達する"
+  },
+  {
+    "q": "depress",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を落胆させる"
+  },
+  {
+    "q": "devise",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を考え出す"
+  },
+  {
+    "q": "diminish",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "減る、～を減らす"
+  },
+  {
+    "q": "disagree",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "一致しない"
+  },
+  {
+    "q": "discourage",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～をがっかりさせる"
+  },
+  {
+    "q": "dominate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を支配する"
+  },
+  {
+    "q": "dwell",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "住む"
+  },
+  {
+    "q": "eliminate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を取り除く"
+  },
+  {
+    "q": "embarrass",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を恥ずかしがらせる、～にばつの悪い思いをさせる"
+  },
+  {
+    "q": "endure",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～に耐える"
+  },
+  {
+    "q": "ensure",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を確実にする、～を保証する"
+  },
+  {
+    "q": "equip",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～に備え付ける"
+  },
+  {
+    "q": "evolve",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "進化する"
+  },
+  {
+    "q": "exhaust",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を疲れ果てさせる、～を使い果たす"
+  },
+  {
+    "q": "exhibit",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を表に出す、～を展示する、"
+  },
+  {
+    "q": "fascinate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を魅了する"
+  },
+  {
+    "q": "float",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "浮かぶ"
+  },
+  {
+    "q": "fold",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を折りたたむ"
+  },
+  {
+    "q": "found",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を設立する"
+  },
+  {
+    "q": "fulfill",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を果たす、～をかなえる"
+  },
+  {
+    "q": "gaze",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "じっと見つめる"
+  },
+  {
+    "q": "generate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を発生させる"
+  },
+  {
+    "q": "grasp",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～をつかむ、～を理解する"
+  },
+  {
+    "q": "guarantee",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を保証する"
+  },
+  {
+    "q": "guard",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～の警護をする、警護者"
+  },
+  {
+    "q": "illustrate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を詳しく説明する"
+  },
+  {
+    "q": "imitate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を模倣する"
+  },
+  {
+    "q": "impose",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を課す"
+  },
+  {
+    "q": "inclined",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "傾いている、傾向がある"
+  },
+  {
+    "q": "industrialize",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を産業化する"
+  },
+  {
+    "q": "inspire",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を鼓舞する"
+  },
+  {
+    "q": "interfere",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "干渉する、阻害する"
+  },
+  {
+    "q": "interrupt",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～の邪魔をする、～を中断させる"
+  },
+  {
+    "q": "investigate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "調査する"
+  },
+  {
+    "q": "justify",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を正当化する"
+  },
+  {
+    "q": "leap",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "跳ぶ"
+  },
+  {
+    "q": "melt",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "溶ける、～を溶かす"
+  },
+  {
+    "q": "misunderstand",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を誤解する"
+  },
+  {
+    "q": "neglect",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～の世話を怠る、～を省みない"
+  },
+  {
+    "q": "nod",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "うなずく"
+  },
+  {
+    "q": "offend",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～の気分を害する"
+  },
+  {
+    "q": "originate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "起こる、生じる"
+  },
+  {
+    "q": "overlook",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を見落とす、～を見過ごす"
+  },
+  {
+    "q": "owe",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～に金を借りている"
+  },
+  {
+    "q": "pour",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を注ぐ"
+  },
+  {
+    "q": "pray",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "祈る"
+  },
+  {
+    "q": "proceed",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "進む"
+  },
+  {
+    "q": "protest",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "抗議する、抗議"
+  },
+  {
+    "q": "rank",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "階級、地位"
+  },
+  {
+    "q": "relieve",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を和らげる、～から取り除く"
+  },
+  {
+    "q": "request",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を依頼する、依頼"
+  },
+  {
+    "q": "resist",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を拒む、～に抵抗する"
+  },
+  {
+    "q": "resolve",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を解決する、決心する"
+  },
+  {
+    "q": "restrict",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を制限する"
+  },
+  {
+    "q": "retain",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を保持する"
+  },
+  {
+    "q": "review",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "論評、批評、～を論評する"
+  },
+  {
+    "q": "ruin",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を台無しにする"
+  },
+  {
+    "q": "scare",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を怯えさせる、～をびっくりさせる"
+  },
+  {
+    "q": "scatter",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～をまき散らす"
+  },
+  {
+    "q": "scream",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "金切り声を上げる"
+  },
+  {
+    "q": "secure",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を確保する、～を安全にする、ゆるぎない"
+  },
+  {
+    "q": "specialize",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "専門にする、専攻する"
+  },
+  {
+    "q": "spoil",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を台無しにする"
+  },
+  {
+    "q": "strengthen",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を強化する"
+  },
+  {
+    "q": "substitute",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を代わりに使う、代わり"
+  },
+  {
+    "q": "suppress",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を抑える"
+  },
+  {
+    "q": "swallow",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を飲み込む"
+  },
+  {
+    "q": "sweep",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を掃く、～を掃くように動かす"
+  },
+  {
+    "q": "trace",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～の跡を辿る、跡、痕跡"
+  },
+  {
+    "q": "undergo",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～を経験する"
+  },
+  {
+    "q": "urge",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "願望"
+  },
+  {
+    "q": "wander",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "ぶらつく、放浪する"
+  },
+  {
+    "q": "weigh",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～の重さがある"
+  },
+  {
+    "q": "whisper",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "ささやく"
+  },
+  {
+    "q": "yell",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "大声を上げる"
+  },
+  {
+    "q": "absence",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "不在、欠如"
+  },
+  {
+    "q": "accent",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "なまり、抑揚"
+  },
+  {
+    "q": "acceptance",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "受け入れ"
+  },
+  {
+    "q": "access",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "アクセス、使用する機会"
+  },
+  {
+    "q": "acquaintance",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "知り合い"
+  },
+  {
+    "q": "affection",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "愛情"
+  },
+  {
+    "q": "aggression",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "攻撃性"
+  },
+  {
+    "q": "alarm",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "懸念、～に懸念を抱かせる"
+  },
+  {
+    "q": "ambition",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "夢、大望"
+  },
+  {
+    "q": "appetite",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "食欲"
+  },
+  {
+    "q": "application",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "応用、適用"
+  },
+  {
+    "q": "appointment",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "約束"
+  },
+  {
+    "q": "arrangement",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "準備、取り決め"
+  },
+  {
+    "q": "athlete",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "運動選手"
+  },
+  {
+    "q": "avenue",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "～通り、大通り"
+  },
+  {
+    "q": "band",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "バンド、一団"
+  },
+  {
+    "q": "border",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "国境"
+  },
+  {
+    "q": "burden",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "重荷、負担"
+  },
+  {
+    "q": "campaign",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "政治的運動"
+  },
+  {
+    "q": "candidate",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "候補者、志願者"
+  },
+  {
+    "q": "cash",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "現金"
+  },
+  {
+    "q": "category",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "部門、部類"
+  },
+  {
+    "q": "cave",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "ほら穴"
+  },
+  {
+    "q": "cell",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "細胞"
+  },
+  {
+    "q": "charm",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "魅力、～を魅了する"
+  },
+  {
+    "q": "colleague",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "同僚"
+  },
+  {
+    "q": "colony",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "植民地"
+  },
+  {
+    "q": "committee",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "委員会"
+  },
+  {
+    "q": "companion",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "連れ、仲間"
+  },
+  {
+    "q": "comparison",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "比較"
+  },
+  {
+    "q": "complaint",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "不満"
+  },
+  {
+    "q": "complexity",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "複雑さ"
+  },
+  {
+    "q": "composition",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "構成、楽曲"
+  },
+  {
+    "q": "confusion",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "混乱"
+  },
+  {
+    "q": "construction",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "建設、構造"
+  },
+  {
+    "q": "contract",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "契約"
+  },
+  {
+    "q": "convention",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "しきたり、会議"
+  },
+  {
+    "q": "courage",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "勇気"
+  },
+  {
+    "q": "crash",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "衝突、衝突する"
+  },
+  {
+    "q": "crew",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "乗組員、一団"
+  },
+  {
+    "q": "critic",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "批評家、批判者"
+  },
+  {
+    "q": "description",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "説明、描写"
+  },
+  {
+    "q": "dialect",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "方言、なまり"
+  },
+  {
+    "q": "dignity",
+    "hint": "高校3年必須英単語    動詞",
+    "a": "威厳、尊厳"
+  },
+  {
+    "q": "whereas",
+    "hint": "高校3年必須英単語    接続詞・前置詞",
+    "a": "～である一方で"
+  },
+  {
+    "q": "beneath",
+    "hint": "高校3年必須英単語    接続詞・前置詞",
+    "a": "～の下に"
+  },
+  {
+    "q": "absolute",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "絶対的な、完全な"
+  },
+  {
+    "q": "abstract",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "抽象的な"
+  },
+  {
+    "q": "accustomed",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "慣れている"
+  },
+  {
+    "q": "additional",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "追加の"
+  },
+  {
+    "q": "adequate",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "十分な"
+  },
+  {
+    "q": "aggressive",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "攻撃的な、積極的な"
+  },
+  {
+    "q": "amazing",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "びっくりするような"
+  },
+  {
+    "q": "annual",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "毎年の"
+  },
+  {
+    "q": "apparent",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "外見上の、明らかな"
+  },
+  {
+    "q": "artificial",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "人工的な"
+  },
+  {
+    "q": "Atlantic",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "大西洋の"
+  },
+  {
+    "q": "atomic",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "原子の、原子力の"
+  },
+  {
+    "q": "awful",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "ひどい"
+  },
+  {
+    "q": "based",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "基づいている"
+  },
+  {
+    "q": "brilliant",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "すばらしい"
+  },
+  {
+    "q": "calm",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "穏やかな、落ち着いた"
+  },
+  {
+    "q": "casual",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "何気ない"
+  },
+  {
+    "q": "civil",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "公民の、民間の"
+  },
+  {
+    "q": "classical",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "古典の、古典的な"
+  },
+  {
+    "q": "definite",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "明確な"
+  },
+  {
+    "q": "delicate",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "微妙な"
+  },
+  {
+    "q": "democratic",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "民主主義の、民主的な"
+  },
+  {
+    "q": "desirable",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "望ましい"
+  },
+  {
+    "q": "dirty",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "汚れた"
+  },
+  {
+    "q": "distinct",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "はっきり異なる"
+  },
+  {
+    "q": "elaborate",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "手の込んだ"
+  },
+  {
+    "q": "electrical",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "電気の"
+  },
+  {
+    "q": "elementary",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "初歩の、基本の"
+  },
+  {
+    "q": "equivalent",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "等しい、同等の"
+  },
+  {
+    "q": "evident",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "明らかな"
+  },
+  {
+    "q": "exact",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "正確な"
+  },
+  {
+    "q": "excessive",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "過度の"
+  },
+  {
+    "q": "external",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "外部の"
+  },
+  {
+    "q": "frequent",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "頻繁な"
+  },
+  {
+    "q": "generous",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "気前のよい"
+  },
+  {
+    "q": "genuine",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "本物の、偽りのない"
+  },
+  {
+    "q": "grand",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "壮大な"
+  },
+  {
+    "q": "guilty",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "有罪の"
+  },
+  {
+    "q": "identical",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "全く同じ"
+  },
+  {
+    "q": "inevitable",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "避けられない"
+  },
+  {
+    "q": "inferior",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "劣った"
+  },
+  {
+    "q": "initial",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "当初の"
+  },
+  {
+    "q": "inner",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "内部の"
+  },
+  {
+    "q": "intimate",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "親密な"
+  },
+  {
+    "q": "invisible",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "見えない"
+  },
+  {
+    "q": "keen",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "切望した、熱意のある"
+  },
+  {
+    "q": "latest",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "最新の、最近の"
+  },
+  {
+    "q": "legal",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "法律の、合法な"
+  },
+  {
+    "q": "liberal",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "寛大な、自由主義的な"
+  },
+  {
+    "q": "located",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "位置する"
+  },
+  {
+    "q": "logical",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "論理的な"
+  },
+  {
+    "q": "long-term",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "長期的な"
+  },
+  {
+    "q": "massive",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "巨大な、大規模な"
+  },
+  {
+    "q": "mature",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "成熟した"
+  },
+  {
+    "q": "mechanical",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "機械の、機械的な"
+  },
+  {
+    "q": "minor",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "小さな、重要度の低い"
+  },
+  {
+    "q": "mutual",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "相互の"
+  },
+  {
+    "q": "numerous",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "多数の"
+  },
+  {
+    "q": "odd",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "変な、可能性"
+  },
+  {
+    "q": "overwhelming",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "圧倒的な"
+  },
+  {
+    "q": "painful",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "苦痛な"
+  },
+  {
+    "q": "passive",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "受身の、消極的な"
+  },
+  {
+    "q": "peculiar",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "奇妙な"
+  },
+  {
+    "q": "permanent",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "永久の、常設の"
+  },
+  {
+    "q": "plain",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "簡素な、無地の、高原"
+  },
+  {
+    "q": "precious",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "貴重な"
+  },
+  {
+    "q": "precise",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "正確な"
+  },
+  {
+    "q": "precisely",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "正確に"
+  },
+  {
+    "q": "prime",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "主要な、最重要の"
+  },
+  {
+    "q": "principal",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "第一の、主要な、校長、学長"
+  },
+  {
+    "q": "profound",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "深い、大きな"
+  },
+  {
+    "q": "racial",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "人種の"
+  },
+  {
+    "q": "rational",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "理性的な"
+  },
+  {
+    "q": "raw",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "生の、原料のままの"
+  },
+  {
+    "q": "relative",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "相対的な"
+  },
+  {
+    "q": "reliable",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "頼りになる"
+  },
+  {
+    "q": "remote",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "遠い"
+  },
+  {
+    "q": "routine",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "いつもの、いつもの手順"
+  },
+  {
+    "q": "rude",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "失礼な"
+  },
+  {
+    "q": "satisfactory",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "満足のいく"
+  },
+  {
+    "q": "sensible",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "分別がある"
+  },
+  {
+    "q": "spare",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "予備の"
+  },
+  {
+    "q": "spiritual",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "精神の、精神的な"
+  },
+  {
+    "q": "steady",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "着実な"
+  },
+  {
+    "q": "strict",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "厳しい、厳密な"
+  },
+  {
+    "q": "subtle",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "微妙な"
+  },
+  {
+    "q": "sufficient",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "十分な"
+  },
+  {
+    "q": "tremendous",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "非常に大きな"
+  },
+  {
+    "q": "tropical",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "熱帯の"
+  },
+  {
+    "q": "ultimate",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "究極の"
+  },
+  {
+    "q": "uncomfortable",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "心地の悪い"
+  },
+  {
+    "q": "unexpected",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "予期せぬ"
+  },
+  {
+    "q": "unlikely",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "可能性が低い"
+  },
+  {
+    "q": "unpleasant",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "不愉快な"
+  },
+  {
+    "q": "verbal",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "ことばの、口頭での"
+  },
+  {
+    "q": "visual",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "視覚の、視覚的な"
+  },
+  {
+    "q": "widespread",
+    "hint": "高校3年必須英単語    形容詞",
+    "a": "広範囲に渡る"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

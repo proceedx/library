@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyKankenjunLv1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #e74c3c;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #e74c3c;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #e74c3c;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #e74c3c;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">漢</span>
+  <h1>EasyKankenjunLv1</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "畏怖　いふ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "所謂　いわゆる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "旺盛　おうせい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蓋世　がいせい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "牡蠣　かき",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "翰墨　かんぼく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "翫弄　がんろう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鞠　きくもん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "忌引　きびき",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "矩形　くけい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "萱堂　けんどう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "光耀　こうよう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "柴扉　さいひ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "犀利　さいり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "燦燦　さんさん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "灼熱　しゃくねつ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "集輯　しゅうしゅう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "夙夜　しゅくや",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "馴致　じゅんち",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "嘗試　しょうし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "靱性　じんせい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "荏苒　じんぜん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "翠微　すいび",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "厨子　ずし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "脆弱　ぜいじゃく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "正閏　せいじゅん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "凄絶　せいぜつ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "清穆　せいぼく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "尖端　せんたん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "騒擾　そうじょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "巽位　そんい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "箪笥　たんす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "湛然　たんぜん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暢達　ちょうたつ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "填足　てんそく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "濤声　とうせい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "賭博　とばく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "嚢中　のうちゅう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "庇護　ひご",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "廟議　びょうぎ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不壊　ふえ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "浮腫　ふしゅ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "補填　ほてん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "満腔　まんこう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "眉間　みけん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "雌蕊　めしべ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "悶絶　もんぜつ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "螺旋　らせん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "凌駕　りょうが",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "老爺　ろうや",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "意見にハンバク（反駁）する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "言葉でバトウ（罵倒）する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "汗マミ（塗）れになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アッケ（呆気）なくきまった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あまりの人の多さにヘキエキ（辟易）する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンキョ（暗渠）工事",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウガ（穿）った質問をする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コウガイ（梗概）を文章にまとめる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サンゴショウ（珊瑚礁）はうつくしい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オシベ（雄蕊）とめしべ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジライ（爾来）音沙汰無し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "川のカンガイ（灌漑）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゲキリン（逆鱗）に触れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "宮中バンサン（晩餐）会",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "キョウジン（強靱）な体",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ケイセン（罫線）の表",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヒンシ（瀕死）の重体",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モチロン（勿論）論外である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コンペキ（紺碧）の海",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゼイジャク（脆弱）性がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シャクネツ（灼熱）の太陽",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "勝敗にコウデイ（拘泥）する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "商品コンポウ（梱包）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゼッポウ（舌鋒）鋭い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カマビス（喧）しく鳴く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マンコウ（満腔）の敬意",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "電話をカクシュ（鶴首）して待つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サンサン（燦燦）と照る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ツブ（円）らな瞳",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ホウジュン（芳醇）なかおり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モクトウ（黙祷）を捧げる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ムシ（寧）ろ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "タイエイ（退嬰）的なこころ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヒサシ（庇）をつける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ガクゼン（愕然）とした結果",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ビンショウ（敏捷）な対応",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミケン（眉間）のしわ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "洋服タンス（箪笥）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "お寺のガラン（伽藍）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ケイモウ（啓蒙）活動する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アダバナ（徒花）に実は生らぬ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "悪貨は良貨をクチク（駆逐）する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アバタ（痘痕）もえくぼ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "江戸の敵を長崎でウ（討）つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エンオウ（鴛鴦）の契りを結ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "遠慮無ければキンユウ（近憂）あり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大風が吹けばオケヤ（桶屋）が喜ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "恩をアダ（仇）で返す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "角をタ（矯）めて牛を殺す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カナエ（鼎）の軽重を問う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "亀の甲より年のコウ（劫）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "枯れ木も山のニギ（賑）わい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カンニンブクロ（堪忍袋）の緒が切れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "口に入るものならアンマ（按摩）の笛でも",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コイ（鯉）の滝登り",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コウイン（光陰）、矢の如し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後生、オソ（畏）るべし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サジ（匙）を投げる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "触らぬ神にタタ（祟）りなし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スルガ（駿河）の富士と一里塚",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セイコク（正鵠）を得る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セイダク（清濁）併せのむ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "世間知らずのタカマクラ（高枕）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前門のトラ（虎）、後門の狼",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ソウコウ（糟糠）の妻",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "叩けばホコリ（埃）が出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ツジツマ（辻褄）を合わす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ツマズ（躓）く石も縁の端",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ツル（鶴）の一声",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ドハツ（怒髪）、冠を衝く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ナシ（梨）の礫（つぶて）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ナタ（鉈）を貸して山を伐られる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ノドモト（喉元）過ぎれば熱さを忘れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ノレン（暖簾）に腕押し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "馬鹿とハサミ（鋏）は使いよう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バクギャク（莫逆）の交わり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "故郷へニシキ（錦）を飾る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ボンノウ（煩悩）の犬は追えども去らず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "昔はヤリ（槍）が迎えに来た",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リョウジョウ（梁上）の君子",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "膏血　＜--＞　高潔",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "偲ぶ　＜--＞　忍ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伝播　＜--＞　電波",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "倦怠　＜--＞　献体",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "爾来　＜--＞　地雷",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "斥候　＜--＞　石膏",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "仕官　＜--＞　弛緩",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "寵児　＜--＞　弔辞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "咽喉　＜--＞　引航",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "弾劾　＜--＞　断崖",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "騒然　＜--＞　蒼然",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "怨霊　＜--＞　温良",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "些少　＜--＞　詐称",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "諜報　＜--＞　重宝",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "領袖　＜--＞　領収",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "諮る　＜--＞　謀る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "送還　＜--＞　創刊",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "緩衝　＜--＞　勧奨",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "戴冠　＜--＞　体幹",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "寄寓　＜--＞　奇遇",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "私怨　＜--＞　紫煙",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "庇護　＜--＞　卑語",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "皮相　＜--＞　悲愴",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "哀惜　＜--＞　愛惜",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "葺く　＜--＞　拭く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "失墜　　＜--＞　　挽回（ばんかい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "潤沢　　＜--＞　　枯渇（こかつ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "荒蕪　　＜--＞　　肥沃（ひよく）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "進展　　＜--＞　　停頓（ていとん）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "泰然　　＜--＞　　狼狽（ろうばい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "称賛　　＜--＞　　悪罵（あくば）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "勃興　　＜--＞　　没落（ぼつらく）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "還俗　　＜--＞　　剃髪（ていはつ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "黄昏　　＜--＞　　払暁（ふつぎょう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "罵倒　　＜--＞　　絶賛（ぜっさん）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "安堵　　＜--＞　　懸念（けねん）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "喧騒　　＜--＞　　静粛（せいしゅく）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "険阻　　＜--＞　　平坦（へいたん）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "凋落　　＜--＞　　繁栄（はんえい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "軟弱　　＜--＞　　強硬（きょうこう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "狼狽　　　　―　　　　周章（しゅうしょう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "算段　　―　　捻出（ねんしゅつ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "忽然　　―　　突如（とつじょ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "些細　　―　　微小（びしょう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "巷説　　―　　評判（ひょうばん）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "無垢　　―　　潔白（けっぱく）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "峻厳　　―　　苛烈（かれつ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "壊滅　　―　　瓦解（がかい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "隠蔽　　―　　秘匿（ひとく）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "復活　　―　　蘇生（そせい）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "酸鼻　　―　　無惨（むざん）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "果報　　―　　冥利（みょうり）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "親睦　　―　　友好（ゆうこう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "旺盛　　―　　軒昂（けんこう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "瞬間　　―　　刹那（せつな）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "尭年舜日　ぎょうねんしゅんじつ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "膏火自煎　こうかじせん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "綾羅錦繍　りょうらきんしゅう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一壺千金　いっこせんきん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一碧万頃　いっぺきばんけい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "菟糸燕麦　としえんばく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "胡馬北風　こばほくふう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "磨穿鉄硯　ませんてっけん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鎧袖一触　がいしゅういっしょく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "街談巷説　がいだんこうせつ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "風餐露宿　ふうさんろしゅく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "雷轟電撃　らいごうでんげき",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "閑雲野鶴　かんうんやかく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "気息奄奄　きそくえんえん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "吉祥悔過　きちじょうけか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴耳賤目　きじせんもく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "刑鞭蒲朽　けいべんほきゅう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "牽強付会　けんきょうふかい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "剣戟森森　けんげきしんしん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "甲論乙駁　こうろんおつばく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鵠面鳥形　こくめんちょうけい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "甑塵釜魚　そうじんふぎょ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "古色蒼然　こしょくそうぜん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "七歩八叉　しちほはっさ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "城狐社鼠　じょうこしゃそ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "棄甲曳兵　きこうえいへい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "咳唾成珠　がいだせいしゅ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "釈根灌枝　しゃくこんかんし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "折衝禦侮　せっしょうぎょぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "楚材晋用　そざいしんよう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "衡陽雁断　こうようがんだん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "長身痩躯　ちょうしんそうく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "猪突猛進　ちょとつもうしん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "顛撲不破　てんぼくふは",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "臨淵羨魚　りんえんせんぎょ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "馬牛襟裾　ばぎゅうきんきょ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "反逆縁坐　はんぎゃくえんざ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "万里鵬翼　ばんりほうよく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "光焔万丈　こうえんばんじょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不倶戴天　ふぐたいてん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "豚蹄穣田　とんていじょうでん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "偏僻蔽固　へんぺきへいこ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "放蕩無頼　ほうとうぶらい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "碧血丹心　へきけつたんしん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "無知蒙昧　むちもうまい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "牝鶏牡鳴　ひんけいぼめい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "傭書自資　ようしょじし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "容貌魁偉　ようぼうかいい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "柳眉倒豎　りゅうびとうじゅ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蓮華往生　れんげおうじょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暗唱番号-->暗証番号",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "利害が一知-->一致",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "億測で判断-->憶測",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "屈身運動-->屈伸運動",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現格な規格-->厳格",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原価消却-->減価償却",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原項を作成-->原稿",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "健康骨-->肩甲骨",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "学生時代の後杯-->後輩",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "左右対昇-->左右対称",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "神経疾-->神経質",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人口着色料-->人工着色料",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "心身耗弱-->心神耗弱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人篤のある人物-->人徳",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "成績優修-->成績優秀",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "方針に添う-->沿う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "致命症-->致命傷",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "珍味佳香-->珍味佳肴",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "犯人を適発する-->摘発",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "絵画の倒作-->盗作",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "投産した会社-->倒産",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "白内症-->白内障",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "発炎筒-->発煙筒",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "独特な秒写-->描写",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不可考力-->不可抗力",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "物操な事件-->物騒",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "壊れた家を捕修する-->補修",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "競争から離奪した-->離脱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "烈悪な商品-->劣悪",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "劣頭感-->劣等感",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "升油、味噌-->　　升　→　　醬",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自然の洞屈-->　　屈　→　　窟",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "生育には　苔肥が必要-->　　苔　→　　堆",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "集中濠雨-->　　濠　→　　豪",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自然の陶汰-->　　陶　→　　淘",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "穏霊-->怨霊",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "賞含-->賞玩　　玩／ガン／もてあそ‐ぶ／あじ‐わう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自然の判点-->斑点　　斑／ハン／まだら／ふ／ぶち",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "果物の皮を向く-->剥く　　薄く削り取る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "馬艇の音-->馬蹄　　蹄／テイ／ひづめ／わな",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "壁地医療 -->僻地　　　へんぴな土地",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "馬鈴黍と黄瓜-->馬鈴薯",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "心が安度-->安堵",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山を掃い登る -->這い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "培煙がでる-->煤煙",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "責梁山脈-->脊梁　　　せぼね。せすじ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "優偉な身体-->雄偉　　たくましくすぐれていること",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自在鍵-->自在鉤",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "金額の多過 -->多寡　　多いことと少ないこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "赤連瓦-->煉瓦　　　煉／レン／ね‐る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "触指をうごかす-->食指",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "無痛分便 -->分娩　　　娩／ベン／う‐む／うつく‐しい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "概博の知識 -->該博　　学識などの広い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "才援の誉れ高い-->才媛　　　高い教養・才能のある女性",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

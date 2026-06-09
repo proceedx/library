@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>いいだくだく</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #e74c3c;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #e74c3c;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #e74c3c;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #e74c3c;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📖</span>
+  <h1>いいだくだく</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "唯々諾々",
+    "hint": "いいだくだく",
+    "a": "是非善悪（ぜひぜんあく）を抜（ぬ）きに、ただ、はいはいと言って人の意見に従うこと"
+  },
+  {
+    "q": "移花接木",
+    "hint": "いかせつぼく",
+    "a": "花の枝を接（つ）ぎ木する　　ひそかに人や物を取り替え、表面をつくろうこと"
+  },
+  {
+    "q": "遺憾千万",
+    "hint": "いかんせんばん",
+    "a": "非常に残念なこと　　くちおしくてならないこと"
+  },
+  {
+    "q": "衣冠束帯",
+    "hint": "いかんそくたい",
+    "a": "朝廷に出仕するときに着用する服装である"
+  },
+  {
+    "q": "意気軒昂",
+    "hint": "いきけんこう",
+    "a": "心に活気があり高揚（こうよう）した精神状態のこと　　同類として意気揚揚"
+  },
+  {
+    "q": "意気消沈",
+    "hint": "いきしょうちん",
+    "a": "元気をなくし、しょんぼりすること　　　同類として意気阻喪"
+  },
+  {
+    "q": "意気衝天",
+    "hint": "いきしょうてん",
+    "a": "気概（きがい）が高らかで､天をつくほどの意気込みがあること"
+  },
+  {
+    "q": "意気投合",
+    "hint": "いきとうごう",
+    "a": "お互いの気持ちや考えがぴったり合うこと"
+  },
+  {
+    "q": "意気揚々",
+    "hint": "いきようよう",
+    "a": "得意（とくい）で元気いっぱいなようす　　　同類として意気軒昂"
+  },
+  {
+    "q": "異口同音",
+    "hint": "いくどうおん",
+    "a": "多くの人が口をそろえて同じことを言うこと　　　同類として異口同辞・異口同声"
+  },
+  {
+    "q": "異国情緒",
+    "hint": "いこくじょうちょ",
+    "a": "いかにも外国らしい気分や感じのこと"
+  },
+  {
+    "q": "意思疎通",
+    "hint": "いしそつう",
+    "a": "お互いの考えがよどみなくよく通じること"
+  },
+  {
+    "q": "以耳代目",
+    "hint": "いじだいもく",
+    "a": "実際には見ていないのに、聞いただけで見たことにすること"
+  },
+  {
+    "q": "石部金吉",
+    "hint": "いしべきんきち",
+    "a": "堅物（かたぶつ）で、融通（ゆうずう）のきかない人のこと"
+  },
+  {
+    "q": "意匠惨憺",
+    "hint": "いしょうさんたん",
+    "a": "創作（そうさく）の苦しみ　　いろいろと悩（なや）み工夫（くふう）をこらすさまのこと"
+  },
+  {
+    "q": "医食同源",
+    "hint": "いしょくどうげん",
+    "a": "病気予防も食事も、その本質は同じだということ"
+  },
+  {
+    "q": "以心伝心",
+    "hint": "いしんでんしん",
+    "a": "言葉に出さなくとも自然に気持ちが相手に通じること　　同類として不立文字"
+  },
+  {
+    "q": "異端邪説",
+    "hint": "いたんじゃせつ",
+    "a": "正統でないよこしまな教え､思想､学説のこと"
+  },
+  {
+    "q": "一意専心",
+    "hint": "いちいせんしん",
+    "a": "他のことには目もくれず、ひとつのことだけに心を集中すること　　同類として専心一意・一心不乱"
+  },
+  {
+    "q": "一衣帯水",
+    "hint": "いちいたいすい",
+    "a": "狭（せま）い川や海を挟（はさ）んで近接していること"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

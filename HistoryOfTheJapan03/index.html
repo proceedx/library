@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>江　戸　時　代</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #8b6914;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #8b6914;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #8b6914;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #8b6914;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📜</span>
+  <h1>江　戸　時　代</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "1603",
+    "hint": "江　戸　時　代",
+    "a": "江戸幕府が成立する"
+  },
+  {
+    "q": "1605",
+    "hint": "江　戸　時　代",
+    "a": "徳川秀忠、征夷大将軍に就任"
+  },
+  {
+    "q": "1612",
+    "hint": "江　戸　時　代",
+    "a": "キリスト教禁教令（直轄領）"
+  },
+  {
+    "q": "1613",
+    "hint": "江　戸　時　代",
+    "a": "キリスト教禁教令（全国）"
+  },
+  {
+    "q": "1614",
+    "hint": "江　戸　時　代",
+    "a": "方広寺鐘銘事件"
+  },
+  {
+    "q": "1614",
+    "hint": "江　戸　時　代",
+    "a": "大阪　冬の陣　江戸幕府と豊臣宗家（羽柴家）の戦い"
+  },
+  {
+    "q": "1615",
+    "hint": "江　戸　時　代",
+    "a": "大阪　夏の陣　豊臣氏が滅びる"
+  },
+  {
+    "q": "1615",
+    "hint": "江　戸　時　代",
+    "a": "武家諸法度制定            禁中並公家諸法度制定"
+  },
+  {
+    "q": "1616",
+    "hint": "江　戸　時　代",
+    "a": "徳川家康　死去"
+  },
+  {
+    "q": "1624",
+    "hint": "江　戸　時　代",
+    "a": "スペイン船来航禁止"
+  },
+  {
+    "q": "1633",
+    "hint": "江　戸　時　代",
+    "a": "奉書船以外の日本船の海外渡航禁止　　在外５年以上の日本人帰国禁止"
+  },
+  {
+    "q": "1635",
+    "hint": "江　戸　時　代",
+    "a": "日本人の海外渡航・帰国禁止"
+  },
+  {
+    "q": "1635",
+    "hint": "江　戸　時　代",
+    "a": "武家諸法度制定（参勤交代制度化）"
+  },
+  {
+    "q": "1636",
+    "hint": "江　戸　時　代",
+    "a": "清建国"
+  },
+  {
+    "q": "1637",
+    "hint": "江　戸　時　代",
+    "a": "島原の乱おこる　キリシタン信仰を旗印としておこした百姓一揆"
+  },
+  {
+    "q": "1639",
+    "hint": "江　戸　時　代",
+    "a": "ポルトガル船来航禁止"
+  },
+  {
+    "q": "1641",
+    "hint": "江　戸　時　代",
+    "a": "オランダ商館を出島に移す"
+  },
+  {
+    "q": "1643",
+    "hint": "江　戸　時　代",
+    "a": "田畑永代売買の禁　幕府が農民の担税能力維持を目的として，農民が田畑を売買することを禁止した法令"
+  },
+  {
+    "q": "1649",
+    "hint": "江　戸　時　代",
+    "a": "慶安の御触書　　江戸幕府が農民統制のために発令した"
+  },
+  {
+    "q": "1651",
+    "hint": "江　戸　時　代",
+    "a": "由井正雪の乱（慶安の変）"
+  },
+  {
+    "q": "1657",
+    "hint": "江　戸　時　代",
+    "a": "明暦の大火おこる"
+  },
+  {
+    "q": "1660",
+    "hint": "江　戸　時　代",
+    "a": "伊達騒動　　、江戸時代前期に伊達氏の仙台藩で起こったお家騒動である"
+  },
+  {
+    "q": "1669",
+    "hint": "江　戸　時　代",
+    "a": "シャクシャインの戦い　　松前藩に対するアイヌ民族の大規模な蜂起である"
+  },
+  {
+    "q": "1680",
+    "hint": "江　戸　時　代",
+    "a": "綱吉が将軍になる"
+  },
+  {
+    "q": "1685",
+    "hint": "江　戸　時　代",
+    "a": "生類憐みの令"
+  },
+  {
+    "q": "1689",
+    "hint": "江　戸　時　代",
+    "a": "「奥の細道」松尾　芭蕉　　紀行作品の代表的存在である"
+  },
+  {
+    "q": "1690",
+    "hint": "江　戸　時　代",
+    "a": "湯島聖堂が作られる"
+  },
+  {
+    "q": "1701",
+    "hint": "江　戸　時　代",
+    "a": "赤穂事件　　一般に「忠臣蔵」としても知られている"
+  },
+  {
+    "q": "1709",
+    "hint": "江　戸　時　代",
+    "a": "正徳の治がはじまる（新井白石）　　生類憐みの令廃止"
+  },
+  {
+    "q": "1716",
+    "hint": "江　戸　時　代",
+    "a": "享保の改革（吉宗、八代将軍就任）"
+  },
+  {
+    "q": "1720",
+    "hint": "江　戸　時　代",
+    "a": "漢訳洋書の輸入を緩和"
+  },
+  {
+    "q": "1721",
+    "hint": "江　戸　時　代",
+    "a": "吉宗が目安箱設置　　社会事情の収集などを目的に、庶民の進言の投書を集めるために設置した箱"
+  },
+  {
+    "q": "1722",
+    "hint": "江　戸　時　代",
+    "a": "上げ米の制　　徳川吉宗が享保の改革の際に出した制度"
+  },
+  {
+    "q": "1723",
+    "hint": "江　戸　時　代",
+    "a": "足高の制　たしだかのせい（大岡忠相ら登用）"
+  },
+  {
+    "q": "1732",
+    "hint": "江　戸　時　代",
+    "a": "享保の大飢饉"
+  },
+  {
+    "q": "1735",
+    "hint": "江　戸　時　代",
+    "a": "蕃薯考(ばんしょこう)を発表(青木昆陽)"
+  },
+  {
+    "q": "1742",
+    "hint": "江　戸　時　代",
+    "a": "公事方御定書"
+  },
+  {
+    "q": "1772",
+    "hint": "江　戸　時　代",
+    "a": "田沼意次、老中就任する"
+  },
+  {
+    "q": "1774",
+    "hint": "江　戸　時　代",
+    "a": "「解体新書」刊行(杉田玄白・前野良沢)"
+  },
+  {
+    "q": "1778",
+    "hint": "江　戸　時　代",
+    "a": "寛政の改革（松平定信の棄捐令など）享保の改革、天保の改革とあわせて三大改革と並称され"
+  },
+  {
+    "q": "1782",
+    "hint": "江　戸　時　代",
+    "a": "天明の大飢饉"
+  },
+  {
+    "q": "1783",
+    "hint": "江　戸　時　代",
+    "a": "浅間山の大噴火"
+  },
+  {
+    "q": "1787",
+    "hint": "江　戸　時　代",
+    "a": "寛政の改革（松平定信、老中就任）"
+  },
+  {
+    "q": "1790",
+    "hint": "江　戸　時　代",
+    "a": "寛政異学の禁　江戸幕府老中・松平定信が寛政の改革で行った学問の統制"
+  },
+  {
+    "q": "1792",
+    "hint": "江　戸　時　代",
+    "a": "「海国兵談」絶版（林子平）"
+  },
+  {
+    "q": "1792",
+    "hint": "江　戸　時　代",
+    "a": "ラックスマン、根室に来航（ロシア） する   　大黒屋光太夫も一緒"
+  },
+  {
+    "q": "1798",
+    "hint": "江　戸　時　代",
+    "a": "「古事記伝」を著す（本居宣長）"
+  },
+  {
+    "q": "1804",
+    "hint": "江　戸　時　代",
+    "a": "レザノフ、長崎に来航（ロシア）"
+  },
+  {
+    "q": "1808",
+    "hint": "江　戸　時　代",
+    "a": "間宮林蔵が樺太探検"
+  },
+  {
+    "q": "1808",
+    "hint": "江　戸　時　代",
+    "a": "フェートン号事件　　イギリス船がオランダ船を拿捕"
+  },
+  {
+    "q": "1821",
+    "hint": "江　戸　時　代",
+    "a": "「大日本沿海輿地全図」作成（伊能忠敬）"
+  },
+  {
+    "q": "1825",
+    "hint": "江　戸　時　代",
+    "a": "異国船打払令（無二念打払令）"
+  },
+  {
+    "q": "1828",
+    "hint": "江　戸　時　代",
+    "a": "シーボルト事件　シーボルトは禁制の地図の写しを国外へ持ち出そうとした事件"
+  },
+  {
+    "q": "1833",
+    "hint": "江　戸　時　代",
+    "a": "天保の大飢饉"
+  },
+  {
+    "q": "1837",
+    "hint": "江　戸　時　代",
+    "a": "大塩平八郎の乱　大坂町奉行所の元与力大塩平八郎（中斎）とその門人らが起こした江戸幕府に対する反乱である"
+  },
+  {
+    "q": "1837",
+    "hint": "江　戸　時　代",
+    "a": "モリソン号事件　漂流民を届けにきたアメリカ船を撃退する"
+  },
+  {
+    "q": "1839",
+    "hint": "江　戸　時　代",
+    "a": "蛮社の獄（渡辺崋山・高野長英が投獄）"
+  },
+  {
+    "q": "1840",
+    "hint": "江　戸　時　代",
+    "a": "アヘン戦争　→1842　南京条約締結"
+  },
+  {
+    "q": "1841",
+    "hint": "江　戸　時　代",
+    "a": "天保の改革（水野忠邦）"
+  },
+  {
+    "q": "1842",
+    "hint": "江　戸　時　代",
+    "a": "天保の薪水給与令"
+  },
+  {
+    "q": "1843",
+    "hint": "江　戸　時　代",
+    "a": "人返し令・上知令　農村を離れて都市に集中した人口を帰農させた法令"
+  },
+  {
+    "q": "1844",
+    "hint": "江　戸　時　代",
+    "a": "オランダ国王の開国勧告"
+  },
+  {
+    "q": "1853",
+    "hint": "江　戸　時　代",
+    "a": "ペリー、浦賀に来港"
+  },
+  {
+    "q": "1854",
+    "hint": "江　戸　時　代",
+    "a": "日米和親条約　　江戸幕府とアメリカ合衆国が締結した条約である"
+  },
+  {
+    "q": "1856",
+    "hint": "江　戸　時　代",
+    "a": "タウンゼント・ハリス、日本領事着任"
+  },
+  {
+    "q": "1858",
+    "hint": "江　戸　時　代",
+    "a": "日米修好通商条約"
+  },
+  {
+    "q": "1858",
+    "hint": "江　戸　時　代",
+    "a": "安政の大獄がはじまる　　江戸幕府が行なった弾圧"
+  },
+  {
+    "q": "1860",
+    "hint": "江　戸　時　代",
+    "a": "桜田門外の変　江戸城桜田門外において水戸藩、薩摩藩の脱藩浪士が彦根藩の行列を襲撃して、大老・井伊直弼を暗殺した事件"
+  },
+  {
+    "q": "1862",
+    "hint": "江　戸　時　代",
+    "a": "坂下門外の変"
+  },
+  {
+    "q": "1862",
+    "hint": "江　戸　時　代",
+    "a": "生麦事件おこる　神奈川近郊の生麦村で薩摩藩士たちが外国人を殺傷した事件"
+  },
+  {
+    "q": "1863",
+    "hint": "江　戸　時　代",
+    "a": "下関事件　　長州藩が馬関海峡（現関門海峡）を航行する米仏蘭商船を砲撃した事件"
+  },
+  {
+    "q": "1863",
+    "hint": "江　戸　時　代",
+    "a": "薩英戦争　生麦事件報復のため鹿児島湾に来襲したイギリス東洋艦隊と薩摩藩との間で行われた戦争"
+  },
+  {
+    "q": "1864",
+    "hint": "江　戸　時　代",
+    "a": "第一次長州征討"
+  },
+  {
+    "q": "1864",
+    "hint": "江　戸　時　代",
+    "a": "四国連合艦隊下関砲撃事件"
+  },
+  {
+    "q": "1866",
+    "hint": "江　戸　時　代",
+    "a": "薩長同盟　　薩摩藩と長州藩の政治的、軍事的同盟である"
+  },
+  {
+    "q": "1867",
+    "hint": "江　戸　時　代",
+    "a": "大政奉還　　江戸幕府第15代将軍徳川慶喜が政権返上"
+  },
+  {
+    "q": "1867",
+    "hint": "江　戸　時　代",
+    "a": "王政復古の大号令　　摂政・関白等の廃止と三職の設置による新政府の樹立を宣言した政変である"
+  },
+  {
+    "q": "1868",
+    "hint": "江　戸　時　代",
+    "a": "戊辰戦争が始まる(鳥羽伏見の戦い)"
+  },
+  {
+    "q": "1868",
+    "hint": "江　戸　時　代",
+    "a": "五箇条の御誓文・五傍の掲示　明治天皇（満15歳）が公卿や諸侯などに示した明治政府の基本方針"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

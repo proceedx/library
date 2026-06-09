@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyJapaneseMasterpiecesAndPainters</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>EasyJapaneseMasterpiecesAndPainters</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "岩佐又兵衛いわさ　　（豊国祭礼図屏風）俵屋宗達と並ぶ江戸初期を代表する大和絵絵師だが、牧谿や梁楷風の水墨画や、狩野派、海北派、土佐派など流派の絵を吸収し独自の様式を作り上げた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "尾形光琳おがた　　（紅白梅図屏風）（国宝）（八ツ橋蒔絵硯（すずり）箱）（国宝）江戸時代の画家　　工芸家　　\n辻惟雄が「艶隠者(やさいんじゃ)」と呼んだ貴族的･唯美主義的作家であり、宮廷風に美麗で、日本的かわいらしさの美学を強く打ち出した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊藤若冲（じゃくちゅう）いとう　　（野菜涅槃図）代表作の「動植綵絵」30幅は、多種多様の動植物がさまざまな色彩と形態のアラベスクを織り成す、華麗な作品である　　綿密な写生に基づきながら、その画面にはどこか近代のシュルレアリスムにも通じる幻想的な雰囲気が漂う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "歌川（安藤）広重うたがわ　　（近江八景之内・唐崎夜雨（やう））（名所江戸百景・大晦日の狐火）（東海道五拾三次・亀山＆蒲原（かんばら））江戸の定火消しの安藤家に生まれ家督を継ぎ、その後に浮世絵師となった　　かつては安藤広重（あんどう ひろしげ）とも呼ばれた  ゴッホやモネなどの画家に影響を与え、世界的に著名な画家である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "歌川国芳うたがわ　　（讃岐院眷属（けんぞく）をして為朝を救ふ図）（東山桜荘子）（相馬（そうま）の古内裏）（源頼光館土蜘作妖怪図）（里すずめ寝ぐらの仮宿）江戸時代末期を代表する浮世絵師の一人であり、画想の豊かさ、斬新なデザイン力、奇想天外なアイデア、確実なデッサン力を持ち、浮世絵の枠にとどまらない広範な魅力を持つ作品を多数生み出した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "浅井忠あさい　　（八王子付近の町）（秋林）画家としてだけではなく教育者としても優れた人物であった　　また、正岡子規にも西洋画を教えており、夏目漱石の小説『三四郎』の中に登場する深見画伯のモデルとも言われる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "上村松園うえむら　　（姉妹三人）（待月）（焔）明治の京都下京（しもぎょう）に生まれ育ち、女性の目を通して「美人画」を描いた　　1948年（昭和23年）女性として初めて文化勲章を受賞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "青木繁あおき　　（黄泉比良坂）（日本武尊）（海の幸）明治期日本絵画のロマン主義的傾向を代表する画家であり[1]、代表作『海の幸』は明治期洋画の記念碑的作品と評されている[2]　　若くして日本美術史上に残る有名作を次々と描き上げた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小野竹喬（ちっきょう）おの　　（奥の細道句抄絵）（京の灯）（夕空）大正・昭和期の日本画家　　竹喬は戦後も日本画壇の重鎮として活躍し、1976年（昭和51年）には文化勲章を受章している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊藤深水いとう　　（湯気）（暮方）大正・昭和期の浮世絵師、日本画家、版画家　　本名、一（はじめ）　　歌川派浮世絵の正統を継いでおり、日本画独特のやわらかな表現による美人画が有名",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "狩野永徳かのう　　（洛中洛外図屏風）狩野 永徳（かのう えいとく、天文12年1月13日（1543年2月16日） - 天正18年9月14日（1590年10月12日））は、安土桃山時代の絵師　　狩野派（室町時代から江戸時代まで日本画壇の中心にあった画派）の代表的な画人であり、日本美術史上もっとも著名な画人の1人である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "喜多川歌麿 きたがわ　　（姿見七人化粧）（寛政三美人）（夏姿美人）国際的にもよく知られる浮世絵師として、葛飾北斎と並び称される　　繊細で優麗な描線を特徴とし、さまざまな姿態、表情の女性美を追求した美人画の大家である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "葛飾北斎かつしか　　（富嶽三十六景・神奈川沖浪裏＆尾州不二見原）（えびすとヒラメ）（百物語・皿やしき）（北斎漫画）森羅万象を描き、生涯に3万点を超える作品を発表した　　若い時から意欲的であり、版画のほか、肉筆浮世絵にも傑出していた　　しかし、北斎の絵師としての地位は「富嶽三十六景」の発表により、不動のものとなっただけでなく、風景画にも新生面を開いた　　北斎の業績は、浮世絵の中でまさに巨大な高峰であっ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "狩野芳崖かのう　　（悲母観音図）（達磨図）日本画において江戸時代と明治時代を橋渡しする役割を担うと共に、河鍋暁斎、菊池容斎らと狩野派の最後を飾った",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "黒田清輝くろだ　　（鉄砲百合）（ブレハの少女）（舞妓）日本の洋画家、政治家　　位階は従三位　　勲等は勲二等　　爵位は子爵　　通称は新太郎（しんたろう）　　\n東京美術学校教授、帝国美術院院長（第2代）、貴族院議員などを歴任した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "川合玉堂かわい　　（月天心）（深林宿雪）日本の四季の山河と、そこで生きる人間や動物の姿を美しい墨線と彩色で描くことを得意とした　　日本の明治期から昭和期にかけて活躍した日本画家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鏑木清方（きよかた）かぶらき　　（三遊亭円朝像）（朝涼（あさすず））近代日本の美人画家として上村松園、伊東深水と並び称せられる　　作品は風景画などはまれで、ほとんどが人物画であり、単なる美人画というよりは明治時代の東京の風俗を写した風俗画というべき作品が多い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小林古径（こけい）こばやし　　（阿弥陀堂）　　簡潔に力強く描かれた線と単純な色彩で、髪の毛一本一本や美しく縁取られた顔の輪郭、半裸の女性の体温や皮膚の柔らかい感触まで、繊細に描き出している　　「髪」は、裸体画として、日本で初めて切手のデザインとなった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "川端龍子（りゅうし）かわばた　　（筏（いかだ）流し）激しく流れる水の流れとほとばしる波しぶきによる龍子の描いた水は、巨大なエネルギーで観る者を圧倒した　　昭和の動乱期、画壇を飛び出し、独自の芸術を切り開いた日本画家である　　けたはずれの大画面、龍子は躍動する水の世界を描き続けた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "岸田劉生きしだ　　（自画像）大正～昭和初期の洋画家　　父親はジャーナリストの岸田吟香",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小磯良平こいそ　　（斉唱）（練習場の踊り子達）昭和期に活躍した洋画家である　　\n肖像画、特に群像を多く手がけたことで知られる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "雪舟せっしゅう　　（四季山水図巻）（国宝）（破墨山水図）（国宝）（秋冬山水図・冬）（国宝）（天橋立図）（国宝）現存する作品のうち6点が国宝に指定されており、日本の絵画史において別格の高い評価を受けているといえる　　このほか、花鳥図屏風など「伝雪舟筆」とされる作品は多く、真筆であるか否か、専門家の間でも意見の分かれる作品も多い　　代表作は、「四季山水図（山水長巻）」「秋冬山水図」「天橋立図」「破墨山水図」「慧可断臂図」など　　弟子に、秋月、宗淵、等春らがいる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鈴木春信すずき　　（縁先美人・見立無間の鐘）細身で可憐、繊細な表情の女性像で知られる美人画の浮世絵師である　　初期には紅摺絵の役者絵も知られている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "曽我蕭白（しょうはく）そが　　（群仙図屏風）（美人図）（達磨図）蕭白の特徴は、部分の細密で精確な描写能力と対象の動性の的確かつ大胆な把握にある　　構図における大胆な空間把握、顔料の性質を熟知した上になりたつさまざまな独創に支えられた鮮やかな彩色は、相共に強烈な不安定さを生み出し、見るものを魅了しまたおののかせる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "司馬江漢しば　　（捕鯨図）日本における洋風画の開拓者としては、秋田の小田野直武とともに重要な画家　　直武の作品が、遠近法、明暗法などの西洋画法をとりいれつつ、画材は伝統的な絵具と墨とを使用していたのに対し、江漢は荏胡麻の油を使用した油彩画を描いたことで特筆される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "酒井抱一（ほういつ）さかい　　（三十六歌仙図貼付屏風）尾形光琳に私淑し琳派の雅な画風を、俳味を取り入れた詩情ある洒脱な画風に翻案し江戸琳派の祖となった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "坂本繁二郎（はんじろう）さかもと　　（張り物）（能面）明治後期～昭和期の洋画家である　　 坂本には学者肌のところがあり、優れた絵画論をいくつも著している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "佐伯祐三さえき　　（ガス灯と広告）（テラスの広告）（広告貼り）作品はパリの街角、店先などを独特の荒々しいタッチで描いたものが多い　　佐伯の風景画にはモチーフとして文字の登場するものが多く、街角のポスター、看板等の文字を造形要素の一部として取り入れている点が特色である　　作品の大半は都市風景だが、人物画、静物画等もある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "俵屋宗達たわらや　　（風神雷神図屏風）（国宝）（鶴下絵三十六歌仙和歌巻）（松島図屏風）著名な「風神雷神図」のような装飾的大画面のほか、水墨画の作例もある　　水墨の名作「蓮池水禽（れんちすいきん）図」は、生乾きの水墨にさらに濃淡の異なる墨を含ませて「にじみ」による偶然の効果を狙った、いわゆる「たらしこみ」の技法が用いられている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東洲斎写楽とうしゅうさい　　（三代目大谷鬼次の奴（やっこ）江戸兵衛）（鬼次の川島治部五郎）江戸時代中期の浮世絵師　　寛政6年（1794年）5月から翌年の寛政7年（1795年）3月にかけての約10か月の期間内に約145点余の錦絵作品を出版したのち、忽然と浮世絵の世界から姿を消した謎の浮世絵師として知られる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "富岡鉄斎とみおか　　（阿倍仲麻呂　明州望月図）文人画を基本に、大和絵、狩野派、琳派、大津絵など様々な絵画様式を加え、極めて創造的な独自性を持っている　　彼の作品は生涯で一万点以上といわれる　　80歳を過ぎてますます隆盛で、色彩感覚の溢れる傑作を描いた　　生涯を文人として貫き、その自由で奔放な画風は近代日本画に独自の地位を築き、梅原龍三郎や小林秀雄らが絶賛　　日本のみならず世界からもいまなお高い評価を受けている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "竹内栖鳳（せいほう）たけうち　　（せいほう）（秋興（しゅうきょう））（宿鴨宿鴉（しゅくおうしゅくあ））（雪中噪雀（そうじゃく））近代日本画の先駆者で、画歴は半世紀に及び、戦前の京都画壇を代表する大家である　　帝室技芸員　　第1回文化勲章受章者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "竹久夢二たけひさ　　（立田姫）多くの書籍の装幀、広告宣伝物、日用雑貨のほか、浴衣などのデザインも手がけており、日本の近代グラフィック・デザインの草分けのひとりともいえる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "土田麦僊（ばくせん）つちだ　　（大原女（め）・１９２７年版）（三人の舞妓）麦僊はルノワールやゴーギャンに傾倒し、伝統的な日本画に西洋絵画の重厚なマチエールや合理的な空間把握、幾何学的な構図などを取り入れた新たな絵画の創造を目指していた　　大正10年（1921年）、麦僊は竹喬、晩花とともに渡欧　　約1年半に亘り、西洋絵画の研究と制作を行っている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東郷青児とうごう　　（サルタンバンク）日本の洋画家　　本名は東郷 鉄春　　夢見るような甘い女性像が人気を博し、本や雑誌、包装紙などに多数使われ、昭和の美人画家として戦後一世を風靡した　　派手なパフォーマンスで二科展の宣伝に尽力した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "長谷川等伯はせがわ　　（松林（しょうりん）図屏風）（国宝） （千利休画像）長谷川 等伯（はせがわ とうはく、天文8年（1539年） - 慶長15年2月24日（1610年3月19日））は、安土桃山時代から江戸時代初期にかけての絵師　　狩野永徳、海北友松、雲谷等顔らと並び桃山時代を代表する画人である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "英一蝶（いっちょう）はなぶさ　　（一休和尚酔臥（すいが）図）（檜に蝉図）配流以前の画風は、当時すでに形式化しつつあった狩野派を学びながらも浮世絵に惹かれ、古典の軽妙なパロディや俳諧趣味を加味することで、浮世絵の大家である岩佐又兵衛や菱川師宣を超える新しい都市風俗画を目指した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "橋本雅邦（がほう）はしもと　　（弁天（騎龍弁天））（龍虎）日本画の「近世」と「近代」を橋渡しする位置にいる画家　　芳崖と共に、狩野派の描法を基礎としつつも洋画の遠近法等の技法を取り入れ、明治期の日本画の革新に貢献した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤島武二ふじしま　　（黒扇）明治末から昭和期にかけて活躍した洋画家である　　明治から昭和前半まで、日本の洋画壇において長らく指導的役割を果たしてきた重要な画家である　　ロマン主義的な作風の作品を多く残している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "菱田春草ひしだ　　（夜桜）（夕の森）（落葉）（六歌仙）明治期の日本画家　　横山大観、下村観山とともに岡倉天心の門下で、明治期の日本画の革新に貢献した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "福田平八郎ふくだ　　（鯉・１９２１年版）（雨）鋭い観察眼を基にした、対象がもつ雰囲気、美しさを抽出した表現が特徴とされる　　生涯「水」の動き、感覚を追究していたとされ、「漣」は昭和天皇と一緒に魚釣りに行ったときの、池面に映る水面の模様を描写した作品である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "速水御舟（ぎょしゅう）はやみず　　（蟻）従来の日本画にはなかった徹底した写実、細密描写からやがて代表作「炎舞」のような象徴的・装飾的表現へと進んだ　　長くない生涯に多くの名作を残し、「名樹散椿」（めいじゅちりつばき）は昭和期の美術品として最初に重要文化財に指定された",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "円山応挙まるやま　　（雨竹風竹図屏風）（氷図屏風）江戸時代中期～後期の絵師　　\n近現代の京都画壇にまでその系統が続く「円山派」の祖であり、写生を重視した親しみやすい画風が特色である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前田青邨（せいそん）まえだ　　（知盛幻生）（洞窟の頼朝）（先斗町・清水寺～京名所八題）歴史画を得意とし、大和絵の伝統を軸に肖像画や花鳥画にも幅広く作域を示した　　その中でも、武者絵における鎧兜の精密な描写は、ことに有名である　　1955年（昭和30年）に、文化勲章を受章するなど、院展を代表する画家として活躍する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "棟方志功むなかた　　（釈迦十大弟子）（空晴）（歓喜自板像）日本人の板画家　　青森県出身　　20世紀の美術を代表する世界的巨匠の一人　　\n1942年（昭和17年）以降、彼は版画を「板画」と称し、木版の特徴を生かした作品を一貫して作り続けた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "与謝蕪村よさの　　（夜色楼台（やしょくろうだい）図）（鳶（とび）図）（奥の細道図屏風）独創性を失った当時の俳諧を憂い『蕉風回帰』を唱え、絵画用語である『離俗論』を句に適用した天明調の俳諧を確立させた中心的な人物である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "横山大観（たいかん）よこやま　　（海山十題・黎明）（潤声（かんせい））（紅葉）（屈原（くつげん））近代日本画壇の巨匠であり、今日「朦朧体（もうろうたい）」と呼ばれる、線描を抑えた独特の没線描法を確立した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "安田靭彦（ゆきひこ）やすだ　　（夢殿）（守屋大連（おおむらじ））安田靭彦（ゆきひこ）  代表作　（夢殿）（守屋大連（おおむらじ））",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "横山操よこやま　　（十勝岳）（ウォール街）（雪原）（越路十景・出雲崎晩鐘）昭和を代表する日本画家の一人　　横山の作品は煤や石灰などを画面に擦り付け、力強く轟くような漆黒と、そこからにじみ出てくるような鮮やかな色が特徴であるとされる　　見た目には洋画に近い作風ともいえるが、日本画である　　また、同じく昭和期に活躍した加山又造とは懇意であり、荒々しく力強い横山と対照的に、静謐な線による構図や伝統的な花鳥風月などを取り入れ、日本画の王道を歩んだともいえる加山であるが、お互いを認め合いライバルとして日本画壇をリードしてきた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "渡辺崋山（かざん）わたなべ　　（鷹見泉石像）（国宝）肖像画は陰影を巧みに用いて高い写実表現に成功している　　西洋画の影響があったことは間違いないがかつて例のない独自の画法を確立させた　　当時から華山の肖像画は人気があり多くの作品を画いた",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

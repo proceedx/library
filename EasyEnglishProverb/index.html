@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyEnglishProverb</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">💬</span>
+  <h1>EasyEnglishProverb</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "弘法（こうぼう）筆を選ばず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "溺（おぼ）れる者はわらをもつかむ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "まさかの時の友こそ真の友",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "八方美人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "良薬は口に苦し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大男総身に知恵が回りかね",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "生兵法（なまびょうほう）は大怪我のもと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "無い袖は振れぬ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "五十歩百歩",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "転がる石に苔（こけ）は生えず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "健全なる精神は健全なる身体に宿る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "君子（くんし）豹変（ひょうへん）す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人の噂（うわさ）も七十五日",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一を聞いて十を知る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "雨降って地固まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "亀の甲より年の功",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "光るもの必ずしも金ならず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "終わりよければすべて良し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "すべての道はローマに通ず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三度目の正直",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "目には目を、歯には歯を",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "悪妻は百年の不作",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蛇（じゃ）の道は蛇（へび）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人の口には戸が立てられぬ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "枯れ木も山のにぎわい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人は見かけによらぬもの",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三つ子の魂百まで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "攻撃は最大の防御なり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "悪貨は良貨を駆逐する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "悪事千里を走る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鶏口（けいこう）となるも牛後となるなかれ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "寄らば大樹の陰",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "類は友を呼ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "氏より育ち",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "花より団子",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "窮鼠（きゅうそ）猫を噛（か）む",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "捕らぬ狸の皮算用",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "郷に入っては郷に従え",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "言うは易く行うは難し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "悪銭身につかず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "空き樽（たる）は音が高い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一寸の虫にも五分の魂",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "猿も木から落ちる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "叩（たた）けば埃が出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鬼も十八番茶も出花",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "事実は小説より奇なり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "失敗は成功のもと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "馬子（まご）にも衣装",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先んずれば人を制す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "庇（ひさし）を貸して母屋（おもや）を取られる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "酒は百薬の長",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "習い性となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "好事魔多し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "短期は損気",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "急いては事を仕損ずる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "嘘つきは泥棒の始まり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暖簾（のれん）に腕押し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "七転び八起き",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "二兎（にと）を追う者は一兎をも得ず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "下手な鉄砲も数撃（う）ちゃ当たる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "朱に交われば赤くなる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "健康は富に勝る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "歴史は繰り返す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "正直は最善の策",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "空腹にまずいもの無し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "二兎（にと）を追うものは一兎をも得ず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "柳の下にいつもどじょうはいない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "待てば海路の日和（ひより）あり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "触らぬ神にたたりなし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "長いものには巻かれろ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "覆水（ふくすい）盆にかえらず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "釈迦（しゃか）に説法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一石二鳥",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "残り物には福がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "笑う門には福来たる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "金を貸せば友を失う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過ぎたるはなお及ばざるがごとし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "触らぬ神に崇りなし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蛙（かえる）の子は蛙",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "命長ければ恥多し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "転ばぬ先の杖",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "勝てば官軍",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "恋は盲目",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あばたもえくぼ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "急がば回れ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人はパンのみにて生きるにあらず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "親しき仲にも礼儀あり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "塵（ちり）も積もれば山となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "泣き面に蜂",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "金は天下の回りもの",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名は体を表す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "必要は発明の母",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "今日できることを明日まで延ばすな",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "便りなきは良き便り",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "火のないところに煙は立たぬ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蒔（ま）かぬ種は生えぬ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ただより高いものはない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "好きこそものの上手なれ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "虎穴（こけつ）に入らずんば虎子を得ず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "苦しいときの神頼み",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "情けは人のためならず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "去る者は日々にうとし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "口は災いの元",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "石の上にも三年",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "習うより慣れろ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "転ばぬ先の杖",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "驕（おご）れる者久しからず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後悔先に立たず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ローマは一日にしてならず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "念には念を入れよ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日光を見ないうちは結構と言うな",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "百聞は一見にしかず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "油断大敵",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "毒をもって毒を制す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "急がば回れ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "十人十色",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "所変れば品変わる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "可愛い子には旅をさせよ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "噂をすれば影が差す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "雄弁は銀、沈黙は金",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鉄は熱いうちに打て",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先んずれば人を制す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "うわさをすれば影",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "早起きは三文の得",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蓼（たで）食う虫も好き好き",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "学問に王道なし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "例外のないルールはない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "火のない所に煙は立たぬ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "歳月人を待たず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "光陰矢の如し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "時は金なり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "住めば都",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一石二鳥",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "百聞は一見にしかず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "負けるが勝ち",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "明日は明日の風が吹く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "船頭多くして船山に上る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三人寄れば文殊の知恵",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人事を尽くして天命を待つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "亀の甲より年の功",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "瓜（うり）のつるになすびはならぬ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自業自得（じごうじとく）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "逢うは別れの始め",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "精神一到何事かならざらん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "捨てる神あれば拾う神あり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鬼のいぬ間に洗濯",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "二度あることは三度ある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後悔先に立たず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "雀（すずめ）百まで踊り忘れず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "呉越同舟（ごえつどうしゅう）",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

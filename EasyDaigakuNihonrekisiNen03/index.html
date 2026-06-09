@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyDaigakuNihonrekisiNen03</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #2c3e50;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #2c3e50;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #2c3e50;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #2c3e50;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">🎓</span>
+  <h1>EasyDaigakuNihonrekisiNen03</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "大正時代の始まり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第一次護憲運動　尾崎行雄・犬養毅→1913桂太郎退陣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大正政変",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第一次世界大戦が始まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "対華２１ヶ条の要求 　日本が中華民国政府に提示した21か条の要求のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "吉野作造「民本主義」を唱える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロシア革命が起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シベリア出兵",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "富山に米騒動",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第一次世界大戦が終わる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "米騒動",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関税自主権回復",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "パリ講和会議(ヴェルサイユ条約調印)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "国際連盟に加入",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ワシントン会議",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "全国水平者創立",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "関東大震災",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第二次護憲運動    加藤高明内閣成立（～1932まで政党政治）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "普通選挙法が成立",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラジオ放送が始まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "治安維持法制定",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "普通選挙法公布",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "昭和天皇が即位",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大正時代の終わり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "世界恐慌　1929年に始まった世界的規模で起きた経済恐慌",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロンドン会議（ロンドン海軍軍縮会議）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "満州事変　満州（今の中国東北区）でおきた日本軍と中国軍との武力衝突",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リットン調査団調査",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "五・一五事件　海軍急進派青年将校を中心とするクーデタ事件",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "満州国建国宣言",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "国際連盟を脱退",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "普通選挙法制定",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニ・ニ六事件　陸軍の皇道派青年将校が武力による政治改革を目ざし起こしたクーデター事件",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日中戦争が始まる（盧溝橋事件）　　　南京事件",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "国家総動員法公布",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第二次世界大戦が始まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日独伊三国同盟締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大政翼賛会結成",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日ソ中立条約",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太平洋戦争勃発",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミッドウェー海戦で敗れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サイパン島陥落→本土空襲激化",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2月　ヤルタ会談（米・英・ソ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3月　東京大空襲",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "4月　沖縄本土にて会戦",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "5月　ドイツ降伏",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "7月　ポツダム会談→ポツダム宣言",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "８．　６　広島に原爆投下",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "８．　８　ソ連、対日宣戦布告",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "８．　９　長崎に原爆投下",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポツダム宣言受諾",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "８．１５　天皇　戦争終結の詔書放送",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "９．　２　降伏文書に調印（ミズーリ号）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ＧＨＱ設置（マッカーサー）　財閥解体　婦人参政権の実現",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "国際連合発足",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "五大改革指令",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "農地改革　GHQの指揮の下、日本政府によって行われた農地の所有制度の改革",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "新選挙法による総選挙（女性参政権）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "極東裁判開廷      （極東国際軍事裁判：東京裁判）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日本国憲法公布（１１．３）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "天皇の人間宣言　　天皇裕仁が「新日本建設に関する詔書」によって、自らの神格性を否定した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第二次農地改革",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "教育基本法・学校教育法公布　　　　労働基準法・独占禁止法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "朝鮮が分裂         （朝鮮民主主義人民共和国・大韓民国）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "経済安定九原則指示",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中華人民共和国が成立（毛沢東）     （中国が分裂　中華民国→台湾）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "湯川秀樹がノーベル賞受賞",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ドッジ＝ライン指示",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "朝鮮戦争が始まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "警察予備隊設置　　（現在の陸上自衛隊）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サンフランシスコ平和条約調印",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日米安全保障条約調印",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "保安隊設置　　現在の陸上自衛隊の前身に当たる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "朝鮮戦争が休戦",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "テレビ放送が始まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第五福竜丸、ビキニ水爆実験で被爆",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自衛隊発足",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バンドン会議（アジア・アフリカ会議）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自由民主党結成（55年体制）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日ソ共同宣言　ソ連と国交回復　　　　日本、国際連合に加盟",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日米新安全保障条約・地位協定調印　　安保闘争が起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東海道新幹線が開通　　東京オリンピックが開催される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "IMF加盟",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "OECD加盟",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日韓基本条約調印　　戦前の両国関係の清算や戦後補償についての取り決め",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小笠原諸島が返還される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日本万国博覧会",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "札幌オリンピック",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日中共同声明調印",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "沖縄返還",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "第一次石油危機（第四次中東戦争）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "円が変動相場制に移行",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロッキード事件　　田中角栄元首相が逮捕される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日中平和友好条約調印",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リクルート事件",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "昭和天皇崩御　　平成がはじまる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "消費税実施",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バブル経済崩壊　　投機によって資産価格が高騰し実態に伴っていない経済であった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "湾岸戦争が起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ＰＫＯ法成立　　 正式名称は　国際連合平和維持活動等に対する協力に関する法律",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "国連環境開発会議（地球サミット）で「リオ」宣言が採択される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "５５年体制が終わる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "環境基本法制定　　　　（リオ宣言を受けて細川内閣が制定）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "阪神淡路大震災　　　地下鉄サリン事件",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "京都議定書が議決される　　第3回（地球温暖化防止京都会議、COP3）で採択された、気候変動枠組条約に関する議定書",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "沖縄サミット開催",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "9.11　アメリカ同時多発テロ事件",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ピョンヤン宣言",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "米英、イラク攻撃",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自衛隊、イラクへ派遣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オバマ第44代米合衆国大統領に就任",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "3.11　東日本大震災",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

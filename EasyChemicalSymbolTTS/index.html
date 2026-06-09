@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hydrogen   周期1    3族1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #9b59b6;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #9b59b6;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #9b59b6;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #9b59b6;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">⚗️</span>
+  <h1>Hydrogen   周期1    3族1</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "H",
+    "hint": "Hydrogen   周期1    3族1",
+    "a": "水素"
+  },
+  {
+    "q": "He",
+    "hint": "Helium   周期1    3族18",
+    "a": "ヘリウム"
+  },
+  {
+    "q": "Li",
+    "hint": "Lithium   周期2    3族1",
+    "a": "リチウム"
+  },
+  {
+    "q": "Be",
+    "hint": "Beryllium   周期2    3族2",
+    "a": "ベリリウム"
+  },
+  {
+    "q": "B",
+    "hint": "Boron   周期2    3族13",
+    "a": "ホウ素"
+  },
+  {
+    "q": "C",
+    "hint": "Carbon   周期2    3族14",
+    "a": "炭素"
+  },
+  {
+    "q": "N",
+    "hint": "Nitrogen   周期2    3族15",
+    "a": "窒素"
+  },
+  {
+    "q": "O",
+    "hint": "Oxygen   周期2    3族16",
+    "a": "酸素"
+  },
+  {
+    "q": "F",
+    "hint": "Fluorine   周期2    3族17",
+    "a": "フッ素"
+  },
+  {
+    "q": "Ne",
+    "hint": "Neon   周期2    3族18",
+    "a": "ネオン"
+  },
+  {
+    "q": "Na",
+    "hint": "Sodium   周期3    3族1",
+    "a": "ナトリウム"
+  },
+  {
+    "q": "Mg",
+    "hint": "Magnesium   周期3    3族2",
+    "a": "マグネシウム"
+  },
+  {
+    "q": "Al",
+    "hint": "Aluminum[注 1]   周期3    3族13",
+    "a": "アルミニウム"
+  },
+  {
+    "q": "Si",
+    "hint": "Silicon   周期3    3族14",
+    "a": "ケイ素"
+  },
+  {
+    "q": "P",
+    "hint": "Phosphorus   周期3    3族15",
+    "a": "リン"
+  },
+  {
+    "q": "S",
+    "hint": "Sulfur   周期3    3族16",
+    "a": "硫黄"
+  },
+  {
+    "q": "Cl",
+    "hint": "Chlorine   周期3    3族17",
+    "a": "塩素"
+  },
+  {
+    "q": "Ar",
+    "hint": "Argon   周期3    3族18",
+    "a": "アルゴン"
+  },
+  {
+    "q": "K",
+    "hint": "Potassium   周期4    3族1",
+    "a": "カリウム"
+  },
+  {
+    "q": "Ca",
+    "hint": "Calcium   周期4    3族2",
+    "a": "カルシウム"
+  },
+  {
+    "q": "Sc",
+    "hint": "Scandium   周期4    3族3",
+    "a": "スカンジウム"
+  },
+  {
+    "q": "Ti",
+    "hint": "Titanium   周期4    3族4",
+    "a": "チタン"
+  },
+  {
+    "q": "V",
+    "hint": "Vanadium   周期4    3族5",
+    "a": "バナジウム"
+  },
+  {
+    "q": "Cr",
+    "hint": "Chromium   周期4    3族6",
+    "a": "クロム"
+  },
+  {
+    "q": "Mn",
+    "hint": "Manganese   周期4    3族7",
+    "a": "マンガン"
+  },
+  {
+    "q": "Fe",
+    "hint": "Iron   周期4    3族8",
+    "a": "鉄"
+  },
+  {
+    "q": "Co",
+    "hint": "Cobalt   周期4    3族9",
+    "a": "コバルト"
+  },
+  {
+    "q": "Ni",
+    "hint": "Nickel   周期4    3族10",
+    "a": "ニッケル"
+  },
+  {
+    "q": "Cu",
+    "hint": "Copper   周期4    3族11",
+    "a": "銅"
+  },
+  {
+    "q": "Zn",
+    "hint": "Zinc   周期4    3族12",
+    "a": "亜鉛"
+  },
+  {
+    "q": "Ga",
+    "hint": "Gallium   周期4    3族13",
+    "a": "ガリウム"
+  },
+  {
+    "q": "Ge",
+    "hint": "Germanium   周期4    3族14",
+    "a": "ゲルマニウム"
+  },
+  {
+    "q": "As",
+    "hint": "Arsenic   周期4    3族15",
+    "a": "ヒ素"
+  },
+  {
+    "q": "Se",
+    "hint": "Selenium   周期4    3族16",
+    "a": "セレン"
+  },
+  {
+    "q": "Br",
+    "hint": "Bromine   周期4    3族17",
+    "a": "臭素"
+  },
+  {
+    "q": "Kr",
+    "hint": "Krypton   周期4    3族18",
+    "a": "クリプトン"
+  },
+  {
+    "q": "Rb",
+    "hint": "Rubidium   周期5    3族1",
+    "a": "ルビジウム"
+  },
+  {
+    "q": "Sr",
+    "hint": "Strontium   周期5    3族2",
+    "a": "ストロンチウム"
+  },
+  {
+    "q": "Y",
+    "hint": "Yttrium   周期5    3族3",
+    "a": "イットリウム"
+  },
+  {
+    "q": "Zr",
+    "hint": "Zirconium   周期5    3族4",
+    "a": "ジルコニウム"
+  },
+  {
+    "q": "Nb",
+    "hint": "Niobium   周期5    3族5",
+    "a": "ニオブ"
+  },
+  {
+    "q": "Mo",
+    "hint": "Molybdenum   周期5    3族6",
+    "a": "モリブデン"
+  },
+  {
+    "q": "Tc",
+    "hint": "Technetium   周期5    3族7",
+    "a": "テクネチウム"
+  },
+  {
+    "q": "Ru",
+    "hint": "Ruthenium   周期5    3族8",
+    "a": "ルテニウム"
+  },
+  {
+    "q": "Rh",
+    "hint": "Rhodium   周期5    3族9",
+    "a": "ロジウム"
+  },
+  {
+    "q": "Pd",
+    "hint": "Palladium   周期5    3族10",
+    "a": "パラジウム"
+  },
+  {
+    "q": "Ag",
+    "hint": "Silver   周期5    3族11",
+    "a": "銀"
+  },
+  {
+    "q": "Cd",
+    "hint": "Cadmium   周期5    3族12",
+    "a": "カドミウム"
+  },
+  {
+    "q": "In",
+    "hint": "Indium   周期5    3族13",
+    "a": "インジウム"
+  },
+  {
+    "q": "Sn",
+    "hint": "Tin   周期5    3族14",
+    "a": "スズ"
+  },
+  {
+    "q": "Sb",
+    "hint": "Antimony   周期5    3族15",
+    "a": "アンチモン"
+  },
+  {
+    "q": "Te",
+    "hint": "Tellurium   周期5    3族16",
+    "a": "テルル"
+  },
+  {
+    "q": "I",
+    "hint": "Iodine   周期5    3族17",
+    "a": "ヨウ素"
+  },
+  {
+    "q": "Xe",
+    "hint": "Xenon   周期5    3族18",
+    "a": "キセノン"
+  },
+  {
+    "q": "Cs",
+    "hint": "Cesium   周期6    3族1",
+    "a": "セシウム"
+  },
+  {
+    "q": "Ba",
+    "hint": "Barium   周期6    3族2",
+    "a": "バリウム"
+  },
+  {
+    "q": "La",
+    "hint": "Lanthanum   周期6    3族3L",
+    "a": "ランタン"
+  },
+  {
+    "q": "Ce",
+    "hint": "Cerium   周期6    3族3L",
+    "a": "セリウム"
+  },
+  {
+    "q": "Pr",
+    "hint": "Praseodymium   周期6    3族3L",
+    "a": "プラセオジム"
+  },
+  {
+    "q": "Nd",
+    "hint": "Neodymium   周期6    3族3L",
+    "a": "ネオジム"
+  },
+  {
+    "q": "Pm",
+    "hint": "Promethium   周期6    3族3L",
+    "a": "プロメチウム"
+  },
+  {
+    "q": "Sm",
+    "hint": "Samarium   周期6    3族3L",
+    "a": "サマリウム"
+  },
+  {
+    "q": "Eu",
+    "hint": "Europium   周期6    3族3L",
+    "a": "ユウロピウム"
+  },
+  {
+    "q": "Gd",
+    "hint": "Gadolinium   周期6    3族3L",
+    "a": "ガドリニウム"
+  },
+  {
+    "q": "Tb",
+    "hint": "Terbium   周期6    3族3L",
+    "a": "テルビウム"
+  },
+  {
+    "q": "Dy",
+    "hint": "Dysprosium   周期6    3族3L",
+    "a": "ジスプロシウム"
+  },
+  {
+    "q": "Ho",
+    "hint": "Holmium   周期6    3族3L",
+    "a": "ホルミウム"
+  },
+  {
+    "q": "Er",
+    "hint": "Erbium   周期6    3族3L",
+    "a": "エルビウム"
+  },
+  {
+    "q": "Tm",
+    "hint": "Thulium   周期6    3族3L",
+    "a": "ツリウム"
+  },
+  {
+    "q": "Yb",
+    "hint": "Ytterbium   周期6    3族3L",
+    "a": "イッテルビウム"
+  },
+  {
+    "q": "Lu",
+    "hint": "Lutetium   周期6    3族3L",
+    "a": "ルテチウム"
+  },
+  {
+    "q": "Hf",
+    "hint": "Hafnium   周期6    3族4",
+    "a": "ハフニウム"
+  },
+  {
+    "q": "Ta",
+    "hint": "Tantalum   周期6    3族5",
+    "a": "タンタル"
+  },
+  {
+    "q": "W",
+    "hint": "Tungsten   周期6    3族6",
+    "a": "タングステン"
+  },
+  {
+    "q": "Re",
+    "hint": "Rhenium   周期6    3族7",
+    "a": "レニウム"
+  },
+  {
+    "q": "Os",
+    "hint": "Osmium   周期6    3族8",
+    "a": "オスミウム"
+  },
+  {
+    "q": "Ir",
+    "hint": "Iridium   周期6    3族9",
+    "a": "イリジウム"
+  },
+  {
+    "q": "Pt",
+    "hint": "Platinum   周期6    3族10",
+    "a": "白金"
+  },
+  {
+    "q": "Au",
+    "hint": "Gold   周期6    3族11",
+    "a": "金"
+  },
+  {
+    "q": "Hg",
+    "hint": "Mercury   周期6    3族12",
+    "a": "水銀"
+  },
+  {
+    "q": "Tl",
+    "hint": "Thallium   周期6    3族13",
+    "a": "タリウム"
+  },
+  {
+    "q": "Pb",
+    "hint": "Lead   周期6    3族14",
+    "a": "鉛"
+  },
+  {
+    "q": "Bi",
+    "hint": "Bismuth   周期6    3族15",
+    "a": "ビスマス"
+  },
+  {
+    "q": "Po",
+    "hint": "Polonium   周期6    3族16",
+    "a": "ポロニウム"
+  },
+  {
+    "q": "At",
+    "hint": "Astatine   周期6    3族17",
+    "a": "アスタチン"
+  },
+  {
+    "q": "Rn",
+    "hint": "Radon   周期6    3族18",
+    "a": "ラドン"
+  },
+  {
+    "q": "Fr",
+    "hint": "Francium   周期7    3族1",
+    "a": "フランシウム"
+  },
+  {
+    "q": "Ra",
+    "hint": "Radium   周期7    3族2",
+    "a": "ラジウム"
+  },
+  {
+    "q": "Ac",
+    "hint": "Actinium   周期7    3族3A",
+    "a": "アクチニウム"
+  },
+  {
+    "q": "Th",
+    "hint": "Thorium   周期7    3族3A",
+    "a": "トリウム"
+  },
+  {
+    "q": "Pa",
+    "hint": "Protactinium   周期7    3族3A",
+    "a": "プロトアクチニウム"
+  },
+  {
+    "q": "U",
+    "hint": "Uranium   周期7    3族3A",
+    "a": "ウラン"
+  },
+  {
+    "q": "Np",
+    "hint": "Neptunium   周期7    3族3A",
+    "a": "ネプツニウム"
+  },
+  {
+    "q": "Pu",
+    "hint": "Plutonium   周期7    3族3A",
+    "a": "プルトニウム"
+  },
+  {
+    "q": "Am",
+    "hint": "Americium   周期7    3族3A",
+    "a": "アメリシウム"
+  },
+  {
+    "q": "Cm",
+    "hint": "Curium   周期7    3族3A",
+    "a": "キュリウム"
+  },
+  {
+    "q": "Bk",
+    "hint": "Berkelium   周期7    3族3A",
+    "a": "バークリウム"
+  },
+  {
+    "q": "Cf",
+    "hint": "Californium   周期7    3族3A",
+    "a": "カリホルニウム"
+  },
+  {
+    "q": "Es",
+    "hint": "Einsteinium   周期7    3族3A",
+    "a": "アインスタイニウム"
+  },
+  {
+    "q": "Fm",
+    "hint": "Fermium   周期7    3族3A",
+    "a": "フェルミウム"
+  },
+  {
+    "q": "Md",
+    "hint": "Mendelevium   周期7    3族3A",
+    "a": "メンデレビウム"
+  },
+  {
+    "q": "No",
+    "hint": "Nobelium   周期7    3族3A",
+    "a": "ノーベリウム"
+  },
+  {
+    "q": "Lr",
+    "hint": "Lawrencium   周期7    3族3A",
+    "a": "ローレンシウム"
+  },
+  {
+    "q": "Rf",
+    "hint": "Rutherfordium   周期7    3族4",
+    "a": "ラザホージウム"
+  },
+  {
+    "q": "Db",
+    "hint": "Dubnium   周期7    3族5",
+    "a": "ドブニウム"
+  },
+  {
+    "q": "Sg",
+    "hint": "Seaborgium   周期7    3族6",
+    "a": "シーボーギウム"
+  },
+  {
+    "q": "Bh",
+    "hint": "Bohrium   周期7    3族7",
+    "a": "ボーリウム"
+  },
+  {
+    "q": "Hs",
+    "hint": "Hassium   周期7    3族8",
+    "a": "ハッシウム"
+  },
+  {
+    "q": "Mt",
+    "hint": "Meitnerium   周期7    3族9",
+    "a": "マイトネリウム"
+  },
+  {
+    "q": "Ds",
+    "hint": "Darmstadtium   周期7    3族10",
+    "a": "ダームスタチウム"
+  },
+  {
+    "q": "Rg",
+    "hint": "Roentgenium   周期7    3族11",
+    "a": "レントゲニウム"
+  },
+  {
+    "q": "Cn",
+    "hint": "Copernicium   周期7    3族12",
+    "a": "コペルニシウム"
+  },
+  {
+    "q": "Uut",
+    "hint": "Ununtrium   周期7    3族13",
+    "a": "ウンウントリウム"
+  },
+  {
+    "q": "Fl",
+    "hint": "Flerovium   周期7    3族14",
+    "a": "フレロビウム"
+  },
+  {
+    "q": "Uup",
+    "hint": "Ununpentium   周期7    3族15",
+    "a": "ウンウンペンチウム"
+  },
+  {
+    "q": "Lv",
+    "hint": "Livermorium   周期7    3族16",
+    "a": "リバモリウム"
+  },
+  {
+    "q": "Uus",
+    "hint": "Ununseptium   周期7    3族17",
+    "a": "ウンウンセプチウム"
+  },
+  {
+    "q": "Uuo",
+    "hint": "Ununoctium   周期7    3族18",
+    "a": "ウンウンオクチウム"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

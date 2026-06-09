@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高校入試にでる対義語</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>高校入試にでる対義語</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "愛護",
+    "hint": "高校入試にでる対義語",
+    "a": "愛護　　-     虐待"
+  },
+  {
+    "q": "悪意",
+    "hint": "高校入試にでる対義語",
+    "a": "悪意　　-     善意"
+  },
+  {
+    "q": "悪運",
+    "hint": "高校入試にでる対義語",
+    "a": "悪運　　-     幸運"
+  },
+  {
+    "q": "安心",
+    "hint": "高校入試にでる対義語",
+    "a": "安心　　-     不安"
+  },
+  {
+    "q": "安全",
+    "hint": "高校入試にでる対義語",
+    "a": "安全　　-     危険"
+  },
+  {
+    "q": "委細",
+    "hint": "高校入試にでる対義語",
+    "a": "委細　　-     概略"
+  },
+  {
+    "q": "遺失",
+    "hint": "高校入試にでる対義語",
+    "a": "遺失　　-     拾得"
+  },
+  {
+    "q": "以上",
+    "hint": "高校入試にでる対義語",
+    "a": "以上　　-     以下"
+  },
+  {
+    "q": "偉人",
+    "hint": "高校入試にでる対義語",
+    "a": "偉人　　-     凡人"
+  },
+  {
+    "q": "異性",
+    "hint": "高校入試にでる対義語",
+    "a": "異性　　-     同性"
+  },
+  {
+    "q": "一般",
+    "hint": "高校入試にでる対義語",
+    "a": "一般　　-     特殊"
+  },
+  {
+    "q": "緯度",
+    "hint": "高校入試にでる対義語",
+    "a": "緯度　　-     経度"
+  },
+  {
+    "q": "違反",
+    "hint": "高校入試にでる対義語",
+    "a": "違反　　-     遵守"
+  },
+  {
+    "q": "雨季",
+    "hint": "高校入試にでる対義語",
+    "a": "雨季　　-     乾季"
+  },
+  {
+    "q": "運動",
+    "hint": "高校入試にでる対義語",
+    "a": "運動　　-     静止"
+  },
+  {
+    "q": "永遠",
+    "hint": "高校入試にでる対義語",
+    "a": "永遠　　-     瞬間"
+  },
+  {
+    "q": "鋭角",
+    "hint": "高校入試にでる対義語",
+    "a": "鋭角　　-     鈍角"
+  },
+  {
+    "q": "栄転",
+    "hint": "高校入試にでる対義語",
+    "a": "栄転　　-     左遷"
+  },
+  {
+    "q": "鋭敏",
+    "hint": "高校入試にでる対義語",
+    "a": "鋭敏　　-     鈍感"
+  },
+  {
+    "q": "益鳥",
+    "hint": "高校入試にでる対義語",
+    "a": "益鳥　　-     害鳥"
+  },
+  {
+    "q": "延長",
+    "hint": "高校入試にでる対義語",
+    "a": "延長　　-     短縮"
+  },
+  {
+    "q": "往信",
+    "hint": "高校入試にでる対義語",
+    "a": "往信　　-     返信"
+  },
+  {
+    "q": "横断",
+    "hint": "高校入試にでる対義語",
+    "a": "横断　　-     縦断"
+  },
+  {
+    "q": "往復",
+    "hint": "高校入試にでる対義語",
+    "a": "往復　　-     片道"
+  },
+  {
+    "q": "大吉",
+    "hint": "高校入試にでる対義語",
+    "a": "大吉　　-     大凶"
+  },
+  {
+    "q": "温暖",
+    "hint": "高校入試にでる対義語",
+    "a": "温暖　　-     寒冷"
+  },
+  {
+    "q": "音読",
+    "hint": "高校入試にでる対義語",
+    "a": "音読　　-     黙読"
+  },
+  {
+    "q": "開会",
+    "hint": "高校入試にでる対義語",
+    "a": "開会　　-     閉会"
+  },
+  {
+    "q": "開始",
+    "hint": "高校入試にでる対義語",
+    "a": "開始　　-     終了"
+  },
+  {
+    "q": "海上",
+    "hint": "高校入試にでる対義語",
+    "a": "海上　　-     陸上"
+  },
+  {
+    "q": "開放",
+    "hint": "高校入試にでる対義語",
+    "a": "開放　　-     閉鎖"
+  },
+  {
+    "q": "開幕",
+    "hint": "高校入試にでる対義語",
+    "a": "開幕　　-     閉幕"
+  },
+  {
+    "q": "加害",
+    "hint": "高校入試にでる対義語",
+    "a": "加害　　-     被害"
+  },
+  {
+    "q": "拡大",
+    "hint": "高校入試にでる対義語",
+    "a": "拡大　　-     縮小"
+  },
+  {
+    "q": "各論",
+    "hint": "高校入試にでる対義語",
+    "a": "各論　　-     総論"
+  },
+  {
+    "q": "可決",
+    "hint": "高校入試にでる対義語",
+    "a": "可決　　-     否決"
+  },
+  {
+    "q": "過去",
+    "hint": "高校入試にでる対義語",
+    "a": "過去　　-     未来"
+  },
+  {
+    "q": "過失",
+    "hint": "高校入試にでる対義語",
+    "a": "過失　　-     故意"
+  },
+  {
+    "q": "過剰",
+    "hint": "高校入試にでる対義語",
+    "a": "過剰　　-     不足"
+  },
+  {
+    "q": "過度",
+    "hint": "高校入試にでる対義語",
+    "a": "過度　　-     適度"
+  },
+  {
+    "q": "加入",
+    "hint": "高校入試にでる対義語",
+    "a": "加入　　-     脱退"
+  },
+  {
+    "q": "華美",
+    "hint": "高校入試にでる対義語",
+    "a": "華美　　-     質素"
+  },
+  {
+    "q": "過密",
+    "hint": "高校入試にでる対義語",
+    "a": "過密　　-     過疎"
+  },
+  {
+    "q": "歓喜",
+    "hint": "高校入試にでる対義語",
+    "a": "歓喜　　-     悲哀"
+  },
+  {
+    "q": "感情",
+    "hint": "高校入試にでる対義語",
+    "a": "感情　　-     理性"
+  },
+  {
+    "q": "乾燥",
+    "hint": "高校入試にでる対義語",
+    "a": "乾燥　　-     湿潤"
+  },
+  {
+    "q": "簡単",
+    "hint": "高校入試にでる対義語",
+    "a": "簡単　　-     複雑"
+  },
+  {
+    "q": "干潮",
+    "hint": "高校入試にでる対義語",
+    "a": "干潮　　-     満潮"
+  },
+  {
+    "q": "完敗",
+    "hint": "高校入試にでる対義語",
+    "a": "完敗　　-     圧勝"
+  },
+  {
+    "q": "干魃",
+    "hint": "高校入試にでる対義語",
+    "a": "干魃　　-     洪水"
+  },
+  {
+    "q": "完備",
+    "hint": "高校入試にでる対義語",
+    "a": "完備　　-     不備"
+  },
+  {
+    "q": "陥没",
+    "hint": "高校入試にでる対義語",
+    "a": "陥没　　-     隆起"
+  },
+  {
+    "q": "緩慢",
+    "hint": "高校入試にでる対義語",
+    "a": "緩慢　　-     敏速"
+  },
+  {
+    "q": "寛容",
+    "hint": "高校入試にでる対義語",
+    "a": "寛容　　-     厳格"
+  },
+  {
+    "q": "記憶",
+    "hint": "高校入試にでる対義語",
+    "a": "記憶　　-     忘却"
+  },
+  {
+    "q": "既刊",
+    "hint": "高校入試にでる対義語",
+    "a": "既刊　　-     未刊"
+  },
+  {
+    "q": "喜劇",
+    "hint": "高校入試にでる対義語",
+    "a": "喜劇　　-     悲劇"
+  },
+  {
+    "q": "既決",
+    "hint": "高校入試にでる対義語",
+    "a": "既決　　-     未決"
+  },
+  {
+    "q": "起床",
+    "hint": "高校入試にでる対義語",
+    "a": "起床　　-     就寝"
+  },
+  {
+    "q": "奇数",
+    "hint": "高校入試にでる対義語",
+    "a": "奇数　　-     偶数"
+  },
+  {
+    "q": "起点",
+    "hint": "高校入試にでる対義語",
+    "a": "起点　　-     終点"
+  },
+  {
+    "q": "客観",
+    "hint": "高校入試にでる対義語",
+    "a": "客観　　-     主観"
+  },
+  {
+    "q": "給水",
+    "hint": "高校入試にでる対義語",
+    "a": "給水　　-     排水"
+  },
+  {
+    "q": "急性",
+    "hint": "高校入試にでる対義語",
+    "a": "急性　　-     慢性"
+  },
+  {
+    "q": "強固",
+    "hint": "高校入試にでる対義語",
+    "a": "強固　　-     軟弱"
+  },
+  {
+    "q": "共同",
+    "hint": "高校入試にでる対義語",
+    "a": "共同　　-     単独"
+  },
+  {
+    "q": "許可",
+    "hint": "高校入試にでる対義語",
+    "a": "許可　　-     禁止"
+  },
+  {
+    "q": "巨大",
+    "hint": "高校入試にでる対義語",
+    "a": "巨大　　-     微小"
+  },
+  {
+    "q": "拒否",
+    "hint": "高校入試にでる対義語",
+    "a": "拒否　　-     承諾"
+  },
+  {
+    "q": "勤勉",
+    "hint": "高校入試にでる対義語",
+    "a": "勤勉　　-     怠惰"
+  },
+  {
+    "q": "偶然",
+    "hint": "高校入試にでる対義語",
+    "a": "偶然　　-     必然"
+  },
+  {
+    "q": "空腹",
+    "hint": "高校入試にでる対義語",
+    "a": "空腹　　-     満腹"
+  },
+  {
+    "q": "具体",
+    "hint": "高校入試にでる対義語",
+    "a": "具体　　-     抽象"
+  },
+  {
+    "q": "軽視",
+    "hint": "高校入試にでる対義語",
+    "a": "軽視　　-     重視"
+  },
+  {
+    "q": "軽率",
+    "hint": "高校入試にでる対義語",
+    "a": "軽率　　-     慎重"
+  },
+  {
+    "q": "軽薄",
+    "hint": "高校入試にでる対義語",
+    "a": "軽薄　　-     重厚"
+  },
+  {
+    "q": "夏至",
+    "hint": "高校入試にでる対義語",
+    "a": "夏至　　-     冬至"
+  },
+  {
+    "q": "決定",
+    "hint": "高校入試にでる対義語",
+    "a": "決定　　-     未定"
+  },
+  {
+    "q": "原因",
+    "hint": "高校入試にでる対義語",
+    "a": "原因　　-     結果"
+  },
+  {
+    "q": "謙虚",
+    "hint": "高校入試にでる対義語",
+    "a": "謙虚　　-     傲慢"
+  },
+  {
+    "q": "健康",
+    "hint": "高校入試にでる対義語",
+    "a": "健康　　-     病弱"
+  },
+  {
+    "q": "現実",
+    "hint": "高校入試にでる対義語",
+    "a": "現実　　-     理想"
+  },
+  {
+    "q": "建設",
+    "hint": "高校入試にでる対義語",
+    "a": "建設　　-     破壊"
+  },
+  {
+    "q": "権利",
+    "hint": "高校入試にでる対義語",
+    "a": "権利　　-     義務"
+  },
+  {
+    "q": "幸運",
+    "hint": "高校入試にでる対義語",
+    "a": "幸運　　-     不運"
+  },
+  {
+    "q": "高価",
+    "hint": "高校入試にでる対義語",
+    "a": "高価　　-     安価"
+  },
+  {
+    "q": "好況",
+    "hint": "高校入試にでる対義語",
+    "a": "好況　　-     不況"
+  },
+  {
+    "q": "攻撃",
+    "hint": "高校入試にでる対義語",
+    "a": "攻撃　　-     守備"
+  },
+  {
+    "q": "口語",
+    "hint": "高校入試にでる対義語",
+    "a": "口語　　-     文語"
+  },
+  {
+    "q": "孝行",
+    "hint": "高校入試にでる対義語",
+    "a": "孝行　　-     不孝"
+  },
+  {
+    "q": "強情",
+    "hint": "高校入試にでる対義語",
+    "a": "強情　　-     従順"
+  },
+  {
+    "q": "巧遅",
+    "hint": "高校入試にでる対義語",
+    "a": "巧遅　　-     拙速"
+  },
+  {
+    "q": "肯定",
+    "hint": "高校入試にでる対義語",
+    "a": "肯定　　-     否定"
+  },
+  {
+    "q": "高騰",
+    "hint": "高校入試にでる対義語",
+    "a": "高騰　　-     暴落"
+  },
+  {
+    "q": "興奮",
+    "hint": "高校入試にでる対義語",
+    "a": "興奮　　-     沈着"
+  },
+  {
+    "q": "巧妙",
+    "hint": "高校入試にでる対義語",
+    "a": "巧妙　　-     拙劣"
+  },
+  {
+    "q": "公用",
+    "hint": "高校入試にでる対義語",
+    "a": "公用　　-     私用"
+  },
+  {
+    "q": "呼吸",
+    "hint": "高校入試にでる対義語",
+    "a": "呼吸　　-     発散"
+  },
+  {
+    "q": "極楽",
+    "hint": "高校入試にでる対義語",
+    "a": "極楽　　-     地獄"
+  },
+  {
+    "q": "個人",
+    "hint": "高校入試にでる対義語",
+    "a": "個人　　-     団体"
+  },
+  {
+    "q": "固定",
+    "hint": "高校入試にでる対義語",
+    "a": "固定　　-     流動"
+  },
+  {
+    "q": "困難",
+    "hint": "高校入試にでる対義語",
+    "a": "困難　　-     容易"
+  },
+  {
+    "q": "混乱",
+    "hint": "高校入試にでる対義語",
+    "a": "混乱　　-     秩序"
+  },
+  {
+    "q": "採血",
+    "hint": "高校入試にでる対義語",
+    "a": "採血　　-     輸血"
+  },
+  {
+    "q": "債権",
+    "hint": "高校入試にでる対義語",
+    "a": "債権　　-     債務"
+  },
+  {
+    "q": "最大",
+    "hint": "高校入試にでる対義語",
+    "a": "最大　　-     最小"
+  },
+  {
+    "q": "歳入",
+    "hint": "高校入試にでる対義語",
+    "a": "歳入　　-     歳出"
+  },
+  {
+    "q": "雑然",
+    "hint": "高校入試にでる対義語",
+    "a": "雑然　　-     整然"
+  },
+  {
+    "q": "差別",
+    "hint": "高校入試にでる対義語",
+    "a": "差別　　-     平等"
+  },
+  {
+    "q": "賛成",
+    "hint": "高校入試にでる対義語",
+    "a": "賛成　　-     反対"
+  },
+  {
+    "q": "散文",
+    "hint": "高校入試にでる対義語",
+    "a": "散文　　-     韻文"
+  },
+  {
+    "q": "自然",
+    "hint": "高校入試にでる対義語",
+    "a": "自然　　-     人工"
+  },
+  {
+    "q": "質疑",
+    "hint": "高校入試にでる対義語",
+    "a": "質疑　　-     応答"
+  },
+  {
+    "q": "支配",
+    "hint": "高校入試にでる対義語",
+    "a": "支配　　-     従属"
+  },
+  {
+    "q": "自発",
+    "hint": "高校入試にでる対義語",
+    "a": "自発　　-     強制"
+  },
+  {
+    "q": "諮問",
+    "hint": "高校入試にでる対義語",
+    "a": "諮問　　-     答申"
+  },
+  {
+    "q": "集合",
+    "hint": "高校入試にでる対義語",
+    "a": "集合　　-     解散"
+  },
+  {
+    "q": "充実",
+    "hint": "高校入試にでる対義語",
+    "a": "充実　　-     空虚"
+  },
+  {
+    "q": "収入",
+    "hint": "高校入試にでる対義語",
+    "a": "収入　　-     支出"
+  },
+  {
+    "q": "就任",
+    "hint": "高校入試にでる対義語",
+    "a": "就任　　-     離任"
+  },
+  {
+    "q": "熟練",
+    "hint": "高校入試にでる対義語",
+    "a": "熟練　　-     未熟"
+  },
+  {
+    "q": "出場",
+    "hint": "高校入試にでる対義語",
+    "a": "出場　　-     欠場"
+  },
+  {
+    "q": "出発",
+    "hint": "高校入試にでる対義語",
+    "a": "出発　　-     到着"
+  },
+  {
+    "q": "需要",
+    "hint": "高校入試にでる対義語",
+    "a": "需要　　-     供給"
+  },
+  {
+    "q": "消極",
+    "hint": "高校入試にでる対義語",
+    "a": "消極　　-     積極"
+  },
+  {
+    "q": "詳細",
+    "hint": "高校入試にでる対義語",
+    "a": "詳細　　-     簡略"
+  },
+  {
+    "q": "上昇",
+    "hint": "高校入試にでる対義語",
+    "a": "上昇　　-     下降"
+  },
+  {
+    "q": "饒舌",
+    "hint": "高校入試にでる対義語",
+    "a": "饒舌　　-     寡黙"
+  },
+  {
+    "q": "正面",
+    "hint": "高校入試にでる対義語",
+    "a": "正面　　-     背面"
+  },
+  {
+    "q": "勝利",
+    "hint": "高校入試にでる対義語",
+    "a": "勝利　　-     敗北"
+  },
+  {
+    "q": "序盤",
+    "hint": "高校入試にでる対義語",
+    "a": "序盤　　-     終盤"
+  },
+  {
+    "q": "自立",
+    "hint": "高校入試にでる対義語",
+    "a": "自立　　-     依存"
+  },
+  {
+    "q": "自律",
+    "hint": "高校入試にでる対義語",
+    "a": "自律　　-     他律"
+  },
+  {
+    "q": "進化",
+    "hint": "高校入試にでる対義語",
+    "a": "進化　　-     退化"
+  },
+  {
+    "q": "真実",
+    "hint": "高校入試にでる対義語",
+    "a": "真実　　-     虚偽"
+  },
+  {
+    "q": "親切",
+    "hint": "高校入試にでる対義語",
+    "a": "親切　　-     冷淡"
+  },
+  {
+    "q": "進展",
+    "hint": "高校入試にでる対義語",
+    "a": "進展　　-     停滞"
+  },
+  {
+    "q": "親密",
+    "hint": "高校入試にでる対義語",
+    "a": "親密　　-     疎遠"
+  },
+  {
+    "q": "清潔",
+    "hint": "高校入試にでる対義語",
+    "a": "清潔　　-     不潔"
+  },
+  {
+    "q": "成功",
+    "hint": "高校入試にでる対義語",
+    "a": "成功　　-     失敗"
+  },
+  {
+    "q": "精巧",
+    "hint": "高校入試にでる対義語",
+    "a": "精巧　　-     粗雑"
+  },
+  {
+    "q": "生産",
+    "hint": "高校入試にでる対義語",
+    "a": "生産　　-     消費"
+  },
+  {
+    "q": "正常",
+    "hint": "高校入試にでる対義語",
+    "a": "正常　　-     異常"
+  },
+  {
+    "q": "精神",
+    "hint": "高校入試にでる対義語",
+    "a": "精神　　-     肉体"
+  },
+  {
+    "q": "正答",
+    "hint": "高校入試にでる対義語",
+    "a": "正答　　-     誤答"
+  },
+  {
+    "q": "正当",
+    "hint": "高校入試にでる対義語",
+    "a": "正当　　-     不当"
+  },
+  {
+    "q": "精読",
+    "hint": "高校入試にでる対義語",
+    "a": "精読　　-     乱読"
+  },
+  {
+    "q": "清流",
+    "hint": "高校入試にでる対義語",
+    "a": "清流　　-     濁流"
+  },
+  {
+    "q": "絶対",
+    "hint": "高校入試にでる対義語",
+    "a": "絶対　　-     相対"
+  },
+  {
+    "q": "節約",
+    "hint": "高校入試にでる対義語",
+    "a": "節約　　-     浪費"
+  },
+  {
+    "q": "是認",
+    "hint": "高校入試にでる対義語",
+    "a": "是認　　-     否認"
+  },
+  {
+    "q": "潜在",
+    "hint": "高校入試にでる対義語",
+    "a": "潜在　　-     顕在"
+  },
+  {
+    "q": "前進",
+    "hint": "高校入試にでる対義語",
+    "a": "前進　　-     後退"
+  },
+  {
+    "q": "善戦",
+    "hint": "高校入試にでる対義語",
+    "a": "善戦　　-     苦戦"
+  },
+  {
+    "q": "全体",
+    "hint": "高校入試にでる対義語",
+    "a": "全体　　-     部分"
+  },
+  {
+    "q": "先頭",
+    "hint": "高校入試にでる対義語",
+    "a": "先頭　　-     後尾"
+  },
+  {
+    "q": "先輩",
+    "hint": "高校入試にでる対義語",
+    "a": "先輩　　-     後輩"
+  },
+  {
+    "q": "創刊",
+    "hint": "高校入試にでる対義語",
+    "a": "創刊　　-     既刊"
+  },
+  {
+    "q": "総合",
+    "hint": "高校入試にでる対義語",
+    "a": "総合　　-     分析"
+  },
+  {
+    "q": "創造",
+    "hint": "高校入試にでる対義語",
+    "a": "創造　　-     模倣"
+  },
+  {
+    "q": "促進",
+    "hint": "高校入試にでる対義語",
+    "a": "促進　　-     抑制"
+  },
+  {
+    "q": "束縛",
+    "hint": "高校入試にでる対義語",
+    "a": "束縛　　-     開放"
+  },
+  {
+    "q": "粗野",
+    "hint": "高校入試にでる対義語",
+    "a": "粗野　　-     優雅"
+  },
+  {
+    "q": "尊敬",
+    "hint": "高校入試にでる対義語",
+    "a": "尊敬　　-     軽蔑"
+  },
+  {
+    "q": "存続",
+    "hint": "高校入試にでる対義語",
+    "a": "存続　　-     廃止"
+  },
+  {
+    "q": "体言",
+    "hint": "高校入試にでる対義語",
+    "a": "体言　　-     用言"
+  },
+  {
+    "q": "大胆",
+    "hint": "高校入試にでる対義語",
+    "a": "大胆　　-     小心"
+  },
+  {
+    "q": "多額",
+    "hint": "高校入試にでる対義語",
+    "a": "多額　　-     小額"
+  },
+  {
+    "q": "高値",
+    "hint": "高校入試にでる対義語",
+    "a": "高値　　-     安値"
+  },
+  {
+    "q": "妥結",
+    "hint": "高校入試にでる対義語",
+    "a": "妥結　　-     決裂"
+  },
+  {
+    "q": "多作",
+    "hint": "高校入試にでる対義語",
+    "a": "多作　　-     寡作"
+  },
+  {
+    "q": "単一",
+    "hint": "高校入試にでる対義語",
+    "a": "単一　　-     複合"
+  },
+  {
+    "q": "単純",
+    "hint": "高校入試にでる対義語",
+    "a": "単純　　-     複雑"
+  },
+  {
+    "q": "短所",
+    "hint": "高校入試にでる対義語",
+    "a": "短所　　-     長所"
+  },
+  {
+    "q": "淡白",
+    "hint": "高校入試にでる対義語",
+    "a": "淡白　　-     濃厚"
+  },
+  {
+    "q": "暖房",
+    "hint": "高校入試にでる対義語",
+    "a": "暖房　　-     冷房"
+  },
+  {
+    "q": "中央",
+    "hint": "高校入試にでる対義語",
+    "a": "中央　　-     末端"
+  },
+  {
+    "q": "直接",
+    "hint": "高校入試にでる対義語",
+    "a": "直接　　-     間接"
+  },
+  {
+    "q": "直列",
+    "hint": "高校入試にでる対義語",
+    "a": "直列　　-     並列"
+  },
+  {
+    "q": "直行",
+    "hint": "高校入試にでる対義語",
+    "a": "直行　　-     迂回"
+  },
+  {
+    "q": "沈黙",
+    "hint": "高校入試にでる対義語",
+    "a": "沈黙　　-     浮上"
+  },
+  {
+    "q": "追加",
+    "hint": "高校入試にでる対義語",
+    "a": "追加　　-     削除"
+  },
+  {
+    "q": "通読",
+    "hint": "高校入試にでる対義語",
+    "a": "通読　　-     熟読"
+  },
+  {
+    "q": "統一",
+    "hint": "高校入試にでる対義語",
+    "a": "統一　　-     分裂"
+  },
+  {
+    "q": "登校",
+    "hint": "高校入試にでる対義語",
+    "a": "登校　　-     下校"
+  },
+  {
+    "q": "投票",
+    "hint": "高校入試にでる対義語",
+    "a": "投票　　-     開票"
+  },
+  {
+    "q": "動脈",
+    "hint": "高校入試にでる対義語",
+    "a": "動脈　　-     静脈"
+  },
+  {
+    "q": "道理",
+    "hint": "高校入試にでる対義語",
+    "a": "道理　　-     無理"
+  },
+  {
+    "q": "得意",
+    "hint": "高校入試にでる対義語",
+    "a": "得意　　-     苦手"
+  },
+  {
+    "q": "独唱",
+    "hint": "高校入試にでる対義語",
+    "a": "独唱　　-     合唱"
+  },
+  {
+    "q": "特別",
+    "hint": "高校入試にでる対義語",
+    "a": "特別　　-     普通"
+  },
+  {
+    "q": "鈍感",
+    "hint": "高校入試にでる対義語",
+    "a": "鈍感　　-     敏感"
+  },
+  {
+    "q": "内径",
+    "hint": "高校入試にでる対義語",
+    "a": "内径　　-     外径"
+  },
+  {
+    "q": "内職",
+    "hint": "高校入試にでる対義語",
+    "a": "内職　　-     本職"
+  },
+  {
+    "q": "内面",
+    "hint": "高校入試にでる対義語",
+    "a": "内面　　-     外面"
+  },
+  {
+    "q": "内容",
+    "hint": "高校入試にでる対義語",
+    "a": "内容　　-     形式"
+  },
+  {
+    "q": "軟質",
+    "hint": "高校入試にでる対義語",
+    "a": "軟質　　-     硬質"
+  },
+  {
+    "q": "入荷",
+    "hint": "高校入試にでる対義語",
+    "a": "入荷　　-     出荷"
+  },
+  {
+    "q": "入学",
+    "hint": "高校入試にでる対義語",
+    "a": "入学　　-     退学"
+  },
+  {
+    "q": "入場",
+    "hint": "高校入試にでる対義語",
+    "a": "入場　　-     退場"
+  },
+  {
+    "q": "熱帯",
+    "hint": "高校入試にでる対義語",
+    "a": "熱帯　　-     寒帯"
+  },
+  {
+    "q": "年少",
+    "hint": "高校入試にでる対義語",
+    "a": "年少　　-     年長"
+  },
+  {
+    "q": "年末",
+    "hint": "高校入試にでる対義語",
+    "a": "年末　　-     年始"
+  },
+  {
+    "q": "濃縮",
+    "hint": "高校入試にでる対義語",
+    "a": "濃縮　　-     希釈"
+  },
+  {
+    "q": "能動",
+    "hint": "高校入試にでる対義語",
+    "a": "能動　　-     受動"
+  },
+  {
+    "q": "能弁",
+    "hint": "高校入試にでる対義語",
+    "a": "能弁　　-     訥弁"
+  },
+  {
+    "q": "発車",
+    "hint": "高校入試にでる対義語",
+    "a": "発車　　-     停車"
+  },
+  {
+    "q": "発生",
+    "hint": "高校入試にでる対義語",
+    "a": "発生　　-     消滅"
+  },
+  {
+    "q": "反抗",
+    "hint": "高校入試にでる対義語",
+    "a": "反抗　　-     服従"
+  },
+  {
+    "q": "販売",
+    "hint": "高校入試にでる対義語",
+    "a": "販売　　-     購入"
+  },
+  {
+    "q": "必要",
+    "hint": "高校入試にでる対義語",
+    "a": "必要　　-     不要"
+  },
+  {
+    "q": "表層",
+    "hint": "高校入試にでる対義語",
+    "a": "表層　　-     深層"
+  },
+  {
+    "q": "表面",
+    "hint": "高校入試にでる対義語",
+    "a": "表面　　-     裏面"
+  },
+  {
+    "q": "美麗",
+    "hint": "高校入試にでる対義語",
+    "a": "美麗　　-     醜悪"
+  },
+  {
+    "q": "副業",
+    "hint": "高校入試にでる対義語",
+    "a": "副業　　-     本業"
+  },
+  {
+    "q": "富裕",
+    "hint": "高校入試にでる対義語",
+    "a": "富裕　　-     貧困"
+  },
+  {
+    "q": "分解",
+    "hint": "高校入試にでる対義語",
+    "a": "分解　　-     合成"
+  },
+  {
+    "q": "分散",
+    "hint": "高校入試にでる対義語",
+    "a": "分散　　-     集中"
+  },
+  {
+    "q": "平易",
+    "hint": "高校入試にでる対義語",
+    "a": "平易　　-     難解"
+  },
+  {
+    "q": "平日",
+    "hint": "高校入試にでる対義語",
+    "a": "平日　　-     休日"
+  },
+  {
+    "q": "平凡",
+    "hint": "高校入試にでる対義語",
+    "a": "平凡　　-     非凡"
+  },
+  {
+    "q": "便利",
+    "hint": "高校入試にでる対義語",
+    "a": "便利　　-     不便"
+  },
+  {
+    "q": "豊作",
+    "hint": "高校入試にでる対義語",
+    "a": "豊作　　-     凶作"
+  },
+  {
+    "q": "膨張",
+    "hint": "高校入試にでる対義語",
+    "a": "膨張　　-     収縮"
+  },
+  {
+    "q": "豊富",
+    "hint": "高校入試にでる対義語",
+    "a": "豊富　　-     欠乏"
+  },
+  {
+    "q": "保守",
+    "hint": "高校入試にでる対義語",
+    "a": "保守　　-     革新"
+  },
+  {
+    "q": "発端",
+    "hint": "高校入試にでる対義語",
+    "a": "発端　　-     結末"
+  },
+  {
+    "q": "本式",
+    "hint": "高校入試にでる対義語",
+    "a": "本式　　-     略式"
+  },
+  {
+    "q": "満足",
+    "hint": "高校入試にでる対義語",
+    "a": "満足　　-     不満"
+  },
+  {
+    "q": "密集",
+    "hint": "高校入試にでる対義語",
+    "a": "密集　　-     散在"
+  },
+  {
+    "q": "名目",
+    "hint": "高校入試にでる対義語",
+    "a": "名目　　-     実質"
+  },
+  {
+    "q": "明瞭",
+    "hint": "高校入試にでる対義語",
+    "a": "明瞭　　-     曖昧"
+  },
+  {
+    "q": "有益",
+    "hint": "高校入試にでる対義語",
+    "a": "有益　　-     無益"
+  },
+  {
+    "q": "有機",
+    "hint": "高校入試にでる対義語",
+    "a": "有機　　-     無機"
+  },
+  {
+    "q": "優遇",
+    "hint": "高校入試にでる対義語",
+    "a": "優遇　　-     冷遇"
+  },
+  {
+    "q": "有償",
+    "hint": "高校入試にでる対義語",
+    "a": "有償　　-     無償"
+  },
+  {
+    "q": "優勢",
+    "hint": "高校入試にでる対義語",
+    "a": "優勢　　-     劣勢"
+  },
+  {
+    "q": "有名",
+    "hint": "高校入試にでる対義語",
+    "a": "有名　　-     無名"
+  },
+  {
+    "q": "陽気",
+    "hint": "高校入試にでる対義語",
+    "a": "陽気　　-     陰気"
+  },
+  {
+    "q": "洋風",
+    "hint": "高校入試にでる対義語",
+    "a": "洋風　　-     和風"
+  },
+  {
+    "q": "予習",
+    "hint": "高校入試にでる対義語",
+    "a": "予習　　-     復習"
+  },
+  {
+    "q": "与党",
+    "hint": "高校入試にでる対義語",
+    "a": "与党　　-     野党"
+  },
+  {
+    "q": "落第",
+    "hint": "高校入試にでる対義語",
+    "a": "落第　　-     及第"
+  },
+  {
+    "q": "楽観",
+    "hint": "高校入試にでる対義語",
+    "a": "楽観　　-     悲観"
+  },
+  {
+    "q": "利益",
+    "hint": "高校入試にでる対義語",
+    "a": "利益　　-     損害"
+  },
+  {
+    "q": "良質",
+    "hint": "高校入試にでる対義語",
+    "a": "良質　　-     悪質"
+  },
+  {
+    "q": "理論",
+    "hint": "高校入試にでる対義語",
+    "a": "理論　　-     実践"
+  },
+  {
+    "q": "冷静",
+    "hint": "高校入試にでる対義語",
+    "a": "冷静　　-     興奮"
+  },
+  {
+    "q": "連続",
+    "hint": "高校入試にでる対義語",
+    "a": "連続　　-     断続"
+  },
+  {
+    "q": "朗報",
+    "hint": "高校入試にでる対義語",
+    "a": "朗報　　-     悲報"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyDaigakuNihonrekisiNen01</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #2c3e50;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #2c3e50;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #2c3e50;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #2c3e50;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">🎓</span>
+  <h1>EasyDaigakuNihonrekisiNen01</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "石器時代始まる　打製石斧と狩猟採集生活",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "縄文時代がはじまる　縄文時代前期は縄文時代の発展期",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "弥生時代がはじまる　水稲耕作による稲作はじまる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "倭人は百余国にわかれ、一部の国は前漢の楽浪郡に朝貢「漢書」地理志",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "倭の奴国、後漢の光武帝より「漢委奴国王」の金印を賜る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "倭国王「帥升」が生口160人献上（後漢書東夷伝）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "邪馬台国は卑弥呼がおさめている（『魏誌倭人伝』）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "邪馬台国　卑弥呼が魏に使者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "卑弥呼が没し、壱与が女王となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "漢字が伝わる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "古墳時代がはじまる(3世紀後半～)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大和朝廷が国内統一する　有力氏族が連合して成立した政治権力、組織である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "任那に日本府　　倭国の出先統治機関",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "倭の五王の一人・武が、宋に上表文を送り、安東大将軍の称号を賜る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "倭王武（雄略(ﾕｳﾘｬｸ)天皇）宋に遣使",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "筑紫国造磐井の反乱起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "筑紫国造（ツクシノクニノミヤツコ）磐井（イワイ）の乱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "百済の聖明王により、日本に仏教伝来",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "聖徳太子が摂政になる　冠位十二階や十七条憲法を定めるなど天皇を中心とした中央集権国家体制の確立を図った",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "加羅が新羅に滅ぼされる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蘇我馬子、物部守屋を滅ぼす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "隋建国",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蘇我馬子、崇峻天皇を殺害する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "推古天皇が即位する　日本初の女帝である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "聖徳太子、推古天皇の摂政になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "厩戸王（聖徳太子）、摂政就任",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "仏教興隆の詔",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "聖徳太子が斑鳩宮を造営",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "冠位１２階制定される　日本で初めての冠位・位階である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１７条の憲法制定　聖徳太子が作った17条からなる法文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "遣隋使を派遣(小野妹子) 　　 法隆寺建立",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "唐建国",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "聖徳太子没（蘇我馬子が執政となる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "遣唐使を派遣　日本が唐に派遣した使節である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "聖徳太子の子・山背大兄王の一族が斑鳩宮で自殺（蘇我入鹿に攻められる）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大化の改新　645（大化1）年に始められた政治改革 　　蘇我氏宗家滅びる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中大兄皇子と中臣鎌足ら、大極殿で蘇我入鹿を暗殺（乙巳の変）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "改新の詔（中大兄皇子・藤原鎌足）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "班田収受の法を施行",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "出雲大社の神殿を修築",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "百済　滅亡する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "白村江の戦い（中大兄皇子）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日本・百済の連合軍が、唐・新羅連合と、朝鮮半島の白村江で戦い大敗",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大津京遷都（中大兄皇子）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "近江令の制定、庚午年籍",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "庚午年籍施行（初の全国戸籍）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "壬申の乱(大海人皇子 と大友皇子)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "天武天皇即位 ← 大海人皇子",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "富文銭の鋳造（天武天皇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "八色の姓の制定（天武天皇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "飛鳥浄御原令　（あすかきよみはらりょう）飛鳥時代後期に制定された体系的な法典",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "持統天皇が藤原京遷都",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大宝律令制定（文武天皇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山上憶良入唐",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "和同開珎の鋳造（元明天皇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平城京に遷都　　平城京（へいじょうきょう）は、奈良時代の日本の首都",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蓄銭叙位令発布",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "古事記ができる　日本最古の歴史書である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "風土記編纂を命じる（元明天皇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "養老律令(ﾖｳﾛｳﾘﾂﾘｮｳ)制定",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日本書紀編纂（元正天皇）される　日本に伝存する最古の正史",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三世一身の法制定（元正天皇）　墾田の奨励のため三世代までの私有を認めた法令",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "多賀城設置",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "長屋王の変　（藤原兄弟、長屋王を殺す）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤原広嗣(ﾋﾛﾂｸﾞ)の乱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "国分寺・国分尼寺建立の詔（聖武天皇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "墾田永年私財法の制定（聖武天皇）　 墾田（自分で新しく開墾した耕地）の永年私財化を認める法令である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大仏造立の詔（聖武天皇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東大寺大仏の開眼供養",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鑑真来日、律宗を伝える 日本における律宗の開祖",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "聖武上皇死去、遺品を東大寺正倉院に納める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "養老律令施行　　橘奈良麻呂の変",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "万葉集編纂（大伴家持）　日本に現存する最古の和歌集である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤原仲麻呂の乱 （恵美押勝の乱）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "和気清麻呂が道鏡の即位に反する宇佐八幡の信託を報じたため、流罪となる（宇佐八幡宮神託事件）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "長岡京遷都　（桓武天皇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平安京に遷都する　平安城ともいい、現在の京都市中心部に位置した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "坂上田村麻呂を征夷大将軍に任命",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アテルイ降伏　平安時代初期の蝦夷の軍事指導者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "坂上田村麻呂が鎮守府を胆沢城（いさわじょう）に移す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最澄・空海が唐に渡る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最澄帰国（天台宗をはじめる）する　　比叡山・延暦寺",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "空海帰国（真言宗）する　     高野山・金剛峰寺→東寺（教王護国寺）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（藤原）薬子の変 （平城天皇と嵯峨天皇の争い）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "承和の変おこる　平安時代初期に起きた廃太子を伴う政変",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤原良房、摂政就任",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "応天門の変　（応天門炎上謎の変）平安時代前期の貞観8年に起こった政治事件",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤原基経、関白就任",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "阿衡事件　平安時代前期に藤原基経と宇多天皇の間で起こった政治紛争である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "遣唐使の廃止",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "菅原道真、大宰府に左遷 される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "延喜の荘園整理令",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "古今和歌集ができる　平安時代前期の勅撰和歌集　全二十巻",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "醍醐天皇譲位　藤原忠平、摂政となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平将門の乱（承平・天慶の乱）　　平将門が朝廷に反旗を翻し、関東一円を手中に収めた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "承平・天慶の乱（平将門編）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤原純友の乱（承平・天慶の乱）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "宋建国",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "安和の変おこる　（安和2年）に起きた藤原氏による他氏排斥事件",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "尾張国の国司の藤原元命が郡司・百姓らに訴えられる　 尾張国郡司百姓等下文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "枕草子(清少納言)ができる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "源氏物語ができる　平安時代中期に成立した日本の長編物語、小説である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤原道長が摂政になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "刀伊の入寇",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平忠常の乱　（国司に逆らった末、平氏弱体化する）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前九年の役はじまる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平等院鳳凰堂できる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "延久の荘園整理令(後三条天皇)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後三年の役　　平安時代後期の陸奥・出羽（東北地方）を舞台とした戦役である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "白河上皇の院政開始",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤原清衡、中尊寺金色堂建立        →清衡・基衡・秀衡・泰衡",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "保元の乱（平清盛　源義朝）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平治の乱（源義朝負ける）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平清盛、太政大臣に就任　　大輪田泊修築（日宋貿易）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鹿ケ谷の陰謀",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後白河法皇幽閉",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "源頼朝の挙兵（治承・貞永の乱）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "石橋山の戦い（1180年）　　源頼朝と大庭景親ら平氏方との間で行われた戦いである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "富士川の戦い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "以仁王の令旨",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "源頼朝、侍所を設置",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平清盛死去",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "倶利伽羅峠の戦い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一ノ谷の戦い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "屋島の戦い・壇ノ浦の戦い（平氏滅亡）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "源頼朝、全国に守護・地頭を設置",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三世一身の法制定（元正天皇）墾田の奨励のため開墾者から三世代（または本人一代）までの墾田私有を認めた法令",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "守護・地頭設置",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤原泰衡が源義経を殺害　　源頼朝、奥州を平定",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "将軍源頼朝が征夷大将軍就任　鎌倉幕府ひらく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "比企能員の乱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北条時政、執権就任（執権政治）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "新古今和歌集編纂（後鳥羽上皇・藤原定家）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チンギス・ハン、モンゴル帝国建国",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "源実朝、公暁に殺される　　　　 北条義時、公暁を殺す(源氏正統断絶)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "承久の乱(北条義時/政子) 六波羅探題設置　　後鳥羽上皇、隠岐に流される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "御成敗（貞永）式目制定（北条泰時）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "宝治(ﾎｳｼﾞ)合戦",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "引付衆設置",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フビライ・ハン、元建国",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文永の役（元寇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "弘安の役（元寇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "霜月騒動（しもつきそうどう）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平頼綱の乱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "永仁の徳政令",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "文保和談",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後醍醐天皇即位",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "正中の変(後醍醐天皇、倒幕計画失敗)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "元弘の変(後醍醐天皇、倒幕計画失敗)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後醍醐天皇が隠岐に流される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鎌倉幕府滅亡",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後醍醐天皇が隠岐を脱出　　新田義貞が鎌倉を攻め落とす（鎌倉幕府滅亡）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "建武の新政",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後醍醐天皇による建武の新政開始　二条河原に落書が掲示される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北条高時の子・時行が乱を起こす（中先代の乱）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後醍醐天皇→隠岐から脱出、再度倒幕",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "南北朝時代へ（後醍醐天皇吉野へ→南朝）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "足利尊氏、征夷大将軍に就任",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "湊川の戦い　　足利尊氏が征夷大将軍となる（室町幕府の開始）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "天竜寺：尊氏が後醍醐天皇の死を悼んで建立",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "天竜寺船を元に派遣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "四条畷の戦い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "足利直義・直冬が尊氏に叛旗を翻す（観応の擾乱（～52））",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "観応(ｶﾝﾉｳ)の擾乱(ｼﾞｮｳﾗﾝ)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "尊氏、直義を殺害　　半済令",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "足利義満、征夷大将軍に就任",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "明建国（朱元璋：太祖・洪武帝）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "足利義満、花の御所を造営(室町へ移る)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "明徳の乱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "李氏朝鮮建国（李成桂）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "南朝の後小松天皇が、北朝の後亀山天皇に神器を返還（南北朝合一）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "足利義満、鹿苑寺金閣造営 　　北山文化",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "応永の乱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日明貿易開始　日本が中国の明朝と行った貿易",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "足利義満が初めて遣明船を派遣（使者は商人の肥富某と僧祖阿）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "勘合貿易開始",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "対馬に朝鮮兵が来航し、九州探題がこれを撃退（応永の外寇）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "正長の土一揆　農民が起こした初めての一揆",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "琉球王朝成立(中山 尚巴志が統一)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "播磨の土一揆",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "幕府が、関東管領足利持氏を征討（永享の乱）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "結城合戦",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "赤松満祐が、将軍義教を殺害（嘉吉の乱）　嘉吉の徳政一揆",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "応仁の乱がはじまる　応仁元年から文明9年（1477年）までの約10年間続いた内乱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山城の国一揆",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "加賀の一向一揆",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "足利義政、慈照寺銀閣造営 　　東山文化",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

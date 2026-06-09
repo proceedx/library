@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>a03-rekidai-amerika-daitoryo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>a03-rekidai-amerika-daitoryo</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "ジョージ・ワシントン　　アメリカ建国の父，初代大統領である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョン・アダムズ　　ワシントン政権下の初代副大統領　　アメリカ海軍創設者であるアメリカ合衆国建国の父の中でも最も影響力があった者の一人とされている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジェファーソン　　独立宣言起草者　　　博学者であるジェファーソンは数ある得意分野の中でも園芸学者、政治指導者、建築家、考古学者、古生物学者、発明家およびバージニア大学の創設者として傑出していた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジェームズ・マディスン　　合衆国憲法の父　　ジョン・ジェイおよびアレクサンダー・ハミルトンと共にザ・フェデラリストを共同執筆し「アメリカ合衆国憲法の父」と見なされる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジェームズ・モンロー　　モンロー主義　　　モンローは建国の父として最後の世代であり、大統領を続けて輩出してバージニア王朝と言われた時代　ならびに　共和主義者世代から大統領になったことでも最後の人だった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アダムズ　　２代大統領の息子　　外交官としてアダムズは多くの国際交渉に臨み、国務長官としてモンロー主義の確立に尽力した歴史家の多くは彼が米国史上で偉大な外交官の一人であったと見なす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンドリュー・ジャクソン　　はじめての庶民出身の大統領　　　ジャクソンは民主党所属としては初の大統領であり、貴族生まれでない最初の大統領",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マーティン・ヴァン・ビューレン　　1837年に大統領に就任したが、同年の大恐慌など、在任中におきた数回の恐慌に対していずれも無策で目立った成果を上げられなかった　　また、相当な贅沢好きも災いし人気を落とした",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハリソン　　68歳で大統領に就任したもの、在任期間わずか1ヶ月で死去した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "タイラー　　彼は独立宣言署名後に生まれた二人目の大統領、および大統領の死に際して副大統領から昇格した最初の大統領",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポーク　　ポークは最後の南北戦争前における「強い」大統領であった彼は外交政策での成功で有名である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "テーラー　　テイラーは「オールド・ラフ・アンド・レディ」（老暴れん坊）として知られており、陸軍での40年の経歴を持つ米英戦争、ブラック・ホーク戦争、第二次セミノール戦争、米墨戦争に従軍した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミラード・フィルモア　　日本史においては、ペリーを日本に派遣した大統領として記憶されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランクリン・ピアース　　外見と人当たりの良い個性で多くの友人を作ったものの、私生活においては恵まれなかった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブキャナン　　18世紀生まれの最後の大統領であり、結婚しなかった唯一の大統領である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エイブラハム・リンカーン　　「奴隷解放の父」、有名なゲティスバーグ演説、南北戦争による国家分裂の危機を乗り越えたことなどが評価され、歴代大統領ランキングではしばしば“最も偉大な大統領”の一人に挙げられる　　奴隷解放宣言，暗殺される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンドリュー・ジョンソン　　リンカーン大統領の暗殺に続いてジョンソンは南北戦争後の4年間、合衆国のレコンストラクションを統括した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ユリシーズ・グラント　　アメリカ史上初の陸軍士官出身の大統領南北戦争で戦った将軍の中では南軍のロバート・E・リー将軍と並んで（またそのリー将軍を最終的に破ったことで）最も有名な将軍の一人である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラザフォード・ヘイズ　　ヘイズは能力主義の政府、人種に関係ない平等な待遇、および教育による改良を信じた彼は1877年の鉄道大ストライキを鎮圧するよう連邦軍に命じ、レコンストラクションが終了すると連邦軍の南部撤退を命じた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ガーフィールド　　暗殺された二人目の大統領[1]であり、初の左利きの大統領でもあり、大統領に選出された唯一の現職下院議員でもある[2]在任はウィリアム・ハリソンに次いで短く6ヶ月と15日に過ぎなかった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チェスター・A・アーサー　　アーサーの第一の実績はペンドルトン公務員改革法の議会通過であった本法の成立により、アーサーは「行政の父 The Father of Civil Service」と呼ばれるようになり、多くの歴史家から肯定的な評価を得るようになった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グロバー・クリーブランド　　クリーブランドはその正直さ、独立性、高潔さおよび古典的自由主義の原則への関与により称賛を勝ち得た[2]改革者として彼は根気よく政治腐敗、およびボス政治に反対した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベンジャミン・ハリソン　　ハリソンの政権で成立した法律で特筆すべきが「マッキンリー関税法」と「シャーマン購銀法」であるマッキンリー関税法により輸入品に対する関税は50パーセント以上に引き上げられ、国内市場は国産製品の土壇場になり逆に外国製品の価格は高騰した　　９代大統領の孫",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グロバー・クリーブランド　　歴代大統領で唯一、「連続ではない2期」を務めた大統領であるまた、歴代アメリカ大統領の中で唯一、ホワイトハウスで結婚式を行った",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・マッキンリー　　マッキンリーは大不況 (1873年-1896年)特に1893年恐慌後、回復に向けて国を率い、金本位制を導入した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セオドア・ルーズベルト　　ポーツマス条約の仲介をした",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・タフト　　第27代アメリカ合衆国大統領および第10代連邦最高裁判所首席裁判官両方の職を務めた唯一の人物である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウッドロウ・ウィルソン　　国際連盟設立の提唱した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウォレン・ハーディング　　外交政策では、ハーディングは国際連盟への加入を拒み、ドイツおよびオーストリアと単独講和条約と結び、第一次世界大戦を正式に終了させた  ワシントン会議の提唱",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カルビン・クーリッジ　　クーリッジは景気循環に自然の経過をたどらせて自由市場に干渉することを試みなかった最後の大統領だった　　彼の大統領職中にアメリカ合衆国は著しい経済成長を遂げ、その期間は「狂騒の20年代」と呼ばれたクーリッジは税を低減させるだけでなく国債の縮小にも有能だった　　彼は「必要以上の税を集めるのは合法的強盗である」との名言を残している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハーバート・フーヴァー　　『星条旗』をアメリカ合衆国の国歌として正式採用する法案に署名した　　世界恐慌下の大統領である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランクリン・ルーズベルト　　世界恐慌、第二次世界大戦時のアメリカ大統領であり、20世紀前半の国際政治における中心人物の1人である\nニューディール政策，第二次世界大戦の主役",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハリー・S・トルーマン　　第二次世界大戦の終了から冷戦の始まり、国際連合、CIA、NSA、国防総省の創設および朝鮮戦争などに関与した  広島，長崎に原爆を投下，太平洋戦争終わらせる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ドワイト・D・アイゼンハワー　　アメリカの軍人、政治家 連合国遠征軍最高司令部 (Supreme Headquarters Allied Expeditionary Force) 最高司令官、陸軍参謀総長、NATO軍最高司令官、第34代大統領を歴任   第二次世界大戦の英雄である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョン・F・ケネディ　　キューバ危機をすくった人気のある大統領　　ダラスで暗殺される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リンドン・ジョンソン　　内政においては達成した政治課題が多く、ジョンソン政権は同じ民主党のルーズベルト政権と並んで「大きな政府」による社会福祉や教育制度改革、人権擁護を積極的に推進した政権となった　　しかし外交では、ケネディ政権から引き継いだベトナム戦争への軍事介入を拡大させ、国内に激しい反戦運動と世論の分裂をもたらした",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リチャード・ニクソン　　ベトナム戦争からのアメリカ軍の完全撤退を実現し、当時冷戦下にあったソビエト連邦とのデタント（緊張緩和）、中華人民共和国との国交樹立など平和主義に尽力　　また、環境保護局の設置などを通じ公害の抑制や環境保護にも力を注ぎ、「最後のニューディーラー」とも呼ばれた　　しかし、ウォーターゲート事件により1974年に辞職に追い込まれ、任期中に辞任した唯一のアメリカ大統領となった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジェラルド・R・フォード　　ニクソンの辞任により就任　　なおフォードは、1974年11月18日に現職のアメリカ大統領として初めて日本を公式訪問し、昭和天皇と謁見した　　また1975年には天皇として初訪米した昭和天皇を迎えている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジミー・カーター　　2002年ノーベル平和賞受賞　　人権外交を展開した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロナルド・レーガン　　「強いアメリカ」をスローガンとした",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョージ・H・W・ブッシュ　　湾岸戦争をおこした大統領である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ビル・クリントン　　教育を重視し、学校へのPC導入など、IT教育を推進した　　その他、就学前児童の早期教育プログラムの拡大、移民の英語教育の充実を図った　　後期には「強いドル」政策を実行し、他国の通貨に対してドル高を維持し、海外からの投資を呼び込んだ　　また、アル・ゴアの提唱した「情報スーパーハイウェイ構想」を推進し、IT産業の育成と、IT化による生産性向上（ニューエコノミー）を押し進めた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョージ・W・ブッシュ　　アフガン派兵、イラク戦争　　同時多発テロ事件が発生した",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バラク・オバマ　　初の黒人系大統領となった",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

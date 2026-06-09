@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>明　　　　　治</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #8b6914;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #8b6914;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #8b6914;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #8b6914;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📜</span>
+  <h1>明　　　　　治</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "1869",
+    "hint": "明　　　　　治",
+    "a": "東京遷都"
+  },
+  {
+    "q": "1869",
+    "hint": "明　　　　　治",
+    "a": "戊辰戦争が終わる(五稜郭の戦い)"
+  },
+  {
+    "q": "1869",
+    "hint": "明　　　　　治",
+    "a": "版籍奉還　　諸大名から天皇への領地（版図）と領民（戸籍）の返還"
+  },
+  {
+    "q": "1871",
+    "hint": "明　　　　　治",
+    "a": "郵便制度がはじまる"
+  },
+  {
+    "q": "1871",
+    "hint": "明　　　　　治",
+    "a": "廃藩置県　　藩を廃止して地方統治を中央管下の府と県に一元化した行政改革"
+  },
+  {
+    "q": "1829",
+    "hint": "明　　　　　治",
+    "a": "琉球王朝成立(中山 尚巴志が統一)"
+  },
+  {
+    "q": "1871",
+    "hint": "明　　　　　治",
+    "a": "日清修好条規調印"
+  },
+  {
+    "q": "1871",
+    "hint": "明　　　　　治",
+    "a": "岩倉具視ら海外渡航"
+  },
+  {
+    "q": "1872",
+    "hint": "明　　　　　治",
+    "a": "琉球藩設置"
+  },
+  {
+    "q": "1872",
+    "hint": "明　　　　　治",
+    "a": "福沢諭吉「学問のすすめ」　慶應義塾の創設者"
+  },
+  {
+    "q": "1873",
+    "hint": "明　　　　　治",
+    "a": "太陽暦の採用"
+  },
+  {
+    "q": "1873",
+    "hint": "明　　　　　治",
+    "a": "徴兵令（→血税一揆）"
+  },
+  {
+    "q": "1873",
+    "hint": "明　　　　　治",
+    "a": "キリスト教解禁となる"
+  },
+  {
+    "q": "1873",
+    "hint": "明　　　　　治",
+    "a": "地租改正条例公布　地租改正法（上諭と地代の3%を地租とする旨を記載した1ヶ条"
+  },
+  {
+    "q": "1873",
+    "hint": "明　　　　　治",
+    "a": "明治六年の政変（征韓派)下野"
+  },
+  {
+    "q": "1874",
+    "hint": "明　　　　　治",
+    "a": "民撰議院設立建白書提出          （板垣退助・江藤新平ら）"
+  },
+  {
+    "q": "1874",
+    "hint": "明　　　　　治",
+    "a": "佐賀の乱（江藤新平）→神風連の乱・秋月の乱・萩の乱(1876)"
+  },
+  {
+    "q": "1874",
+    "hint": "明　　　　　治",
+    "a": "各地で地租改正反対一揆が起こる"
+  },
+  {
+    "q": "1874",
+    "hint": "明　　　　　治",
+    "a": "立志社設立（板垣退助ら）"
+  },
+  {
+    "q": "1875",
+    "hint": "明　　　　　治",
+    "a": "愛国社設立（板垣退助ら）"
+  },
+  {
+    "q": "1875",
+    "hint": "明　　　　　治",
+    "a": "樺太・千島交換条約締結"
+  },
+  {
+    "q": "1875",
+    "hint": "明　　　　　治",
+    "a": "江華島事件　　江華島付近において日本と朝鮮の間で起こった武力衝突事件"
+  },
+  {
+    "q": "1875",
+    "hint": "明　　　　　治",
+    "a": "新聞紙条例・讒謗律制定"
+  },
+  {
+    "q": "1876",
+    "hint": "明　　　　　治",
+    "a": "廃刀令"
+  },
+  {
+    "q": "1876",
+    "hint": "明　　　　　治",
+    "a": "日朝修好条規（江華条約）調印"
+  },
+  {
+    "q": "1877",
+    "hint": "明　　　　　治",
+    "a": "地租税率改正（３％→２．５％）"
+  },
+  {
+    "q": "1877",
+    "hint": "明　　　　　治",
+    "a": "西南戦争　　明治初期の一連の士族反乱のうち最大規模で日本最後の内戦となっ"
+  },
+  {
+    "q": "1879",
+    "hint": "明　　　　　治",
+    "a": "沖縄県設置"
+  },
+  {
+    "q": "1880",
+    "hint": "明　　　　　治",
+    "a": "国会期成同盟結成"
+  },
+  {
+    "q": "1880",
+    "hint": "明　　　　　治",
+    "a": "集会条例公布"
+  },
+  {
+    "q": "1881",
+    "hint": "明　　　　　治",
+    "a": "国会開設の詔"
+  },
+  {
+    "q": "1881",
+    "hint": "明　　　　　治",
+    "a": "北海道開拓使官有物払い下げ事件"
+  },
+  {
+    "q": "1881",
+    "hint": "明　　　　　治",
+    "a": "板垣退助、自由党結成"
+  },
+  {
+    "q": "1882",
+    "hint": "明　　　　　治",
+    "a": "大隈重信、立憲改進党結成"
+  },
+  {
+    "q": "1882",
+    "hint": "明　　　　　治",
+    "a": "福島事件　　福島県の自由党員・農民が県令三島通庸の圧政に反抗した事件"
+  },
+  {
+    "q": "1882",
+    "hint": "明　　　　　治",
+    "a": "伊藤博文、憲法調査のため渡航"
+  },
+  {
+    "q": "1882",
+    "hint": "明　　　　　治",
+    "a": "大隈重信、立憲改進党結成"
+  },
+  {
+    "q": "1883",
+    "hint": "明　　　　　治",
+    "a": "鹿鳴館完成する　外国からの賓客や外交官を接待するために明治政府によって建てられた社交場"
+  },
+  {
+    "q": "1884",
+    "hint": "明　　　　　治",
+    "a": "秩父事件(秩父困民党）埼玉県秩父郡の農民が政府に対して起こした武装蜂起事件"
+  },
+  {
+    "q": "1885",
+    "hint": "明　　　　　治",
+    "a": "内閣制度創設（初代内閣総理大臣　伊藤博文）"
+  },
+  {
+    "q": "1886",
+    "hint": "明　　　　　治",
+    "a": "ノルマントン号事件　　「ノーマントン」が、紀州沖（和歌山県潮岬沖）で座礁沈没した事から始まった紛争事件"
+  },
+  {
+    "q": "1886",
+    "hint": "明　　　　　治",
+    "a": "大同団結運動　帝国議会開設に備えた自由民権運動各派による統一運動"
+  },
+  {
+    "q": "1887",
+    "hint": "明　　　　　治",
+    "a": "三大事件建白運動　　大同団結運動と並んで自由民権運動の最後を飾る運動"
+  },
+  {
+    "q": "1887",
+    "hint": "明　　　　　治",
+    "a": "保安条例公布"
+  },
+  {
+    "q": "1888",
+    "hint": "明　　　　　治",
+    "a": "枢密院設置　　枢密院は天皇の諮詢に応じて重要の国務を審議する最高顧問府"
+  },
+  {
+    "q": "1888",
+    "hint": "明　　　　　治",
+    "a": "学制発布　　日本最初の近代的学校制度を定めた教育法令"
+  },
+  {
+    "q": "1888",
+    "hint": "明　　　　　治",
+    "a": "鉄道開通（新橋・横浜）"
+  },
+  {
+    "q": "1889",
+    "hint": "明　　　　　治",
+    "a": "富岡製糸場操業開始　群馬県富岡市にあった日本初の機械製糸工場である"
+  },
+  {
+    "q": "1889",
+    "hint": "明　　　　　治",
+    "a": "大日本帝国憲法発布　近代立憲主義に基づく日本の憲法"
+  },
+  {
+    "q": "1890",
+    "hint": "明　　　　　治",
+    "a": "教育勅語発布　　教育の基本方針を示す明治天皇の勅語"
+  },
+  {
+    "q": "1890",
+    "hint": "明　　　　　治",
+    "a": "第一衆議院議員選挙実施"
+  },
+  {
+    "q": "1890",
+    "hint": "明　　　　　治",
+    "a": "第一回帝国議会が開かれる"
+  },
+  {
+    "q": "1891",
+    "hint": "明　　　　　治",
+    "a": "大津事件　　ロシア帝国皇太子・ニコライが津田三蔵に突然斬りつけられ負傷した、暗殺未遂事件"
+  },
+  {
+    "q": "1891",
+    "hint": "明　　　　　治",
+    "a": "足尾銅山鉱毒事件が問題となる"
+  },
+  {
+    "q": "1894",
+    "hint": "明　　　　　治",
+    "a": "日英通商航海条約締結（治外法権撤廃）　　　陸奥宗光"
+  },
+  {
+    "q": "1894",
+    "hint": "明　　　　　治",
+    "a": "甲午農民戦争（東学党の乱：朝鮮）"
+  },
+  {
+    "q": "1894",
+    "hint": "明　　　　　治",
+    "a": "日清戦争　　朝鮮半島（李氏朝鮮）をめぐる大日本帝国と大清国の戦争"
+  },
+  {
+    "q": "1895",
+    "hint": "明　　　　　治",
+    "a": "下関条約締結　春帆楼（しゅんぱんろう）で締結された、日清戦争後の講和会議における条約であ"
+  },
+  {
+    "q": "1895",
+    "hint": "明　　　　　治",
+    "a": "三国干渉　　フランス、ドイツ帝国、ロシア帝国の三国が日本に対して行った勧告"
+  },
+  {
+    "q": "1898",
+    "hint": "明　　　　　治",
+    "a": "隈板内閣成立"
+  },
+  {
+    "q": "1900",
+    "hint": "明　　　　　治",
+    "a": "北清事変（義和団事件）　　中国清朝末期の動乱である"
+  },
+  {
+    "q": "1901",
+    "hint": "明　　　　　治",
+    "a": "八幡製鉄所操業開始"
+  },
+  {
+    "q": "1902",
+    "hint": "明　　　　　治",
+    "a": "日英同盟締結"
+  },
+  {
+    "q": "1904",
+    "hint": "明　　　　　治",
+    "a": "日露戦争　大日本帝国とロシア帝国との間で朝鮮半島とロシア主権下の満洲南部を主戦場として発生した戦争"
+  },
+  {
+    "q": "1905",
+    "hint": "明　　　　　治",
+    "a": "ポーツマス条約締結　日露講和条約ともいわれる"
+  },
+  {
+    "q": "1905",
+    "hint": "明　　　　　治",
+    "a": "「吾輩は猫である」夏目漱石"
+  },
+  {
+    "q": "1909",
+    "hint": "明　　　　　治",
+    "a": "伊藤博文・安重根に殺害される"
+  },
+  {
+    "q": "1910",
+    "hint": "明　　　　　治",
+    "a": "大逆事件(幸徳秋水ら捕らえられる)"
+  },
+  {
+    "q": "1910",
+    "hint": "明　　　　　治",
+    "a": "韓国併合（朝鮮総督府設置）"
+  },
+  {
+    "q": "1911",
+    "hint": "明　　　　　治",
+    "a": "日米通商航海条約締結（関税自主権回復）　小村寿太郎"
+  },
+  {
+    "q": "1911",
+    "hint": "明　　　　　治",
+    "a": "辛亥革命（孫文）"
+  },
+  {
+    "q": "1912",
+    "hint": "明　　　　　治",
+    "a": "中華民国建国（孫文）"
+  },
+  {
+    "q": "1912",
+    "hint": "明　　　　　治",
+    "a": "明治天皇が死去"
+  },
+  {
+    "q": "1912",
+    "hint": "大　　　　正",
+    "a": "大正時代の始まり"
+  },
+  {
+    "q": "1912",
+    "hint": "大　　　　正",
+    "a": "第一次護憲運動　尾崎行雄・犬養毅→1913桂太郎退陣"
+  },
+  {
+    "q": "1914",
+    "hint": "大　　　　正",
+    "a": "第一次世界大戦が始まる"
+  },
+  {
+    "q": "1915",
+    "hint": "大　　　　正",
+    "a": "対華２１ヶ条の要求 　日本が中華民国政府とおこなった外交交渉において提示した21か条の要求と希望のこと"
+  },
+  {
+    "q": "1916",
+    "hint": "大　　　　正",
+    "a": "吉野作造「民本主義」を唱える"
+  },
+  {
+    "q": "1917",
+    "hint": "大　　　　正",
+    "a": "ロシア革命が起こる"
+  },
+  {
+    "q": "1918",
+    "hint": "大　　　　正",
+    "a": "シベリア出兵"
+  },
+  {
+    "q": "1918",
+    "hint": "大　　　　正",
+    "a": "富山に米騒動"
+  },
+  {
+    "q": "1614",
+    "hint": "大　　　　正",
+    "a": "原敬内閣成立"
+  },
+  {
+    "q": "1918",
+    "hint": "大　　　　正",
+    "a": "第一次世界大戦が終わる"
+  },
+  {
+    "q": "1919",
+    "hint": "大　　　　正",
+    "a": "関税自主権回復"
+  },
+  {
+    "q": "1920",
+    "hint": "大　　　　正",
+    "a": "国際連盟に加入"
+  },
+  {
+    "q": "1922",
+    "hint": "大　　　　正",
+    "a": "全国水平者創立"
+  },
+  {
+    "q": "1923",
+    "hint": "大　　　　正",
+    "a": "関東大震災"
+  },
+  {
+    "q": "1924",
+    "hint": "大　　　　正",
+    "a": "第二次護憲運動    加藤高明内閣成立（～1932まで政党政治）"
+  },
+  {
+    "q": "1925",
+    "hint": "大　　　　正",
+    "a": "普通選挙法が成立"
+  },
+  {
+    "q": "1925",
+    "hint": "大　　　　正",
+    "a": "ラジオ放送が始まる"
+  },
+  {
+    "q": "1925",
+    "hint": "大　　　　正",
+    "a": "治安維持法制定"
+  },
+  {
+    "q": "1926",
+    "hint": "大　　　　正",
+    "a": "昭和天皇が即位"
+  },
+  {
+    "q": "1926",
+    "hint": "大　　　　正",
+    "a": "大正時代の終わり"
+  },
+  {
+    "q": "1929",
+    "hint": "昭　　　　和",
+    "a": "世界恐慌　1929年に始まった世界的規模で起きた経済恐慌"
+  },
+  {
+    "q": "1931",
+    "hint": "昭　　　　和",
+    "a": "満州事変　満州（今の中国東北区）でおきた日本軍と中国軍との武力衝突"
+  },
+  {
+    "q": "1932",
+    "hint": "昭　　　　和",
+    "a": "五・一五事件　海軍急進派青年将校を中心とするクーデタ事件"
+  },
+  {
+    "q": "1933",
+    "hint": "昭　　　　和",
+    "a": "国際連盟を脱退"
+  },
+  {
+    "q": "1935",
+    "hint": "昭　　　　和",
+    "a": "普通選挙法制定"
+  },
+  {
+    "q": "1936",
+    "hint": "昭　　　　和",
+    "a": "ニ・ニ六事件　陸軍の皇道派青年将校が武力による政治改革を目ざし、下士官・兵を率いて起こしたクーデター事件"
+  },
+  {
+    "q": "1930",
+    "hint": "昭　　　　和",
+    "a": "ロンドン会議（ロンドン海軍軍縮会議）"
+  },
+  {
+    "q": "1931",
+    "hint": "昭　　　　和",
+    "a": "柳条湖事件（満州事変）"
+  },
+  {
+    "q": "1931",
+    "hint": "昭　　　　和",
+    "a": "リットン調査団調査"
+  },
+  {
+    "q": "1932",
+    "hint": "昭　　　　和",
+    "a": "満州国建国宣言"
+  },
+  {
+    "q": "1937",
+    "hint": "昭　　　　和",
+    "a": "日中戦争が始まる（盧溝橋事件）　　　南京事件"
+  },
+  {
+    "q": "1938",
+    "hint": "昭　　　　和",
+    "a": "国家総動員法"
+  },
+  {
+    "q": "1939",
+    "hint": "昭　　　　和",
+    "a": "第二次世界大戦が始まる"
+  },
+  {
+    "q": "1940",
+    "hint": "昭　　　　和",
+    "a": "日独伊三国同盟"
+  },
+  {
+    "q": "1940",
+    "hint": "昭　　　　和",
+    "a": "大政翼賛会"
+  },
+  {
+    "q": "1941",
+    "hint": "昭　　　　和",
+    "a": "日ソ中立条約"
+  },
+  {
+    "q": "1941",
+    "hint": "昭　　　　和",
+    "a": "太平洋戦争が始まる"
+  },
+  {
+    "q": "1641",
+    "hint": "昭　　　　和",
+    "a": "５・１５事件"
+  },
+  {
+    "q": "1942",
+    "hint": "昭　　　　和",
+    "a": "ミッドウェー海戦で敗れる"
+  },
+  {
+    "q": "1944",
+    "hint": "昭　　　　和",
+    "a": "サイパン島陥落→本土空襲激化"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "2月　ヤルタ会談（米・英・ソ）"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "3月　東京大空襲"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "4月　沖縄本土にて会戦"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "5月　ドイツ降伏"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "7月　ポツダム会談→ポツダム宣言"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "８．　６　広島に原爆投下"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "８．　８　ソ連、対日宣戦布告"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "８．　９　長崎に原爆投下"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "ポツダム宣言受諾"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "８．１５　天皇　戦争終結の詔書放送"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "９．　２　降伏文書に調印（ミズーリ号）"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "ＧＨＱ設置（マッカーサー）　財閥解体　婦人参政権の実現"
+  },
+  {
+    "q": "1945",
+    "hint": "昭　　　　和",
+    "a": "国際連合発足"
+  },
+  {
+    "q": "1946",
+    "hint": "昭　　　　和",
+    "a": "天皇人間宣言"
+  },
+  {
+    "q": "1946",
+    "hint": "昭　　　　和",
+    "a": "農地改革　GHQの指揮の下、日本政府によって行われた農地の所有制度の改革"
+  },
+  {
+    "q": "1946",
+    "hint": "昭　　　　和",
+    "a": "新選挙法による総選挙（女性参政権）"
+  },
+  {
+    "q": "1946",
+    "hint": "昭　　　　和",
+    "a": "極東裁判開廷      （極東国際軍事裁判：東京裁判）"
+  },
+  {
+    "q": "1946",
+    "hint": "昭　　　　和",
+    "a": "日本国憲法公布（１１．３）"
+  },
+  {
+    "q": "1946",
+    "hint": "昭　　　　和",
+    "a": "天皇の人間宣言　　天皇裕仁が「新日本建設に関する詔書」（年頭の詔書）によって、自らの神格性を否定した宣言"
+  },
+  {
+    "q": "1947",
+    "hint": "昭　　　　和",
+    "a": "教育基本法・学校教育法　　　　労働基準法・独占禁止法"
+  },
+  {
+    "q": "1948",
+    "hint": "昭　　　　和",
+    "a": "朝鮮が分裂         （朝鮮民主主義人民共和国・大韓民国）"
+  },
+  {
+    "q": "1949",
+    "hint": "昭　　　　和",
+    "a": "中華人民共和国が成立（毛沢東）     （中国が分裂　中華民国→台湾）"
+  },
+  {
+    "q": "1949",
+    "hint": "昭　　　　和",
+    "a": "湯川秀樹がノーベル賞受賞"
+  },
+  {
+    "q": "1950",
+    "hint": "昭　　　　和",
+    "a": "朝鮮戦争が始まる"
+  },
+  {
+    "q": "1950",
+    "hint": "昭　　　　和",
+    "a": "警察予備隊設置　　（現在の陸上自衛隊）"
+  },
+  {
+    "q": "1951",
+    "hint": "昭　　　　和",
+    "a": "サンフランシスコ平和条約調印"
+  },
+  {
+    "q": "1951",
+    "hint": "昭　　　　和",
+    "a": "日米安全保障条約調印"
+  },
+  {
+    "q": "1952",
+    "hint": "昭　　　　和",
+    "a": "保安隊設置　　現在の陸上自衛隊の前身に当たる"
+  },
+  {
+    "q": "1953",
+    "hint": "昭　　　　和",
+    "a": "朝鮮戦争が休戦"
+  },
+  {
+    "q": "1953",
+    "hint": "昭　　　　和",
+    "a": "テレビ放送が始まる"
+  },
+  {
+    "q": "1954",
+    "hint": "昭　　　　和",
+    "a": "第五福竜丸、ビキニ水爆実験で被爆"
+  },
+  {
+    "q": "1954",
+    "hint": "昭　　　　和",
+    "a": "自衛隊発足"
+  },
+  {
+    "q": "1955",
+    "hint": "昭　　　　和",
+    "a": "バンドン会議（アジア・アフリカ会議）"
+  },
+  {
+    "q": "1956",
+    "hint": "昭　　　　和",
+    "a": "ソ連と国交回復　　　　日本、国際連合に加盟"
+  },
+  {
+    "q": "1960",
+    "hint": "昭　　　　和",
+    "a": "日米新安全保障条約・地位協定調印　　安保闘争が起こる"
+  },
+  {
+    "q": "1964",
+    "hint": "昭　　　　和",
+    "a": "東海道新幹線が開通　　東京オリンピックが開催される"
+  },
+  {
+    "q": "1964",
+    "hint": "昭　　　　和",
+    "a": "東京オリンピック"
+  },
+  {
+    "q": "1965",
+    "hint": "昭　　　　和",
+    "a": "日韓基本条約調印　　戦前の両国関係の清算や戦後補償についての取り決め"
+  },
+  {
+    "q": "1968",
+    "hint": "昭　　　　和",
+    "a": "小笠原諸島が返還される"
+  },
+  {
+    "q": "1970",
+    "hint": "昭　　　　和",
+    "a": "日本万国博覧会"
+  },
+  {
+    "q": "1972",
+    "hint": "昭　　　　和",
+    "a": "札幌オリンピック"
+  },
+  {
+    "q": "1972",
+    "hint": "昭　　　　和",
+    "a": "日中共同声明調印"
+  },
+  {
+    "q": "1972",
+    "hint": "昭　　　　和",
+    "a": "沖縄返還"
+  },
+  {
+    "q": "1973",
+    "hint": "昭　　　　和",
+    "a": "第一次石油危機（第四次中東戦争）"
+  },
+  {
+    "q": "1976",
+    "hint": "昭　　　　和",
+    "a": "ロッキード事件　　田中角栄元首相が逮捕される"
+  },
+  {
+    "q": "1978",
+    "hint": "昭　　　　和",
+    "a": "日中平和友好条約調印"
+  },
+  {
+    "q": "1988",
+    "hint": "昭　　　　和",
+    "a": "リクルート事件"
+  },
+  {
+    "q": "1989",
+    "hint": "平成",
+    "a": "昭和天皇崩御　　平成がはじまる"
+  },
+  {
+    "q": "1990",
+    "hint": "平成",
+    "a": "バブル経済崩壊　　投機によって資産価格が高騰し実態に伴っていない経済であった"
+  },
+  {
+    "q": "1989",
+    "hint": "平成",
+    "a": "消費税実施"
+  },
+  {
+    "q": "1991",
+    "hint": "平成",
+    "a": "湾岸戦争が起こる"
+  },
+  {
+    "q": "1992",
+    "hint": "平成",
+    "a": "ＰＫＯ法成立　　 正式名称は　国際連合平和維持活動等に対する協力に関する法律"
+  },
+  {
+    "q": "1992",
+    "hint": "平成",
+    "a": "国連環境開発会議（地球サミット）で　　「リオ」宣言が採択される。"
+  },
+  {
+    "q": "1993",
+    "hint": "平成",
+    "a": "５５年体制が終わる"
+  },
+  {
+    "q": "1993",
+    "hint": "平成",
+    "a": "環境基本法制定　　　　（リオ宣言を受けて細川内閣が制定）"
+  },
+  {
+    "q": "1995",
+    "hint": "平成",
+    "a": "阪神淡路大震災/地下鉄サリン事件"
+  },
+  {
+    "q": "1997",
+    "hint": "平成",
+    "a": "京都議定書が議決される。"
+  },
+  {
+    "q": "2000",
+    "hint": "平成",
+    "a": "沖縄サミット開催"
+  },
+  {
+    "q": "2001",
+    "hint": "平成",
+    "a": "9.11　アメリカ同時多発テロ事件"
+  },
+  {
+    "q": "2002",
+    "hint": "平成",
+    "a": "ピョンヤン宣言"
+  },
+  {
+    "q": "2003",
+    "hint": "平成",
+    "a": "米英、イラク攻撃"
+  },
+  {
+    "q": "2004",
+    "hint": "平成",
+    "a": "自衛隊、イラクへ派遣"
+  },
+  {
+    "q": "2009",
+    "hint": "平成",
+    "a": "オバマ第44代米合衆国大統領に就任"
+  },
+  {
+    "q": "2012",
+    "hint": "平成",
+    "a": "3.11　東日本大震災"
+  },
+  {
+    "q": "1992",
+    "hint": "平成",
+    "a": "国連環境開発会議（地球サミット）で　　「リオ」宣言が採択される。"
+  },
+  {
+    "q": "1993",
+    "hint": "平成",
+    "a": "環境基本法制定　　　（リオ宣言を受けて細川内閣が制定）"
+  },
+  {
+    "q": "1997",
+    "hint": "平成",
+    "a": "京都議定書が議決される　　第3回（地球温暖化防止京都会議、COP3）で同月11日に採択された、気候変動枠組条約に関する議定書"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

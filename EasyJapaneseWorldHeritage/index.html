@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyJapaneseWorldHeritage</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #27ae60;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #27ae60;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #27ae60;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #27ae60;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">🏛️</span>
+  <h1>EasyJapaneseWorldHeritage</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "奈良県　世界遺産登録　法隆寺地域の仏教建造物（ほうりゅうじちいきのぶっきょうけんぞうぶつ）は、奈良県生駒郡斑鳩町にある法隆寺および法起寺の建造物から構成されるユネスコの世界遺産（文化遺産）である。\nこの遺産には法隆寺の建造物47棟と法起寺の三重塔を加えた48棟が含まれる。法隆寺をはじめとするこの地域の仏教建築物は聖徳太子と縁が深く、中国の六朝時代の建築の影響を多大に受けている。特に、法隆寺の西院伽藍は、建築年代に諸説あるが世界最古の木造建築として国際的にも著名である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "兵庫県　世界遺産登録　姫路城（ひめじじょう）は、播磨国飾東郡姫路（兵庫県姫路市）にあった日本の城である。別名を白鷺城（はくろじょう・しらさぎじょう。詳細は名称の由来と別名を参照）という。江戸時代初期に建てられた天守や櫓等の主要建築物が現存し、建築物は国宝や重要文化財、城跡は国の特別史跡に指定されている　　この他に、ユネスコの世界遺産に登録や日本100名城などに選定されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "京都府　滋賀県　世界遺産登録　古都京都の文化財（こときょうとのぶんかざい）は、京都府京都市・宇治市、滋賀県大津市の１７か所の寺社で構成されるユネスコの世界遺産（文化遺産）である。1994年に日本で5件目の世界遺産として登録された。よく間違われるが、京都市自体は世界遺産では無い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "岐阜県　富山県　世界遺産登録　白川郷・五箇山の合掌造り集落[1]（しらかわごう・ごかやまのがっしょうづくりしゅうらく）は、飛越地方の白川郷と五箇山にある合掌造りの集落群である。1995年12月9日にユネスコの世界遺産（文化遺産）に登録され、日本では6件目の世界遺産となった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "広島県　世界遺産登録　原爆ドーム（げんばくドーム、英: Atomic Bomb Dome）の名で知られる広島平和記念碑（ひろしまへいわきねんひ、英: Hiroshima Peace Memorial）は、日本の広島市に投下された原子爆弾の惨禍を今に伝える記念碑（被爆建造物）である。元は広島県物産陳列館として開館し、原爆投下当時は広島県産業奨励館と呼ばれていた。ユネスコの世界遺産（文化遺産）に登録されており、「二度と同じような悲劇が起こらないように」との戒めや願いをこめて、特に負の世界遺産と呼ばれている。",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "広島県　世界遺産登録　厳島神社（いつくしまじんじゃ、嚴島神社）は、広島県廿日市市の厳島（宮島）にある神社。式内社（名神大社）、安芸国一宮。旧社格は官幣中社で、現在は神社本庁の別表神社。神紋は「三つ盛り二重亀甲に剣花菱」。古くは「伊都岐島神社」とも記された。全国に約500社ある厳島神社の総本社である。ユネスコの世界文化遺産に「厳島神社」として登録されている。",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "奈良県　世界遺産登録　古都奈良の文化財（ことならのぶんかざい）は、奈良県奈良市にある寺院などから構成される世界遺産（文化遺産）である。1998年12月2日に京都市で開催されたユネスコ世界遺産委員会で、日本で9件目の世界遺産（文化遺産）として登録された",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "栃木県　世界遺産登録　日光の社寺（にっこうのしゃじ）は、栃木県日光市にある寺社などから構成されるユネスコの世界遺産である。日光山内（にっこうさんない）、二社一寺（にしゃいちじ）とも称される。",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "沖縄県　世界遺産登録　琉球王国のグスク及び関連遺産群（りゅうきゅうおうこくのグスクおよびかんれんいさんぐん）は、沖縄本島南部を中心に点在するグスクなどの琉球王国の史跡群から構成されるユネスコの世界遺産（文化遺産）である。2000年に日本で11件目の世界遺産として登録された。",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "和歌山県　奈良県三重県　世界遺産登録　紀伊山地の霊場と参詣道（きいさんちのれいじょうとさんけいみち）は、和歌山県・奈良県・三重県にまたがる3つの霊場（吉野・大峰、熊野三山、高野山）と参詣道（熊野参詣道、大峯奥駈道、高野山町石道）を登録対象とする世界遺産（文化遺産）。2004年7月7日に登録された。",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "島根県　世界遺産登録　石見銀山（いわみぎんざん）は、島根県大田市にある、戦国時代後期から江戸時代前期にかけて最盛期を迎えた日本最大の銀山（現在は閉山）である。上述の最盛期に日本は世界の銀の約3分の1を産出したとも推定されるが、当銀山産出の銀がそのかなりの部分を占めていたという　　大森銀山（おおもりぎんざん）とも呼ばれ、江戸時代初期は佐摩銀山（さまぎんざん）と呼ばれた。明治期以降は銅などの鉱物が主に採鉱された。",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "岩手県　世界遺産登録　平泉（ひらいずみ）は、岩手県南西部にある古くからの地名であり、現在の平泉町の中心部にあたる\nこの地域一帯には、平安時代末期、奥州藤原氏が栄えた時代の寺院や遺跡群が多く残り、そのうち5件が「平泉―仏国土（浄土）を表す建築・庭園及び考古学的遺跡群―」の名で、2011年（平成23年）6月26日（現地時間：6月25日）にユネスコの世界遺産リストに登録された",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "静岡県　山梨県　世界遺産登録　「富士山-信仰の対象と芸術の源泉」[注釈 1]（ふじさん-しんこうのたいしょうとげいじゅつのげんせん）は、2013年にUNESCOの世界遺産リストに登録された日本の世界遺産である。静岡県と山梨県にまたがる日本最高峰の富士山は、古来富士信仰が育まれた霊峰であるとともに、葛飾北斎の富嶽三十六景などに代表される芸術上の主要な題材として、日本国内のみならず国際的にも大きな影響を及ぼした景観を形成している。",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "群馬県　世界遺産登録　富岡製糸場と絹産業遺産群（とみおかせいしじょうときぬさんぎょういさんぐん、Tomioka Silk Mill and Related Sitesは、群馬県富岡市の富岡製糸場、および伊勢崎市、藤岡市、下仁田町の2市1町に点在する養蚕関連の文化財によって構成される世界遺産暫定リスト記載物件である。2007年1月にいわゆる近代化遺産として日本で最初に暫定リストに含まれた物件であり　　日本の近代化への寄与にとどまらず、絹産業の国際的技術交流および技術革新を伝える文化遺産として2013年1月に世界遺産センターに推薦書が提出された。2014年6月に第38回世界遺産委員会（ドーハ）において、世界遺産へ正式に登録された",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鹿児島県　世界遺産登録　屋久島（やくしま）は、鹿児島県の大隅半島南南西約60kmの海上に位置する島。熊毛郡屋久島町に属し、近隣の種子島や口永良部島などと共に大隅諸島を形成する。より南方にトカラ列島と南西諸島が位置する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "青森県　秋田県　世界遺産登録　白神山地（しらかみさんち）は、青森県の南西部から秋田県北西部にかけて広がっている標高1,000m級の山地（山岳地帯）のことをいう。白神山地は、屋久島とならんで1993年（平成5）12月、日本で初めてのユネスコ世界遺産（自然遺産）に登録された。そこには「人の影響をほとんど受けていない原生的なブナ天然林が世界最大級の規模で分布」（世界遺産登録理由）している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北海道　世界遺産登録　知床（しれとこ）は、日本にある世界遺産登録物件。\n2005年（平成17年）に南アフリカ共和国ダーバンで行われた第29回ユネスコ世界遺産委員会で登録された",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東京都　世界遺産登録　小笠原諸島の自然（おがさわらしょとうのしぜん）では、東京都小笠原村に属する小笠原諸島の自然の特徴について説明する。小笠原諸島を構成する島々はこれまで一度も大陸や大きな島と陸続きになったことがない大洋島で、亜熱帯の気候の中で独自の生態系が育まれてきた。現在、小笠原諸島内の多くの地域は小笠原国立公園に指定され、またこれまで人間から受けた影響が極めて少ないため、原生の自然が保たれている南硫黄島に関しては南硫黄島原生自然環境保全地域に指定されている。その独自の生態系が高く評価された結果、小笠原諸島は2011年に世界遺産の自然遺産に登録された",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

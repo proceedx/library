@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高校入試-古文重要単語    あ行</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #8b6914;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #8b6914;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #8b6914;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #8b6914;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📜</span>
+  <h1>高校入試-古文重要単語    あ行</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "あいなし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "つまらない　　おもしろくない"
+  },
+  {
+    "q": "あからさまなり",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "ほんのすこし"
+  },
+  {
+    "q": "あく",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "満足する"
+  },
+  {
+    "q": "あさまし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "意外だ　　情けない"
+  },
+  {
+    "q": "あし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "悪い　　卑しい"
+  },
+  {
+    "q": "あした",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "朝"
+  },
+  {
+    "q": "あそぶ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "詩歌･音楽を楽しむ"
+  },
+  {
+    "q": "あぢきなし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "つまらない　　にがにがしい"
+  },
+  {
+    "q": "あな",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "ああ　　あら"
+  },
+  {
+    "q": "あはれ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "しみじみとした趣"
+  },
+  {
+    "q": "あまた",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "たくさん"
+  },
+  {
+    "q": "あやし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "不思議だ　　卑しい"
+  },
+  {
+    "q": "あらまほし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "そうありたい　　好ましい"
+  },
+  {
+    "q": "あり",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "存在する"
+  },
+  {
+    "q": "ありがたし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "めったにない"
+  },
+  {
+    "q": "いかで",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "どうして"
+  },
+  {
+    "q": "いかなる",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "どういう　　どのような"
+  },
+  {
+    "q": "いかに",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "なぜ"
+  },
+  {
+    "q": "いざ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "さあ"
+  },
+  {
+    "q": "いたづら",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "むなしい　　むだだ　　役に立たない"
+  },
+  {
+    "q": "いづ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "出る"
+  },
+  {
+    "q": "いづこ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "どこ"
+  },
+  {
+    "q": "いつしか",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "いつの間にか"
+  },
+  {
+    "q": "いづれ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "どこ"
+  },
+  {
+    "q": "いと",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "とても　　非常に"
+  },
+  {
+    "q": "いとど",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "いよいよ　　ますます"
+  },
+  {
+    "q": "いとほし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "気の毒だ"
+  },
+  {
+    "q": "いにしへ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "昔"
+  },
+  {
+    "q": "いぬ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "行ってしまう　　去る　　死ぬ"
+  },
+  {
+    "q": "いはく",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "言うことには"
+  },
+  {
+    "q": "いまはむかし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "今となっては昔のことだが"
+  },
+  {
+    "q": "いみじ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "大変だ　　すばらしい"
+  },
+  {
+    "q": "いらふ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "答える"
+  },
+  {
+    "q": "うし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "つらい"
+  },
+  {
+    "q": "うしろめたし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "心配だ　　不安だ"
+  },
+  {
+    "q": "うす",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "死ぬ"
+  },
+  {
+    "q": "うたてし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "なさけない"
+  },
+  {
+    "q": "うつくし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "かわいい"
+  },
+  {
+    "q": "うとし",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "よく知らない"
+  },
+  {
+    "q": "うれふ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "心配する"
+  },
+  {
+    "q": "え～打ち消し",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "～できない"
+  },
+  {
+    "q": "おきつ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "命令する"
+  },
+  {
+    "q": "おきな",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "老人"
+  },
+  {
+    "q": "おくる",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "先立たれる　　生き残る"
+  },
+  {
+    "q": "おこたる",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "病気が治る"
+  },
+  {
+    "q": "おこなふ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "仏道修行をする"
+  },
+  {
+    "q": "おどろく",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "目を覚ます"
+  },
+  {
+    "q": "おのづから",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "自然に　　ひとりでに"
+  },
+  {
+    "q": "おのれ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "自分　私"
+  },
+  {
+    "q": "おはす",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "いらっしゃる"
+  },
+  {
+    "q": "おほかた",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "一般に"
+  },
+  {
+    "q": "おぼしめす",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "お思いになる"
+  },
+  {
+    "q": "おほす",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "おっしゃる"
+  },
+  {
+    "q": "おぼゆ",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "思われる"
+  },
+  {
+    "q": "おろかなり",
+    "hint": "高校入試-古文重要単語    あ行",
+    "a": "いいかげんだ"
+  },
+  {
+    "q": "かかる",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "このような"
+  },
+  {
+    "q": "かぎりなし",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "この上ない　　最高だ"
+  },
+  {
+    "q": "かく",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "このように"
+  },
+  {
+    "q": "かげ",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "光"
+  },
+  {
+    "q": "かしこし",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "おそれおおい　　恐ろしい"
+  },
+  {
+    "q": "かしづく",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "大切に育てる"
+  },
+  {
+    "q": "かた",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "方向　　方法　　時期"
+  },
+  {
+    "q": "かたし",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "難しい"
+  },
+  {
+    "q": "かたち",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "姿顔だち　　様子"
+  },
+  {
+    "q": "かたはらいたし",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "みっともない　　恥かしい"
+  },
+  {
+    "q": "かたへ",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "仲間"
+  },
+  {
+    "q": "かたみに",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "互いに"
+  },
+  {
+    "q": "かづく",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "ほうびを与える　　水にもぐる"
+  },
+  {
+    "q": "かど",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "才能"
+  },
+  {
+    "q": "かなし",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "かわいい"
+  },
+  {
+    "q": "～がり",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "～のところへ"
+  },
+  {
+    "q": "かる",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "離れる　　遠ざかる"
+  },
+  {
+    "q": "き",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "～た（過去）"
+  },
+  {
+    "q": "きこしめす",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "お聞きになる"
+  },
+  {
+    "q": "きこゆ",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "申し上げる"
+  },
+  {
+    "q": "ぐす",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "連れて行く"
+  },
+  {
+    "q": "くだる",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "都から地方へ行く"
+  },
+  {
+    "q": "くちをし",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "残念だ"
+  },
+  {
+    "q": "けう",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "珍しい"
+  },
+  {
+    "q": "けしき",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "様子　　態度　　表情"
+  },
+  {
+    "q": "げに",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "なるほど"
+  },
+  {
+    "q": "けはひ",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "雰囲気　　態度"
+  },
+  {
+    "q": "けむ",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "～ただろう"
+  },
+  {
+    "q": "けり",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "～た（過去）　～だなあ"
+  },
+  {
+    "q": "こ",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "これ"
+  },
+  {
+    "q": "ここち",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "気持ち"
+  },
+  {
+    "q": "こころうし",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "つらい　　不愉快だ"
+  },
+  {
+    "q": "こころなし",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "思いやりがない"
+  },
+  {
+    "q": "こと",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "言葉"
+  },
+  {
+    "q": "ごとし",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "～ようだ（たとえ）"
+  },
+  {
+    "q": "ことわり",
+    "hint": "高校入試-古文重要単語    か行",
+    "a": "筋道　　道理"
+  },
+  {
+    "q": "さ",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "そのように"
+  },
+  {
+    "q": "さうざうし",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "物足りない"
+  },
+  {
+    "q": "さうなし",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "比べるものがない　　素晴らしい"
+  },
+  {
+    "q": "さうらふ",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "お仕え申し上げる"
+  },
+  {
+    "q": "さがなし",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "たちが悪い"
+  },
+  {
+    "q": "さとし",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "賢い"
+  },
+  {
+    "q": "さま",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "様子"
+  },
+  {
+    "q": "さらなり",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "言うまでもない"
+  },
+  {
+    "q": "さらに",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "決して絶対に"
+  },
+  {
+    "q": "さらば",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "それならば"
+  },
+  {
+    "q": "さりとて",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "そうかといって"
+  },
+  {
+    "q": "さる（連体詞）",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "立派な"
+  },
+  {
+    "q": "じ",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "～しないつもりだ"
+  },
+  {
+    "q": "しのぶ",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "我慢する　　懐かしむ"
+  },
+  {
+    "q": "しばし",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "しばらく"
+  },
+  {
+    "q": "しむ",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "～せる（使役）"
+  },
+  {
+    "q": "しるし",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "ご利益　　効き目　証拠"
+  },
+  {
+    "q": "す",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "する"
+  },
+  {
+    "q": "ず",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "～ない（打ち消し）"
+  },
+  {
+    "q": "すさまじ",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "興ざめだ"
+  },
+  {
+    "q": "すなはち",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "すぐに　　ただちに"
+  },
+  {
+    "q": "すべ",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "方法　　手段"
+  },
+  {
+    "q": "せうそこ",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "手紙　　手紙を書くこと"
+  },
+  {
+    "q": "そうす",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "申し上げる"
+  },
+  {
+    "q": "そこら",
+    "hint": "高校入試-古文重要単語    さ行",
+    "a": "たくさん"
+  },
+  {
+    "q": "たがふ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "違う　　さからう"
+  },
+  {
+    "q": "たぐひ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "同類　　種類　　仲間"
+  },
+  {
+    "q": "たてまつる",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "さしあげる"
+  },
+  {
+    "q": "～だに",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "せめて…だけでも"
+  },
+  {
+    "q": "たのむ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "あてにする　　信頼する"
+  },
+  {
+    "q": "たまはる",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "いただく"
+  },
+  {
+    "q": "たまふ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "お与えになる"
+  },
+  {
+    "q": "ためし",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "例　　手本"
+  },
+  {
+    "q": "たり",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "～た（完了）　　～ている（存続）"
+  },
+  {
+    "q": "ちぎり",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "約束"
+  },
+  {
+    "q": "ちご",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "幼児"
+  },
+  {
+    "q": "つ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "～た（完了）"
+  },
+  {
+    "q": "つか(う)まつる",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "おつかえ申し上げる"
+  },
+  {
+    "q": "つきづきし",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "ふさわしい"
+  },
+  {
+    "q": "つごもり",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "月末"
+  },
+  {
+    "q": "つつむ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "遠慮する　　隠す"
+  },
+  {
+    "q": "つとめて",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "早朝"
+  },
+  {
+    "q": "つゆ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "少しも　　全然"
+  },
+  {
+    "q": "つれづれ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "退屈だ"
+  },
+  {
+    "q": "て（手）",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "手　　手下部下　　文字筆跡　　手段"
+  },
+  {
+    "q": "～で",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "～ないで"
+  },
+  {
+    "q": "とかく",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "とにかく　　あれやこれやと"
+  },
+  {
+    "q": "とし",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "早い"
+  },
+  {
+    "q": "としごろ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "長年"
+  },
+  {
+    "q": "～とて",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "～と言って　　～と思って"
+  },
+  {
+    "q": "とみ",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "急急ぎ"
+  },
+  {
+    "q": "ども",
+    "hint": "高校入試-古文重要単語    た行",
+    "a": "けれども"
+  },
+  {
+    "q": "なかなか",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "かえってむしろ"
+  },
+  {
+    "q": "ながむ",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "物思いに沈みながらぼんやり見る"
+  },
+  {
+    "q": "な～そ",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "～するな"
+  },
+  {
+    "q": "など",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "どうしてなぜ"
+  },
+  {
+    "q": "なにがし",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "どこそこだれそれ"
+  },
+  {
+    "q": "なほ",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "いっそう　　やはり"
+  },
+  {
+    "q": "なほざり",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "いいかげんおろそか"
+  },
+  {
+    "q": "なり",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "～だ（断定）　　～にいる"
+  },
+  {
+    "q": "なんぢ",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "おまえ（対等とか目下の人に使う）"
+  },
+  {
+    "q": "な(ん)でふ",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "どうして（反語）"
+  },
+  {
+    "q": "～にあらず",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "～ではない"
+  },
+  {
+    "q": "にはか",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "急に"
+  },
+  {
+    "q": "ぬ",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "～た（完了）"
+  },
+  {
+    "q": "ねんごろなり",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "親切である"
+  },
+  {
+    "q": "ねんず",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "我慢する"
+  },
+  {
+    "q": "の",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "～が"
+  },
+  {
+    "q": "のたまふ",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "おっしゃる"
+  },
+  {
+    "q": "ののしる",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "大騒ぎする"
+  },
+  {
+    "q": "～のみ",
+    "hint": "高校入試-古文重要単語    な行",
+    "a": "～だけ"
+  },
+  {
+    "q": "ば",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "もし～ならば"
+  },
+  {
+    "q": "ばかり",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "ぐらい　　だけ"
+  },
+  {
+    "q": "はしたなし",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "決まりが悪い"
+  },
+  {
+    "q": "はた",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "やはり　　それともあるいは"
+  },
+  {
+    "q": "はづかし",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "立派だ"
+  },
+  {
+    "q": "はな",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "梅の花　　桜の花"
+  },
+  {
+    "q": "はべり",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "～です～ます"
+  },
+  {
+    "q": "～ばや",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "～したい"
+  },
+  {
+    "q": "ひねもす",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "一日中"
+  },
+  {
+    "q": "ふみ",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "書物　　手紙"
+  },
+  {
+    "q": "べし",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "～にちがいない（強い推量）　　～つもりだ（強い意志）"
+  },
+  {
+    "q": "ほい",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "本来の目的　　本来の意志"
+  },
+  {
+    "q": "ほど",
+    "hint": "高校入試-古文重要単語    は行",
+    "a": "身分　　時間"
+  },
+  {
+    "q": "まうづ",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "お参りする　　参上する"
+  },
+  {
+    "q": "まし",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "～だろうに"
+  },
+  {
+    "q": "まじ",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "～しないつもりだ"
+  },
+  {
+    "q": "まほし",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "～たい（希望）"
+  },
+  {
+    "q": "～ままに",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "～の通りに　　～にまかせて"
+  },
+  {
+    "q": "まめなり",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "まじめだ"
+  },
+  {
+    "q": "まらうと",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "客"
+  },
+  {
+    "q": "まゐる",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "参上する　　召し上がる"
+  },
+  {
+    "q": "みかど",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "天皇"
+  },
+  {
+    "q": "みゆ",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "見える　　感じられる"
+  },
+  {
+    "q": "む（ん）",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "～だろう（推量）"
+  },
+  {
+    "q": "むげなり",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "身分が低い　ひどい"
+  },
+  {
+    "q": "むつかし",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "わずらわしい不快だ"
+  },
+  {
+    "q": "めでたし",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "すばらしい"
+  },
+  {
+    "q": "ものぐるほし",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "気が変になりそうだ"
+  },
+  {
+    "q": "ものす",
+    "hint": "高校入試-古文重要単語    ま行",
+    "a": "ある　　いる　　来る"
+  },
+  {
+    "q": "やうやう",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "だんだん"
+  },
+  {
+    "q": "やがて",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "すぐに　　そのまま"
+  },
+  {
+    "q": "～やは",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "～（であろう）か、いやない"
+  },
+  {
+    "q": "やまぎは",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "空の、山に接する部分"
+  },
+  {
+    "q": "やむごとなし",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "大切である　　重大である"
+  },
+  {
+    "q": "ゆかし",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "行きたい　　見たい　　聞きたい"
+  },
+  {
+    "q": "ゆゆし",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "不吉だ　　立派だ"
+  },
+  {
+    "q": "ゆゑ",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "理由　　～のために"
+  },
+  {
+    "q": "よし",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "理由"
+  },
+  {
+    "q": "よしなし",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "しかたがない　　くだらない"
+  },
+  {
+    "q": "よすが",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "手段方法"
+  },
+  {
+    "q": "よむ",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "詩歌を作る"
+  },
+  {
+    "q": "～より",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "～によって（手段、方法を表す）"
+  },
+  {
+    "q": "よろづ",
+    "hint": "高校入試-古文重要単語    や行",
+    "a": "すべて　　いろいろ"
+  },
+  {
+    "q": "り",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "～た（完了）　　～ている（存続）"
+  },
+  {
+    "q": "れい",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "いつもふだん"
+  },
+  {
+    "q": "わざ",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "行為　　おこない"
+  },
+  {
+    "q": "わびし",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "つらい"
+  },
+  {
+    "q": "わらは",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "子供"
+  },
+  {
+    "q": "われ",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "わたくし"
+  },
+  {
+    "q": "ゐる",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "すわる"
+  },
+  {
+    "q": "をかし",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "趣がある"
+  },
+  {
+    "q": "をし",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "かわいい　　いとしい"
+  },
+  {
+    "q": "をりふし",
+    "hint": "高校入試-古文重要単語    ら・わ行",
+    "a": "季節"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

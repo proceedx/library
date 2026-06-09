@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>紀元後1901年 ～  現　在</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #8b6914;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #8b6914;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #8b6914;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #8b6914;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📜</span>
+  <h1>紀元後1901年 ～  現　在</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "1901",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "第１回ノーベル賞　物理学、化学、医学生理学、文学、平和、経済学の6分野で顕著な功績を残した人物に贈られる"
+  },
+  {
+    "q": "1903",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ロシアが満州を占領"
+  },
+  {
+    "q": "1903",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "アメリカのライト兄弟が飛行機を発明"
+  },
+  {
+    "q": "1904",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "日露戦争（～1905）起こる　大日本帝国とロシア帝国との間で朝鮮半島とロシア主権下の満洲南部を主戦場として発生した戦争"
+  },
+  {
+    "q": "1905",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ロシアで血の日曜日事件"
+  },
+  {
+    "q": "1905",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "孫文らが中国革命同盟会を結成"
+  },
+  {
+    "q": "1905",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ポーツマス条約　アメリカ合衆国大統領セオドア・ルーズベルトの斡旋によって日本とロシア帝国との間で結ばれた日露戦争の講和条約"
+  },
+  {
+    "q": "1905",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ベンガル分割令　1905年にインド副王カーゾン卿によって出された法令"
+  },
+  {
+    "q": "1907",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "イギリス･フランス･ロシアの三国協商が成立"
+  },
+  {
+    "q": "1907",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "アメリカで日本移民制限法が成立"
+  },
+  {
+    "q": "1911",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "辛亥革命　辛亥の年に勃発し，清朝を打倒して中華民国を樹立した中国の革命"
+  },
+  {
+    "q": "1911",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ノルウェーのアムンゼンが南極を探検"
+  },
+  {
+    "q": "1912",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "中華民国建国（清が滅びる）"
+  },
+  {
+    "q": "1912",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "イギリスのスコットが南極に到達"
+  },
+  {
+    "q": "1914",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "サラエボ事件起こる"
+  },
+  {
+    "q": "1914",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "第一次世界大戦が始まる（～1918）"
+  },
+  {
+    "q": "1914",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "マナマ運河が開通"
+  },
+  {
+    "q": "1915",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "日本が中国に二十一か条要求　第一次世界大戦中、日本が中華民国政府とおこなった外交交渉において提示した21か条の要"
+  },
+  {
+    "q": "1915",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ドイツのアインシュタインが一般相対性理論を完成"
+  },
+  {
+    "q": "1917",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ロシア革命（三月革命・十一月革命）"
+  },
+  {
+    "q": "1917",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "文学革命　1917年に始まる中国の文学革新運動"
+  },
+  {
+    "q": "1919",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "中国で五・四運動起こる　ヴェルサイユ条約の結果に不満を抱き発生した中華民国時の北京から全国に広がった抗日、反帝国主義を掲げる大衆運動"
+  },
+  {
+    "q": "1919",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "中国国民党が発足"
+  },
+  {
+    "q": "1919",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "パリでベルサイユ条約　連合国とドイツとの間で締結された第一次大戦の戦後処理のための講和条約"
+  },
+  {
+    "q": "1919",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ドイツがワイマール憲法制定　国民主権・議会制民主主義の採用のほか、初めて社会権の保障について定め、二〇世紀民主主義憲法の先駆け・典型といわれる"
+  },
+  {
+    "q": "1920",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "国際連盟成立　第一次世界大戦の教訓から、1919年のドイツとのヴェルサイユ条約、および中央同盟国との諸講和条約により発足した"
+  },
+  {
+    "q": "1920",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ドイツにナチスができる"
+  },
+  {
+    "q": "1921",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "中国共産党、成立"
+  },
+  {
+    "q": "1921",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "イタリアにファシスト党が結成される"
+  },
+  {
+    "q": "1922",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ワシントン会議（海軍軍縮会議）"
+  },
+  {
+    "q": "1922",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ムッソリーニがイタリアのファシスト政権を樹立"
+  },
+  {
+    "q": "1922",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ソビエト社会主義共和国連邦、成立"
+  },
+  {
+    "q": "1923",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ケマル・パシャがトルコ共和国を建国"
+  },
+  {
+    "q": "1925",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "五・三○事件起こる　1925年5月30日に中国・上海でデモに対して租界警察が発砲し、学生・労働者に13人の死者と40人余りの負傷者が出た事件"
+  },
+  {
+    "q": "1927",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "蒋介石の上海クーデター"
+  },
+  {
+    "q": "1928",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "蒋介石が国民政府主席に"
+  },
+  {
+    "q": "1928",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "パリ不戦条約　国際紛争解決の手段として戦争に訴えないことがちかわれた条約"
+  },
+  {
+    "q": "1928",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "スターリンによる第1次5か年計画開始"
+  },
+  {
+    "q": "1929",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "世界恐慌が始まる　世界恐慌は1929年の株価大暴落により引き起こされた"
+  },
+  {
+    "q": "1930",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ロンドン軍縮会議　列強海軍の補助艦保有量の制限を主な目的とした国際会議"
+  },
+  {
+    "q": "1931",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "満州事変起こる　満州（今の中国東北区）でおきた日本軍と中国軍との武力衝突"
+  },
+  {
+    "q": "1932",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "「満州国」建国宣言　1932年から1945年にかけて満州（現在の中華人民共和国東北部）に存在した国家である"
+  },
+  {
+    "q": "1933",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ドイツにヒトラー内閣が成立"
+  },
+  {
+    "q": "1933",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ニュー・ディール政策はじまる　アメリカ合衆国大統領フランクリン・ルーズベルトが世界恐慌を克服するために行った一連の経済政策"
+  },
+  {
+    "q": "1933",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ナチスのユダヤ人迫害が始まる"
+  },
+  {
+    "q": "1934",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ドイツに総統ヒトラー（～1945）"
+  },
+  {
+    "q": "1935",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "エチオピア戦争　1935年から1936年にかけて起きたイタリア王国とエチオピア帝国の戦争"
+  },
+  {
+    "q": "1936",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "西安事件起こる　中華民国西安で起きた、張学良・楊虎城らによる蒋介石拉致監禁事件"
+  },
+  {
+    "q": "1937",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "盧溝橋事件　北京（北平）西南方向の盧溝橋で起きた日本軍と中国国民革命軍第二十九軍との衝突事件"
+  },
+  {
+    "q": "1938",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ミュンヘン会談　チェコスロバキアのズデーテン地方帰属問題を解決するためにドイツのミュンヘンにおいて開催された国際会議"
+  },
+  {
+    "q": "1939",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "独ソ不可侵条約　1939年8月23日モスクワで調印された、ドイツ・ソ連両国の相互不可侵に関する条約"
+  },
+  {
+    "q": "1939",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "第二次世界大戦が始まる　1939年～1945年に勃発した人類史上二度目の世界戦争"
+  },
+  {
+    "q": "1941",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ドイツがソ連に宣戦"
+  },
+  {
+    "q": "1941",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "大西洋憲章　イギリス首相のウィンストン・チャーチルと、アメリカ合衆国大統領のフランクリン・ルーズベルトによって調印された憲章"
+  },
+  {
+    "q": "1941",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "太平洋戦争が始まる（～1945）"
+  },
+  {
+    "q": "1943",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "イタリアが降伏し、ファシスト党が解体"
+  },
+  {
+    "q": "1943",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "カイロ会談　第2次世界大戦中の連合国の首脳会談の一つで，対日戦争と戦後処理について具体的に討議した最初の会議"
+  },
+  {
+    "q": "1945",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ヤルタ会談　ルーズベルト・チャーチル・スターリンという米英ソ3カ国の首脳による首脳会談"
+  },
+  {
+    "q": "1945",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ドイツが無条件降伏"
+  },
+  {
+    "q": "1945",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ポツダム会談　ドイツベルリン郊外のポツダムに、米国、英国、ソ連の3カ国の首脳が集まって行われた、第二次世界大戦の戦後処理を決定するための会談"
+  },
+  {
+    "q": "1945",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "第二次世界大戦が終わる"
+  },
+  {
+    "q": "1945",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "国際連合が発足　主たる活動目的は国際平和の維持（安全保障）、そして経済や社会などに関する国際協力の実現"
+  },
+  {
+    "q": "1946",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "インドシナ戦争（～1954）起こる"
+  },
+  {
+    "q": "1947",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "インド・パキスタンが独立"
+  },
+  {
+    "q": "1948",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "世界人権宣言　「すべての人民とすべての国とが達成すべき共通の基準」を宣言したもの"
+  },
+  {
+    "q": "1948",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "朝鮮が大韓民国と朝鮮民主主義人民共和国に分裂"
+  },
+  {
+    "q": "1948",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "インドのガンジーが暗殺される"
+  },
+  {
+    "q": "1949",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "北大西洋条約機構（NATO)が発足"
+  },
+  {
+    "q": "1949",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "中華人民共和国、成立。毛沢東が主席になる"
+  },
+  {
+    "q": "1950",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "朝鮮戦争が始まる"
+  },
+  {
+    "q": "1950",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "中国国民政府が台湾に移る"
+  },
+  {
+    "q": "1950",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "インドネシア共和国が成立"
+  },
+  {
+    "q": "1951",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "サンフランシスコ講和会議"
+  },
+  {
+    "q": "1953",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "エジプト共和国が成立"
+  },
+  {
+    "q": "1953",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "朝鮮休戦協定"
+  },
+  {
+    "q": "1954",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ジュネーブ会議　軍備縮小に関する国際連盟主催の国際会議"
+  },
+  {
+    "q": "1954",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ビキニ環礁で水爆実験（アメリカ）"
+  },
+  {
+    "q": "1955",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "バンドン（アジア・アフリカ）会議"
+  },
+  {
+    "q": "1955",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ワルシャワ条約が成立"
+  },
+  {
+    "q": "1956",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "スエズ戦争起こる"
+  },
+  {
+    "q": "1958",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ヨーロッパ経済共同体（ECC）結成"
+  },
+  {
+    "q": "1959",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "チベット反乱"
+  },
+  {
+    "q": "1960",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "アフリカで１７ヶ国が独立"
+  },
+  {
+    "q": "1962",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "キューバ危機　1962年10月14日から28日までの14日間に亘って米ソ間の冷戦の緊張が、核戦争寸前まで達した危機的な状況のこと"
+  },
+  {
+    "q": "1963",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "米・英・ソが部分的核実験停止条約に調印"
+  },
+  {
+    "q": "1963",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ケネディ大統領暗殺"
+  },
+  {
+    "q": "1965",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "アメリカが北ベトナムを攻撃"
+  },
+  {
+    "q": "1966",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "中国で文化大革命　封建的文化、資本主義文化を批判し、新しく社会主義文化を創生しよう"
+  },
+  {
+    "q": "1967",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "第3次中東戦争起こる"
+  },
+  {
+    "q": "1967",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "東南アジア諸国連合（ASEAN)発足"
+  },
+  {
+    "q": "1969",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "アメリカのアポロ11号が月面着陸"
+  },
+  {
+    "q": "1970",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "核拡散防止条約、発効"
+  },
+  {
+    "q": "1971",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "中華人民共和国の国連参加、国民政府の追放、国連で決定"
+  },
+  {
+    "q": "1972",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ニクソン訪中、共同声明発表"
+  },
+  {
+    "q": "1972",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "田中首相訪中、共同声明発表。国民政府、日本と断交"
+  },
+  {
+    "q": "1973",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "第四次中東戦争（石油危機）起こる　原油の供給逼迫および価格高騰と、それによる世界の経済混乱である"
+  },
+  {
+    "q": "1975",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ベトナム戦争が終結"
+  },
+  {
+    "q": "1978",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "日中平和友好条約調印　日本と中国の友好関係の発展のために締結された条約"
+  },
+  {
+    "q": "1979",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ソ連がアフガニスタンに侵攻"
+  },
+  {
+    "q": "1979",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "米中国交が正式に樹立。米、台湾と断交"
+  },
+  {
+    "q": "1980",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "イラン・イラク戦争"
+  },
+  {
+    "q": "1986",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ソ連のチェルノブイリ原発事故起こる"
+  },
+  {
+    "q": "1986",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ソ連で「ペレストロイカ」が始まる"
+  },
+  {
+    "q": "1987",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "米・ソがＩＭＦ全廃条約に調印"
+  },
+  {
+    "q": "1988",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "イラン・イラク戦争停戦　イランとイラクが国境をめぐって行った戦争"
+  },
+  {
+    "q": "1989",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "天安門事件起こる"
+  },
+  {
+    "q": "1989",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "マルタで米ソ首脳会談、冷戦終結宣言"
+  },
+  {
+    "q": "1989",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ベルリンの壁崩壊"
+  },
+  {
+    "q": "1990",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "イラクがクェートを侵攻"
+  },
+  {
+    "q": "1991",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "湾岸戦争起こる　イラクがクウェートに侵攻したのを機に、国際連合が多国籍軍（連合軍）の派遣を決定し、1991年1月17日にイラクを空爆した"
+  },
+  {
+    "q": "1991",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "ソ連邦、解体"
+  },
+  {
+    "q": "1992",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "マーストリヒト条約調印　EC(ヨーロッパ共同体)首脳会議で合意された欧州連合条約の通称"
+  },
+  {
+    "q": "1993",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "欧州連合（EU）が発足"
+  },
+  {
+    "q": "1997",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "香港が中国に返還される"
+  },
+  {
+    "q": "2001",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "アメリカ同時多発テロ"
+  },
+  {
+    "q": "2002",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "EURO（通貨）発足　ユーロはヨーロッパでは24の国で使用されている"
+  },
+  {
+    "q": "2003",
+    "hint": "紀元後1901年 ～  現　在",
+    "a": "イラク戦争"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyAboutUSA</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">🗽</span>
+  <h1>EasyAboutUSA</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "カリフォルニア州（英: State of California）は、アメリカ合衆国西部、太平洋岸の州　　アメリカ西海岸の大部分を占める　　3,970km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太平洋に位置するハワイ諸島にあるアメリカ合衆国の州である　　漢字では「布哇」と書く　　州都はオアフ島のホノルル市である　　アメリカ合衆国50州の中で最後に加盟した州である　　　州都Honoluluホノルル　州の人口は　約129万人　面積は　28,311km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国北西部のロッキー山脈にある州である　　州の北はカナダ国境（ブリティッシュコロンビア州）に接し、東はモンタナ州とワイオミング州に、西はワシントン州とオレゴン州に、南はネバダ州とユタ州に接している内陸の州である　　　州都Boiseボイシ　州の人口は　約154万人　面積は　216,446km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "州都はカーソンシティ市である　　気候は砂漠気候と亜乾燥気候帯にあり、州域の大半がグレートベースンの中にある　　グレートベースンより南はモハーヴェ砂漠である　　西端にはタホ湖とシエラネバダ山脈がある　州都Carson Cityカーソンシティ　州の人口は　約264万人　面積は　286,351km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北米西海岸に位置する、アメリカ合衆国第33番目の州である太平洋に沿って北にワシントン州、南にカリフォルニア州と接し、内陸の南東はネバダ州、東はアイダホ州である  州内には多様な景観がある風に吹き曝される太平洋岸、カスケード山脈のゴツゴツして氷河に侵食された火山、マルトノマ滝など多くの滝、深い常緑樹の森、また州東部の大半でグレートベースンまで拡がる高原型砂漠などである　州都Salemセイラム　州の人口は　約382万人　面積は　254,805km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国西部にある州であるアメリカ合衆国には1896年1月4日に45番目の州として加盟した州の北はアイダホ州とワイオミング州に接し、東側はコロラド州に、西側はネバダ州に、南側はアリゾナ州に接している　州都Salt Lake Cityソルトレイクシティ　州の人口は　約278万人面積は　219,887km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国西海岸最北部の州州都はオリンピアであるが、規模・経済の面での中心都市はシアトルである北はカナダのブリティッシュコロンビア州、南はオレゴン州、東はアイダホ州と接している マイクロソフトの本拠地であり、スターバックスの発祥の地などとして知られる日本では、州の中心都市シアトルがシアトル・マリナーズの本拠地である点、任天堂のアメリカ本社がある点でも知られている　州都Olympiaオリンピア　州の人口は　約666万人　面積は　184,665km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アリゾナ州はいわゆるフォー・コーナーズと呼ばれる4州の1つである　　ニューメキシコ州、ユタ州、ネバダ州およびカリフォルニア州と境を接しており、コロラド州とはフォーコーナーズの1点で接している　　メキシコのソノラ州とバハ・カリフォルニア州とも国境で接しており、その総延長は389マイル (626 km) になる　　アメリカ合衆国の内陸州としては人口最大である　　州内にはグランド・キャニオン国立公園がある他、多くの国立の森、公園、保護地域がある　　　州都Phoenixフェニックス　州の人口は　約660万人　面積は　295,254km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国中西部に位置し、「アメリカのハートランド（中心地）」と呼ばれる州である　　1846年12月28日にアメリカ合衆国29番目の州となった　　アメリカ合衆国50州の中で、陸地面積では第26位、人口では第30位である　州都Des Moinesデモイン　州の人口は　約300万人　面積は　145,743km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アーカンソー州（英: State of Arkansas）は、アメリカ合衆国南部の州である　　アメリカ合衆国50州の中で、陸地面積では第29位、人口では第32位である　州都Little Rockリトルロック　州の人口は　約289万人　面積は　137,732km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コロラド州は、アメリカ合衆国西部にある州である　　北側はワイオミング州に接し、北東はネブラスカ州、東側はカンザス州、南側はニューメキシコ州とオクラホマ州に、西側はユタ州に接している　州都Denverデンバー　州の人口は　約500万人　面積は　269,601km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国の州　　アメリカ合衆国に加盟したのは21番目であり、人口では国内5番目、中西部では人口最大、かつ民族構成が最も多様化した州である　　州都Springfieldスプリングフィールド　州の人口は　約1291万人　面積は　149,998km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国の中西部に位置する州である　　五大湖地域にも含まれる　　アメリカ合衆国50州の中で、陸地面積では第38位、人口では第15位である　州都Indianapolisインディアナポリス　州の人口は　約642万人　面積は　94,321km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国の中西部に位置する州である　ネブラスカ州、オクラホマ州、コロラド州、ミズーリ州と隣接する　　\nグレートプレーンズ（大平原地帯）の真っ只中にあって、農業の生産性が高く、また牧畜業が盛んである　州都Topekaトピカ　州の人口は　約281万人　面積は　213,096km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "米国中東部にある州（コモンウェルス）である　　州都はフランクフォート市で、最大都市はルイビル市である　　アメリカ合衆国50州の中で、陸地面積では第37位、人口では第26位である　州都Frankfortフランクフォート　州の人口は　約431万人　面積は　104,659km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミシシッピ川沿いにある多数の町は、ヨーロッパからの移民の影響を強く受けており、現在でも当時の教会や町並みが多く残っている　州都Jefferson Cityジェファーソンシティ　州の人口は　約598万人　面積は　180,533km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "州の大部分は平坦なグレートプレーンズに属しており、西部にはスコッツブラフ、チムニー・ロックなど巨大な岩がある　　\nアメリカ合衆国を構成する50州の中で唯一、州議会が一院制である　州都Lincolnリンカーン　州の人口は　約179万人　面積は　200,345km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国中西部の北東にある州であるアメリカ合衆国50州の中で、陸地面積では第34位、人口では第7位である州の北はミシガン州とエリー湖、東はペンシルベニア州、南はケンタッキー州とウェストバージニア州、西はインディアナ州に接している州都および2010年度の国勢調査での人口最大都市はコロンバス市である　州都Columbusコロンバス　州の人口は　約1154万人　面積は　116,096km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国南中部にある州である州の北はコロラド州とカンザス州に接し、東はミズーリ州とアーカンソー州、西はニューメキシコ州、南はテキサス州に接しているアメリカ合衆国50州の中で、面積では第20位、人口では第28位である  オクラホマ州は天然ガス、石油および農業の生産高が高く、また航空機、エネルギー、通信およびバイオテクノロジーに経済の基盤がある　州都Oklahoma Cityオクラホマシティ　州の人口は　約368万人　面積は　181,035km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国の中西部にある州であるグレートプレーンズ（大平原）にあり、南西部はハイプレーンズ（英語版）と呼ばれる標高の高い平原地帯である州の北はノースダコタ州に、東側はミネソタ州とアイオワ州に、西側はモンタナ州とワイオミング州に、南側はネブラスカ州に接している  自然が豊富で多くの観光客が訪れる州という華やかな面がある一方、ゴールドラッシュ期にはインディアンと白人との激しい抗争が繰り返された州でもある　州都Pierreピア　州の人口は　約81万人　面積は　199,731km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国南部の州である合衆国50州の中で、陸地面積では第36位、人口では第17位である南北戦争では南部連合側に属し、シャイロー、ナッシュビル、マーフリーズボロなどが戦場となった　州都Nashvilleナッシュビル　州の人口は　約629万人　面積は　109,151km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国西部の山岳地域にある州である\n州都はシャイアン市である陸地面積は全米50州の中で第10位だが、人口は全米50州の中で最も人口が少ない　州都Cheyenneシャイアン　州の人口は　約54万人　面積は　253,336km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国50州の中で、陸地面積では第48位、人口では第29位、人口密度が第4位である　　世帯当たり収入の中央値では第2位である　　ニックネームは「憲法の州」、「ナツメグの州」、「堅い習慣の土地」と呼ばれ、アメリカ合衆国連邦政府の発展に大きな影響を残した　州都Hartfordハートフォード　州の人口は　約352万人　面積は　14,357km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国大西洋岸中部に位置する州の1つである　　デルマーバ半島の北東部を占め、南と西はメリーランド州に、北東はニュージャージー州に、北はペンシルベニア州に接している　州都Doverドーバー　州の人口は　約88万人　面積は　6,447km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東と南は大西洋に面し、西はニューハンプシャー州、北西はカナダのケベック州、北東は同じくニューブランズウィック州に接している　　入り組んだ岩の多い海岸線、低くうねった山稜、内陸の深い森と美しい水流など、その景色で知られ、またロブスターやハマグリなど海産物料理でも知られている　州都Augustaオーガスタ　州の人口は　約131万人　面積は　91,646km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国東部大西洋岸にあり、ワシントンD.C.に隣接して大西洋岸中部地域を構成する州の一つである　　アメリカ合衆国50州の中で、陸地面積では第42位、人口では第19位である　　人口密度が高い　　　州都Annapolisアナポリス　州の人口は　約569万人　面積は　32,133km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "人口の約3分の2はボストン大都市圏に住んでいる　　州都はボストン市であり、人口最大の都市でもある　　ボストン大都市圏には、ハーバード大学、マサチューセッツ工科大学などがあるケンブリッジやサマービル、クインシーなどの市町が含まれている　　　州都Bostonボストン　州の人口は　約659万人　面積は　27,336km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国北東部、ニューイングランド地方に位置する州である州名はイングランド南部のハンプシャーから採られた南はマサチューセッツ州、西はバーモント州、東はメイン州と大西洋に接し、また北はカナダのケベック州との国境である   アメリカ合衆国大統領の予備選挙が最初に行われる州として知られている　州都Concordコンコード　州の人口は　約132万人　面積は　24,216km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "米国東部の大西洋沿岸にある州である州の北東はハドソン川越しにニューヨーク州に接し、西はペンシルベニア州に、西南の一角はデラウェア湾を挟んでデラウェア州に接している南東と南は大西洋に面しているアメリカ合衆国50州の中で、陸地面積では第47位、人口では第11位、人口密度が第1位である　州都Trentonトレントン　州の人口は　約870万人　面積は　22,588km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国大西洋岸中部にあり、本土アメリカ合衆国では北東部地域に位置する州人口では全米第3位、面積では第27位の州である 東南端に、アメリカ合衆国で人口最大の都市であるニューヨーク市（人口800万人）がある同市は州内では面積最大の都市であり、歴史的には移民の入り口として知られた現在、アメリカ合衆国のみならず、世界の経済、文化および交通の一つの中心と見られている　州都Albanyオルバニー　州の人口は　約1954万人　面積は　141,299km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国の南東部にある州の1つである合衆国50州の中で、陸地面積では第28位、人口では第10位である州都はローリー市であり、人口最大都市はシャーロット市である  州内には100の郡がある元はタバコと家具の生産地として知られたが、過去50年間でバイオテクノロジーや金融分野など多様な経済に転換してきた　州都Raleighローリー　州の人口は　約938万人　面積は　139,389km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国北東部、また大西洋岸中部に分類される州である五大湖地方に含められることもある「礎石の州」とも呼ばれる  自由の鐘や独立記念館で有名なフィラデルフィア市と、重要な河港を持つピッツバーグ市の、2つの主要都市がある州都はハリスバーグ市である　州都Harrisburgハリスバーグ　州の人口は　約1260万人　面積は　119,283km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国東北部、ニューイングランド地方にある州である州都および人口最大都市は州北部、ナラガンセット湾の湾奥に位置する港湾都市・学術都市プロビデンスである  独立時の13州の1つである全米50州の中で面積最小の州であり、日本における滋賀県と同程度の面積である　州都Providenceプロビデンス　州の人口は　約100万人　面積は　4,002km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国の南東部を構成する州の1つである北はノースカロライナ州に、南と西はサバンナ川の対岸であるジョージア州に接しており、東は大西洋に面している  　州都Columbiaコロンビア　州の人口は　約456万人　面積は　82,932km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国北東部、ニューイングランド地方の内陸に位置し、西部をニューヨーク州、東部をニューハンプシャー州、南部をマサチューセッツ州、北部をカナダ・ケベック州に隣接する西のニューヨーク州との境界の半分はシャンプレーン湖である面積は、全米50州のうち45位人口は、ワイオミング州に次いで全米で2番目に少ない　州都Montpelierモントピリア　州の人口は　約62万人　面積は　24,901km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国東部、大西洋岸の南部に位置する州（コモンウェルス）であるイギリスから最初に独立した13州のうちの一つである南北戦争では南部連邦側に属し、激戦地となった\n州都はリッチモンド市、人口最大都市はバージニアビーチ市である　州都Richmondリッチモンド　州の人口は　約788万人　面積は　110,785km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国東部の州であるアパラチア山脈中に位置しており、山岳州という愛称で知られるアメリカ合衆国50州の中で、陸地面積では第41位、人口では第38位である南東はバージニア州、南西はケンタッキー州、北西はオハイオ州、北はペンシルベニア州、北東はメリーランド州と接している　州都Charlestonチャールストン　州の人口は　約181万人　面積は　62,755km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカの南部の州である　　アメリカ合衆国50州の中で、陸地面積では第31位、人口では第25位である　　 州都はバトンルージュ市、最大の都市はニューオーリンズ市である　　　州都Baton Rougeバトンルージュ　州の人口は　約449万人　面積は　134,264km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アラバマ州はアメリカ合衆国南部に位置する州である　　　州都はモンゴメリー市　　他に都市圏では州内最大のバーミングハム、州内唯一の港湾都市モービル、アメリカ航空宇宙局関連施設が集中するハンツビルなどの主要都市がある　　北はテネシー州、東はジョージア州、南はフロリダ州とメキシコ湾、西はミシシッピ州と接している　　アメリカ合衆国50州の中で、陸地面積では第30位、人口では第23位である　　内陸まで航行できる水路総延長が1,300マイル (2,100 km) あることでは、国内でも最長クラスにある　州都Montgomeryモンゴメリー　州の人口は　約470万人　面積は　135,765km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フロリダ州は、アメリカ合衆国東南部の州である　　メキシコ湾と大西洋に挟まれるフロリダ半島の全域を占め、北はジョージア州とアラバマ州に接しており、サンベルトと呼ばれる比較的気候が温暖な州の1つである　　　州都Tallahasseeタラハシー　州の人口は　約1800万人　面積は　170,304km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国の南東部にある州である　　州都はアトランタ市であり、人口で州内最大の都市でもある　　1776年にアメリカ独立宣言をした13州の1つである　　コカ・コーラやCNN、アフラックの本社などがあることでも知られている　州都Atlantaアトランタ　州の人口は　約982万人　面積は　153,909km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "州名はインディアン部族オジブワ族の、部族語で「大きな川」を意味するミシシッピ川から取られている　　\n南北戦争では南部連合側に属した　　そのため、州旗には南軍旗が描かれている　　　州都Jacksonジャクソン　州の人口は　約295万人　面積は　125,434km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国南西部にある州である州の北はコロラド州に接し、東側にはオクラホマ州とテキサス州に、西側はアリゾナ州に、南側はテキサス州およびメキシコとの国境に接している面積ではアメリカ合衆国で5番目に大きいが、人口では36番目であり、人口密度では45番目になっている美しい景観から「Land of Enchantment(魅惑/魔法の土地)」と通称される　州都Santa Feサンタフェ　州の人口は　約200万人　面積は　314,915km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "テキサス州は、アメリカ合衆国の州のひとつ　　合衆国本土南部にあり、メキシコと国境を接している   各産業は成長を続けており、農業、石油化学、エネルギー、コンピュータと電子工学、宇宙工学およびバイオテクノロジーの分野で先頭を走っている2002年以来輸出高でも国内をリードしており、州総生産（Gross state product）は国内第2位である　州都Austinオースティン　州の人口は　約2478万人　面積は　695,621km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国の州の中では面積最大であり、東はカナダ、北は北極海、西と南は太平洋と接し、西のベーリング海を隔ててロシアとも海上の国境がある　　海港アンカレッジはかつてアジアとアメリカおよびヨーロッパを結ぶ航空路線の寄港地として知られた　　アメリカ合衆国の州の中では人口密度最小の州でもある　　　州都Juneauジュノー　州の人口は　約70万人　面積は　1,717,854km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北米における自動車産業発祥の州として知られているが、五大湖のうちの4つに囲まれているという地の利もあり、アメリカ・カナダの両方からの観光客が多い州でもある　　　州都Lansingランシング　州の人口は　約996万人　面積は　250,494km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "州都はセントポール市である　　ミシシッピ川を挟んだ隣の都市であるミネアポリス市と合わせて「ツインシティーズ」と呼ばれている　　州人口の60％近くがこの都市圏に住んでおり、交通、事業、工業、教育、行政の中心である　州都Saint Paulセントポール　州の人口は　約526万人　面積は　225,171km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "経済は主にサービス業に基づいており、東部では牧畜業、小麦農業、石油と石炭の採掘、西部では林業、観光業および岩石採掘業が盛んである　　毎年多くの観光客がグレイシャー国立公園、リトルビッグホーン戦場跡国定保護区、およびイエローストーン国立公園を訪れている　州都Helenaヘレナ　州の人口は　約97万人　面積は　380,838km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国中西部の最北部、グレートプレーンズ（大平原）にある州である\n州の北側はカナダ国境であり、サスカチュワン州およびマニトバ州に接している　州都Bismarckビスマーク　州の人口は　約64万人　面積は　183,112km2",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国の中西部の最北に位置する州である五大湖地域にも含まれるアメリカ合衆国50州の中で、陸地面積では第23位、人口では第20位である　州都Madisonマディソン　州の人口は　約565万人　面積は　169,639km2",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

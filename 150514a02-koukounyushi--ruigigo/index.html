@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高校入試に出る類義語</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>高校入試に出る類義語</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "青　葉",
+    "hint": "高校入試に出る類義語",
+    "a": "青　葉　　　　-　　　　若葉"
+  },
+  {
+    "q": "悪　評",
+    "hint": "高校入試に出る類義語",
+    "a": "悪　評　　　　-　　　　不評"
+  },
+  {
+    "q": "改　良",
+    "hint": "高校入試に出る類義語",
+    "a": "改　良　　　　-　　　　改善"
+  },
+  {
+    "q": "案　外",
+    "hint": "高校入試に出る類義語",
+    "a": "案　外　　　　-　　　　意外"
+  },
+  {
+    "q": "以　後",
+    "hint": "高校入試に出る類義語",
+    "a": "以　後　　　　-　　　　以降"
+  },
+  {
+    "q": "異　議",
+    "hint": "高校入試に出る類義語",
+    "a": "異　議　　　　-　　　　異論"
+  },
+  {
+    "q": "命　中",
+    "hint": "高校入試に出る類義語",
+    "a": "命　中　　　　-　　　　的中"
+  },
+  {
+    "q": "上　達",
+    "hint": "高校入試に出る類義語",
+    "a": "上　達　　　　-　　　　熟達"
+  },
+  {
+    "q": "現　物",
+    "hint": "高校入試に出る類義語",
+    "a": "現　物　　　　-　　　　現品"
+  },
+  {
+    "q": "永　遠",
+    "hint": "高校入試に出る類義語",
+    "a": "永　遠　　　　-　　　　永久"
+  },
+  {
+    "q": "英　断",
+    "hint": "高校入試に出る類義語",
+    "a": "英　断　　　　-　　　　果断"
+  },
+  {
+    "q": "納　得",
+    "hint": "高校入試に出る類義語",
+    "a": "納　得　　　　-　　　　承知"
+  },
+  {
+    "q": "修　理",
+    "hint": "高校入試に出る類義語",
+    "a": "修　理　　　　-　　　　修正"
+  },
+  {
+    "q": "親　友",
+    "hint": "高校入試に出る類義語",
+    "a": "親　友　　　　-　　　　知己"
+  },
+  {
+    "q": "快　活",
+    "hint": "高校入試に出る類義語",
+    "a": "快　活　　　　-　　　　活発"
+  },
+  {
+    "q": "快　調",
+    "hint": "高校入試に出る類義語",
+    "a": "快　調　　　　-　　　　順調"
+  },
+  {
+    "q": "革　新",
+    "hint": "高校入試に出る類義語",
+    "a": "革　新　　　　-　　　　改革"
+  },
+  {
+    "q": "風　景",
+    "hint": "高校入試に出る類義語",
+    "a": "風　景　　　　-　　　　景色"
+  },
+  {
+    "q": "方　向",
+    "hint": "高校入試に出る類義語",
+    "a": "方　向　　　　-　　　　方角"
+  },
+  {
+    "q": "活　用",
+    "hint": "高校入試に出る類義語",
+    "a": "活　用　　　　-　　　　利用"
+  },
+  {
+    "q": "構　造",
+    "hint": "高校入試に出る類義語",
+    "a": "構　造　　　　-　　　　機構"
+  },
+  {
+    "q": "体　験",
+    "hint": "高校入試に出る類義語",
+    "a": "体　験　　　　-　　　　経験"
+  },
+  {
+    "q": "刊　行",
+    "hint": "高校入試に出る類義語",
+    "a": "刊　行　　　　-　　　　出版"
+  },
+  {
+    "q": "簡　潔",
+    "hint": "高校入試に出る類義語",
+    "a": "簡　潔　　　　-　　　　簡明"
+  },
+  {
+    "q": "完　全",
+    "hint": "高校入試に出る類義語",
+    "a": "完　全　　　　-　　　　無欠"
+  },
+  {
+    "q": "感　動",
+    "hint": "高校入試に出る類義語",
+    "a": "感　動　　　　-　　　　感激"
+  },
+  {
+    "q": "感　心",
+    "hint": "高校入試に出る類義語",
+    "a": "感　心　　　　-　　　　敬服"
+  },
+  {
+    "q": "帰　省",
+    "hint": "高校入試に出る類義語",
+    "a": "帰　省　　　　-　　　　帰郷"
+  },
+  {
+    "q": "気　性",
+    "hint": "高校入試に出る類義語",
+    "a": "気　性　　　　-　　　　気質"
+  },
+  {
+    "q": "気　絶",
+    "hint": "高校入試に出る類義語",
+    "a": "気　絶　　　　-　　　　失神"
+  },
+  {
+    "q": "規　約",
+    "hint": "高校入試に出る類義語",
+    "a": "規　約　　　　-　　　　規定"
+  },
+  {
+    "q": "逆　境",
+    "hint": "高校入試に出る類義語",
+    "a": "逆　境　　　　-　　　　苦境"
+  },
+  {
+    "q": "休　息",
+    "hint": "高校入試に出る類義語",
+    "a": "休　息　　　　-　　　　休憩"
+  },
+  {
+    "q": "救　助",
+    "hint": "高校入試に出る類義語",
+    "a": "救　助　　　　-　　　　救済"
+  },
+  {
+    "q": "急　流",
+    "hint": "高校入試に出る類義語",
+    "a": "急　流　　　　-　　　　激流"
+  },
+  {
+    "q": "居　所",
+    "hint": "高校入試に出る類義語",
+    "a": "居　所　　　　-　　　　住所"
+  },
+  {
+    "q": "去　年",
+    "hint": "高校入試に出る類義語",
+    "a": "去　年　　　　-　　　　昨年"
+  },
+  {
+    "q": "興　味",
+    "hint": "高校入試に出る類義語",
+    "a": "興　味　　　　-　　　　関心"
+  },
+  {
+    "q": "曲　解",
+    "hint": "高校入試に出る類義語",
+    "a": "曲　解　　　　-　　　　誤解"
+  },
+  {
+    "q": "具　合",
+    "hint": "高校入試に出る類義語",
+    "a": "具　合　　　　-　　　　都合"
+  },
+  {
+    "q": "区　別",
+    "hint": "高校入試に出る類義語",
+    "a": "区　別　　　　-　　　　区分"
+  },
+  {
+    "q": "苦　労",
+    "hint": "高校入試に出る類義語",
+    "a": "苦　労　　　　-　　　　苦心"
+  },
+  {
+    "q": "首　都",
+    "hint": "高校入試に出る類義語",
+    "a": "首　都　　　　-　　　　首府"
+  },
+  {
+    "q": "消　息",
+    "hint": "高校入試に出る類義語",
+    "a": "消　息　　　　-　　　　音信"
+  },
+  {
+    "q": "計　画",
+    "hint": "高校入試に出る類義語",
+    "a": "計　画　　　　-　　　　企画"
+  },
+  {
+    "q": "決　心",
+    "hint": "高校入試に出る類義語",
+    "a": "決　心　　　　-　　　　決意"
+  },
+  {
+    "q": "見　学",
+    "hint": "高校入試に出る類義語",
+    "a": "見　学　　　　-　　　　見物"
+  },
+  {
+    "q": "公　表",
+    "hint": "高校入試に出る類義語",
+    "a": "公　表　　　　-　　　　公開"
+  },
+  {
+    "q": "効　能",
+    "hint": "高校入試に出る類義語",
+    "a": "効　能　　　　-　　　　効用"
+  },
+  {
+    "q": "公　平",
+    "hint": "高校入試に出る類義語",
+    "a": "公　平　　　　-　　　　公正"
+  },
+  {
+    "q": "航　路",
+    "hint": "高校入試に出る類義語",
+    "a": "航　路　　　　-　　　　海路"
+  },
+  {
+    "q": "心　情",
+    "hint": "高校入試に出る類義語",
+    "a": "心　情　　　　-　　　　感情"
+  },
+  {
+    "q": "試　験",
+    "hint": "高校入試に出る類義語",
+    "a": "試　験　　　　-　　　　考査"
+  },
+  {
+    "q": "志　願",
+    "hint": "高校入試に出る類義語",
+    "a": "志　願　　　　-　　　　志望"
+  },
+  {
+    "q": "語　調",
+    "hint": "高校入試に出る類義語",
+    "a": "語　調　　　　-　　　　口調"
+  },
+  {
+    "q": "衣　料",
+    "hint": "高校入試に出る類義語",
+    "a": "衣　料　　　　-　　　　衣服"
+  },
+  {
+    "q": "差　別",
+    "hint": "高校入試に出る類義語",
+    "a": "差　別　　　　-　　　　区別"
+  },
+  {
+    "q": "差　異",
+    "hint": "高校入試に出る類義語",
+    "a": "差　異　　　　-　　　　相違"
+  },
+  {
+    "q": "最　良",
+    "hint": "高校入試に出る類義語",
+    "a": "最　良　　　　-　　　　最上"
+  },
+  {
+    "q": "先　祖",
+    "hint": "高校入試に出る類義語",
+    "a": "先　祖　　　　-　　　　祖先"
+  },
+  {
+    "q": "支　援",
+    "hint": "高校入試に出る類義語",
+    "a": "支　援　　　　-　　　　援助"
+  },
+  {
+    "q": "雑　然",
+    "hint": "高校入試に出る類義語",
+    "a": "雑　然　　　　-　　　　乱雑"
+  },
+  {
+    "q": "賛　成",
+    "hint": "高校入試に出る類義語",
+    "a": "賛　成　　　　-　　　　同意"
+  },
+  {
+    "q": "自　重",
+    "hint": "高校入試に出る類義語",
+    "a": "自　重　　　　-　　　　自愛"
+  },
+  {
+    "q": "辞　職",
+    "hint": "高校入試に出る類義語",
+    "a": "辞　職　　　　-　　　　辞任"
+  },
+  {
+    "q": "辞　典",
+    "hint": "高校入試に出る類義語",
+    "a": "辞　典　　　　-　　　　辞書"
+  },
+  {
+    "q": "死　者",
+    "hint": "高校入試に出る類義語",
+    "a": "死　者　　　　-　　　　故人"
+  },
+  {
+    "q": "失　意",
+    "hint": "高校入試に出る類義語",
+    "a": "失　意　　　　-　　　　失望"
+  },
+  {
+    "q": "実　質",
+    "hint": "高校入試に出る類義語",
+    "a": "実　質　　　　-　　　　内容"
+  },
+  {
+    "q": "実　情",
+    "hint": "高校入試に出る類義語",
+    "a": "実　情　　　　-　　　　実態"
+  },
+  {
+    "q": "質　問",
+    "hint": "高校入試に出る類義語",
+    "a": "質　問　　　　-　　　　質疑"
+  },
+  {
+    "q": "失　敗",
+    "hint": "高校入試に出る類義語",
+    "a": "失　敗　　　　-　　　　失策"
+  },
+  {
+    "q": "品　格",
+    "hint": "高校入試に出る類義語",
+    "a": "品　格　　　　-　　　　風格"
+  },
+  {
+    "q": "主　要",
+    "hint": "高校入試に出る類義語",
+    "a": "主　要　　　　-　　　　重要"
+  },
+  {
+    "q": "終　生",
+    "hint": "高校入試に出る類義語",
+    "a": "終　生　　　　-　　　　一生"
+  },
+  {
+    "q": "重　宝",
+    "hint": "高校入試に出る類義語",
+    "a": "重　宝　　　　-　　　　便利"
+  },
+  {
+    "q": "情　景",
+    "hint": "高校入試に出る類義語",
+    "a": "情　景　　　　-　　　　光景"
+  },
+  {
+    "q": "将　来",
+    "hint": "高校入試に出る類義語",
+    "a": "将　来　　　　-　　　　未来"
+  },
+  {
+    "q": "情　勢",
+    "hint": "高校入試に出る類義語",
+    "a": "情　勢　　　　-　　　　形勢"
+  },
+  {
+    "q": "信　用",
+    "hint": "高校入試に出る類義語",
+    "a": "信　用　　　　-　　　　信頼"
+  },
+  {
+    "q": "推　測",
+    "hint": "高校入試に出る類義語",
+    "a": "推　測　　　　-　　　　推量"
+  },
+  {
+    "q": "助　言",
+    "hint": "高校入試に出る類義語",
+    "a": "助　言　　　　-　　　　忠言"
+  },
+  {
+    "q": "助　勢",
+    "hint": "高校入試に出る類義語",
+    "a": "助　勢　　　　-　　　　加勢"
+  },
+  {
+    "q": "進　退",
+    "hint": "高校入試に出る類義語",
+    "a": "進　退　　　　-　　　　去就"
+  },
+  {
+    "q": "製　作",
+    "hint": "高校入試に出る類義語",
+    "a": "製　作　　　　-　　　　製造"
+  },
+  {
+    "q": "政　務",
+    "hint": "高校入試に出る類義語",
+    "a": "政　務　　　　-　　　　公務"
+  },
+  {
+    "q": "制　約",
+    "hint": "高校入試に出る類義語",
+    "a": "制　約　　　　-　　　　制限"
+  },
+  {
+    "q": "生　育",
+    "hint": "高校入試に出る類義語",
+    "a": "生　育　　　　-　　　　発育"
+  },
+  {
+    "q": "静　養",
+    "hint": "高校入試に出る類義語",
+    "a": "静　養　　　　-　　　　休養"
+  },
+  {
+    "q": "説　明",
+    "hint": "高校入試に出る類義語",
+    "a": "説　明　　　　-　　　　解説"
+  },
+  {
+    "q": "節　約",
+    "hint": "高校入試に出る類義語",
+    "a": "節　約　　　　-　　　　倹約"
+  },
+  {
+    "q": "先　生",
+    "hint": "高校入試に出る類義語",
+    "a": "先　生　　　　-　　　　教師"
+  },
+  {
+    "q": "増　大",
+    "hint": "高校入試に出る類義語",
+    "a": "増　大　　　　-　　　　増加"
+  },
+  {
+    "q": "外　国",
+    "hint": "高校入試に出る類義語",
+    "a": "外　国　　　　-　　　　異国"
+  },
+  {
+    "q": "多　量",
+    "hint": "高校入試に出る類義語",
+    "a": "多　量　　　　-　　　　大量"
+  },
+  {
+    "q": "台　本",
+    "hint": "高校入試に出る類義語",
+    "a": "台　本　　　　-　　　　脚本"
+  },
+  {
+    "q": "他　界",
+    "hint": "高校入試に出る類義語",
+    "a": "他　界　　　　-　　　　死去"
+  },
+  {
+    "q": "立　身",
+    "hint": "高校入試に出る類義語",
+    "a": "立　身　　　　-　　　　出世"
+  },
+  {
+    "q": "旅　館",
+    "hint": "高校入試に出る類義語",
+    "a": "旅　館　　　　-　　　　宿屋"
+  },
+  {
+    "q": "均　等",
+    "hint": "高校入試に出る類義語",
+    "a": "均　等　　　　-　　　　均一"
+  },
+  {
+    "q": "短　歌",
+    "hint": "高校入試に出る類義語",
+    "a": "短　歌　　　　-　　　　和歌"
+  },
+  {
+    "q": "単　純",
+    "hint": "高校入試に出る類義語",
+    "a": "単　純　　　　-　　　　純粋"
+  },
+  {
+    "q": "短　所",
+    "hint": "高校入試に出る類義語",
+    "a": "短　所　　　　-　　　　欠点"
+  },
+  {
+    "q": "地　方",
+    "hint": "高校入試に出る類義語",
+    "a": "地　方　　　　-　　　　地域"
+  },
+  {
+    "q": "調　節",
+    "hint": "高校入試に出る類義語",
+    "a": "調　節　　　　-　　　　調整"
+  },
+  {
+    "q": "長　所",
+    "hint": "高校入試に出る類義語",
+    "a": "長　所　　　　-　　　　美点"
+  },
+  {
+    "q": "賃　金",
+    "hint": "高校入試に出る類義語",
+    "a": "賃　金　　　　-　　　　給料"
+  },
+  {
+    "q": "使　命",
+    "hint": "高校入試に出る類義語",
+    "a": "使　命　　　　-　　　　任務"
+  },
+  {
+    "q": "付　近",
+    "hint": "高校入試に出る類義語",
+    "a": "付　近　　　　-　　　　近辺"
+  },
+  {
+    "q": "勉　学",
+    "hint": "高校入試に出る類義語",
+    "a": "勉　学　　　　-　　　　勉強"
+  },
+  {
+    "q": "勤　勉",
+    "hint": "高校入試に出る類義語",
+    "a": "勤　勉　　　　-　　　　努力"
+  },
+  {
+    "q": "手　段",
+    "hint": "高校入試に出る類義語",
+    "a": "手　段　　　　-　　　　方法"
+  },
+  {
+    "q": "適　当",
+    "hint": "高校入試に出る類義語",
+    "a": "適　当　　　　-　　　　適切"
+  },
+  {
+    "q": "天　候",
+    "hint": "高校入試に出る類義語",
+    "a": "天　候　　　　-　　　　天気"
+  },
+  {
+    "q": "天　然",
+    "hint": "高校入試に出る類義語",
+    "a": "天　然　　　　-　　　　自然"
+  },
+  {
+    "q": "戸　外",
+    "hint": "高校入試に出る類義語",
+    "a": "戸　外　　　　-　　　　屋外"
+  },
+  {
+    "q": "達　成",
+    "hint": "高校入試に出る類義語",
+    "a": "達　成　　　　-　　　　成就"
+  },
+  {
+    "q": "特　産",
+    "hint": "高校入試に出る類義語",
+    "a": "特　産　　　　-　　　　名産"
+  },
+  {
+    "q": "特　技",
+    "hint": "高校入試に出る類義語",
+    "a": "特　技　　　　-　　　　得手"
+  },
+  {
+    "q": "所　有",
+    "hint": "高校入試に出る類義語",
+    "a": "所　有　　　　-　　　　所持"
+  },
+  {
+    "q": "処　理",
+    "hint": "高校入試に出る類義語",
+    "a": "処　理　　　　-　　　　処置"
+  },
+  {
+    "q": "留　守",
+    "hint": "高校入試に出る類義語",
+    "a": "留　守　　　　-　　　　不在"
+  },
+  {
+    "q": "共　同",
+    "hint": "高校入試に出る類義語",
+    "a": "共　同　　　　-　　　　協同"
+  },
+  {
+    "q": "納　得",
+    "hint": "高校入試に出る類義語",
+    "a": "納　得　　　　-　　　　合点"
+  },
+  {
+    "q": "根　底",
+    "hint": "高校入試に出る類義語",
+    "a": "根　底　　　　-　　　　基礎"
+  },
+  {
+    "q": "野　心",
+    "hint": "高校入試に出る類義語",
+    "a": "野　心　　　　-　　　　野望"
+  },
+  {
+    "q": "発　展",
+    "hint": "高校入試に出る類義語",
+    "a": "発　展　　　　-　　　　進展"
+  },
+  {
+    "q": "母　国",
+    "hint": "高校入試に出る類義語",
+    "a": "母　国　　　　-　　　　祖国"
+  },
+  {
+    "q": "原　始",
+    "hint": "高校入試に出る類義語",
+    "a": "原　始　　　　-　　　　未開"
+  },
+  {
+    "q": "原　料",
+    "hint": "高校入試に出る類義語",
+    "a": "原　料　　　　-　　　　材料"
+  },
+  {
+    "q": "美　観",
+    "hint": "高校入試に出る類義語",
+    "a": "美　観　　　　-　　　　景観"
+  },
+  {
+    "q": "標　準",
+    "hint": "高校入試に出る類義語",
+    "a": "標　準　　　　-　　　　基準"
+  },
+  {
+    "q": "平　安",
+    "hint": "高校入試に出る類義語",
+    "a": "平　安　　　　-　　　　無事"
+  },
+  {
+    "q": "非　礼",
+    "hint": "高校入試に出る類義語",
+    "a": "非　礼　　　　-　　　　無礼"
+  },
+  {
+    "q": "広　告",
+    "hint": "高校入試に出る類義語",
+    "a": "広　告　　　　-　　　　宣伝"
+  },
+  {
+    "q": "寛　大",
+    "hint": "高校入試に出る類義語",
+    "a": "寛　大　　　　-　　　　寛容"
+  },
+  {
+    "q": "拡　大",
+    "hint": "高校入試に出る類義語",
+    "a": "拡　大　　　　-　　　　拡張"
+  },
+  {
+    "q": "不　運",
+    "hint": "高校入試に出る類義語",
+    "a": "不　運　　　　-　　　　非運"
+  },
+  {
+    "q": "不　作",
+    "hint": "高校入試に出る類義語",
+    "a": "不　作　　　　-　　　　凶作"
+  },
+  {
+    "q": "不　安",
+    "hint": "高校入試に出る類義語",
+    "a": "不　安　　　　-　　　　心配"
+  },
+  {
+    "q": "不　満",
+    "hint": "高校入試に出る類義語",
+    "a": "不　満　　　　-　　　　不服"
+  },
+  {
+    "q": "文　化",
+    "hint": "高校入試に出る類義語",
+    "a": "文　化　　　　-　　　　文明"
+  },
+  {
+    "q": "平　常",
+    "hint": "高校入試に出る類義語",
+    "a": "平　常　　　　-　　　　平生"
+  },
+  {
+    "q": "返　答",
+    "hint": "高校入試に出る類義語",
+    "a": "返　答　　　　-　　　　応答"
+  },
+  {
+    "q": "本　意",
+    "hint": "高校入試に出る類義語",
+    "a": "本　意　　　　-　　　　真意"
+  },
+  {
+    "q": "本　来",
+    "hint": "高校入試に出る類義語",
+    "a": "本　来　　　　-　　　　元来"
+  },
+  {
+    "q": "真　心",
+    "hint": "高校入試に出る類義語",
+    "a": "真　心　　　　-　　　　誠意"
+  },
+  {
+    "q": "真　相",
+    "hint": "高校入試に出る類義語",
+    "a": "真　相　　　　-　　　　真実"
+  },
+  {
+    "q": "看　護",
+    "hint": "高校入試に出る類義語",
+    "a": "看　護　　　　-　　　　介抱"
+  },
+  {
+    "q": "都　会",
+    "hint": "高校入試に出る類義語",
+    "a": "都　会　　　　-　　　　都市"
+  },
+  {
+    "q": "向　上",
+    "hint": "高校入試に出る類義語",
+    "a": "向　上　　　　-　　　　進歩"
+  },
+  {
+    "q": "蒸　発",
+    "hint": "高校入試に出る類義語",
+    "a": "蒸　発　　　　-　　　　揮発"
+  },
+  {
+    "q": "結　果",
+    "hint": "高校入試に出る類義語",
+    "a": "結　果　　　　-　　　　結末"
+  },
+  {
+    "q": "安　易",
+    "hint": "高校入試に出る類義語",
+    "a": "安　易　　　　-　　　　平易"
+  },
+  {
+    "q": "宿　命",
+    "hint": "高校入試に出る類義語",
+    "a": "宿　命　　　　-　　　　天命"
+  },
+  {
+    "q": "遊　学",
+    "hint": "高校入試に出る類義語",
+    "a": "遊　学　　　　-　　　　留学"
+  },
+  {
+    "q": "有　名",
+    "hint": "高校入試に出る類義語",
+    "a": "有　名　　　　-　　　　著名"
+  },
+  {
+    "q": "用　意",
+    "hint": "高校入試に出る類義語",
+    "a": "用　意　　　　-　　　　準備"
+  },
+  {
+    "q": "用　件",
+    "hint": "高校入試に出る類義語",
+    "a": "用　件　　　　-　　　　用事"
+  },
+  {
+    "q": "要　点",
+    "hint": "高校入試に出る類義語",
+    "a": "要　点　　　　-　　　　要所"
+  },
+  {
+    "q": "好　意",
+    "hint": "高校入試に出る類義語",
+    "a": "好　意　　　　-　　　　親切"
+  },
+  {
+    "q": "万　事",
+    "hint": "高校入試に出る類義語",
+    "a": "万　事　　　　-　　　　一切"
+  },
+  {
+    "q": "領　地",
+    "hint": "高校入試に出る類義語",
+    "a": "領　地　　　　-　　　　領土"
+  },
+  {
+    "q": "例　外",
+    "hint": "高校入試に出る類義語",
+    "a": "例　外　　　　-　　　　特殊"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

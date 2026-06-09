@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyWorldMap</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>EasyWorldMap</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "アフガニスタン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アラブ首長国連邦　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イエメン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イスラエル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イラク　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イラン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "インド　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "インドネシア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オマーン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カタール　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カンボジア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "韓国　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "キプロス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "クウェート　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サウジアラビア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北朝鮮　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シンガポール　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スリランカ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "タイ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "台湾　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中国　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トルコ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ネパール　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "パキスタン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バーレーン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バングラディシュ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東チモール　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブータン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フィリピン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブルネイ・ダルサマール　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベトナム　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マレーシア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミャンマー　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モルジブ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モンゴル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヨルダン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラオス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "レバノン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日本　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アルジェリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンゴラ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウガンダ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エジプト　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エチオピア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エリトリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ガーナ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カーボベルデ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ガボン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カメルーン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ガンビア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ギニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ギニアビサウ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ケニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コートジボワール　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コモロ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コンゴ共和国　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コンゴ民主共和国　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サントメ・プリンシベ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ザンビア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シエラレオネ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジブチ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジンバブエ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スーダン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スワジランド　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セイシェル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セネガル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ソマリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "タンザニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チャド　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チュニジア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トーゴ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ナイジェリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ナミビア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニジェール　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブルキナファソ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブルンジ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベナン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ボツワナ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マダガスカル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マラウイ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マリ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モーリシャス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モーリタニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モザンビーク　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モロッコ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リビア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リベリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルワンダ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "レソト　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "赤道ギニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中央アフリカ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "南アフリカ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "南スーダン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アイスランド　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アイルランド　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アルバニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンドラ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イギリス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イタリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エストニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オーストリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オランダ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ギリシャ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "キプロス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "クロアチア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コソボ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サンマリノ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スイス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スウェーデン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スペイン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スロバキア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スロベニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セルビア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チェコ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "デンマーク　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ドイツ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ノルウェー　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バチカン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハンガリー　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フィンランド　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブルガリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベルギー　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポーランド　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ボスニア・ヘルツェゴビナ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポルトガル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マケドニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マルタ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モナコ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラトビア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リトアニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リヒテンシュタイン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルーマニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルクセンブルク　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アメリカ合衆国　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンティグア・バーブーダ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エルサルバドル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カナダ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "キューバ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グアテマラ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グレナダ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コスタリカ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャマイカ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セントクリストファー・ネイビス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セントビンセント及びグレナディーン諸島　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セントルシア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ドミニカ共和国　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ドミニカ国　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トリニダード・トバゴ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニカラグア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "メキシコ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハイチ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "パナマ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バハマ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バルバドス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベリーズ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ホンジュラス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アルゼンチン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウルグアイ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エクアドル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ガイアナ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コロンビア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "スリナム　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チリ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "パラグアイ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブラジル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベネズエラ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ペルー　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ボリビア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アゼルバイジャン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アルメニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウクライナ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウズベキスタン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カザフスタン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "キルギス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グルジア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "タジキスタン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トルクメニスタン　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベラルーシ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モルドバ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロシア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オーストラリア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "キリバス　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サモア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ソロモン諸島　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ツバル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トンガ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ナウル　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニュージーランド　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バヌアツ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "パプアニューギニア　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "パラオ　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フィジー　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マーシャル諸島　　はどこ？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミクロネシア連邦 　　はどこ？",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

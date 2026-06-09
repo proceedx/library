@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ものは液体にうく</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>ものは液体にうく</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "同体積の重さが　液体より小さいと　ものは液体にうくか?",
+    "hint": "ものは液体にうく",
+    "a": "同体積の重さが　液体より小さいと　ものは液体にうく"
+  },
+  {
+    "q": "同体積の重さが　液体より大きいと　ものは液体にしずむか?",
+    "hint": "ものは液体にしずむ",
+    "a": "同体積の重さが　液体より大きいと　ものは液体にしずむ"
+  },
+  {
+    "q": "同体積の重さが　液体と同じだと　ものは液体の中間にとどまるか?",
+    "hint": "ものは液体の中間にとどまる",
+    "a": "同体積の重さが　液体と同じだと　ものは液体の中間にとどまる"
+  },
+  {
+    "q": "おもりが重いほど　ものを動かすはたらきが大きいか?",
+    "hint": "ものを動かすはたらきが大きい",
+    "a": "おもりが重いほど　ものを動かすはたらきが大きい"
+  },
+  {
+    "q": "おもりがはやく動くほど　ものを動かすはたらきが大きいか?",
+    "hint": "ものを動かすはたらきが大きい",
+    "a": "おもりがはやく動くほど　ものを動かすはたらきが大きい"
+  },
+  {
+    "q": "ゴムののびがながいほど　物を動かす力はおおきくなるか?",
+    "hint": "力はおおきくなる",
+    "a": "ゴムののびがながいほど　物を動かす力はおおきくなる"
+  },
+  {
+    "q": "ゴムの本数が多いほど物を動かす力はおおきくなるか?",
+    "hint": "力はおおきくなる",
+    "a": "ゴムの本数が多いほど物を動かす力はおおきくなる"
+  },
+  {
+    "q": "風がつよければつよいほど、ものを動かす力はおおきくなるか?",
+    "hint": "ものを動かす力はおおきくなる",
+    "a": "風がつよければつよいほど ものを動かす力はおおきくなる"
+  },
+  {
+    "q": "虫 め が ね か ら し ょ う 点 ま で の 長 さ を 何 と い う か 　?",
+    "hint": "し ょ う 点 き ょ り",
+    "a": "虫めがねから しょう点までの長さを しょう点きょりという"
+  },
+  {
+    "q": "光は１秒間に 30万 km の速さで進むか?",
+    "hint": "30万 km の速さ",
+    "a": "光は１秒間に 30万 km の速さで進む"
+  },
+  {
+    "q": "いろいろな色のうち，くっせつする角度がもっとも大きい色は紫で，もっとも小さい色は赤か?",
+    "hint": "赤",
+    "a": "いろいろな色のうち くっせつする角度がもっとも大きい色は紫で もっとも小さい色は赤である"
+  },
+  {
+    "q": "物体を遠ざけると，像の位置は近くなって，大きさは 小さ くなるか?",
+    "hint": "大きさは 小さ くなる",
+    "a": "物体を遠ざけると 像の位置は近くなって 大きさは 小さくなる"
+  },
+  {
+    "q": "音は，１５℃の空気中では，秒速 ３ ｍくらいの速さ　水中では秒速 １５００ ｍぐらいであるか?",
+    "hint": "水中では秒速 １５００ ｍぐらいである",
+    "a": "音は 15ど の空気中では 秒速 3mくらいの速さ　水中では秒速 1500mぐらいである"
+  },
+  {
+    "q": "音の伝わり方　→　げんが太いほど，音は 低 くなるか?",
+    "hint": "音は 低 くなる",
+    "a": "音の伝わり方　→　げんが太いほど 音は 低くなる"
+  },
+  {
+    "q": "音の伝わり方　→　げんの長さが長いほど，音は 低 くなるか?",
+    "hint": "音は 低 くなる",
+    "a": "音の伝わり方　→　げんの長さが長いほど 音は 低くなる"
+  },
+  {
+    "q": "音の伝わり方　→　コップをたたくとき，水の量が多いほど，音は 低 くなるか?",
+    "hint": "音は 低 くなる",
+    "a": "音の伝わり方　→　コップをたたくとき 水の量が多いほど 音は 低くなる"
+  },
+  {
+    "q": "音の伝わり方　→　げんをぴんと張るほど，音は高くなるか?",
+    "hint": "音の伝わり方　→　げんをぴんと張るほど，音は高くなる",
+    "a": "音の伝わり方　→　げんをぴんと張るほど 音は高くなる"
+  },
+  {
+    "q": "振動数が多くなると，音は高くなるか?",
+    "hint": "音は高くなる",
+    "a": "振動数が多くなると 音は高くなる"
+  },
+  {
+    "q": "げんを強く張ったり， 短 くしたり， 細 くすると， 高 い音が出るか?",
+    "hint": "高 い音が出る",
+    "a": "げんを強く張ったり 短くしたり 細くすると 高い音が出る"
+  },
+  {
+    "q": "虫 め が ね を 通 し て 太 陽 の 光 が 集 ま る 点 を ， 何 というか ?",
+    "hint": "し ょ う 点",
+    "a": "虫めがねを 通して 太陽の光が集まる点を しょう点という"
+  },
+  {
+    "q": "しょう点を通ってきた光は，とつレンズを通ったあと 軸に平行に進む か?",
+    "hint": "軸に平行に進む",
+    "a": "しょう点を通ってきた光は とつレンズを通ったあと 軸に平行に進む"
+  },
+  {
+    "q": "とつレンズの軸に平行な光は，レンズを通ったあと　 しょう点を通るか?",
+    "hint": "しょう点を通る",
+    "a": "とつレンズの軸に平行な光は レンズを通ったあと　 しょう点を通る"
+  },
+  {
+    "q": "物体をしょう点きょりの内側におくと， 正 立 きょ像ができるか?",
+    "hint": "正 立 きょ像ができる",
+    "a": "物体をしょう点きょりの 内側におくと せいりつきょ像ができる"
+  },
+  {
+    "q": "とつレンズの中心に向かう光は，レンズを通ったあと そのまま進むか?",
+    "hint": "そのまま進む",
+    "a": "とつレンズの中心に向かう光は レンズを通ったあと そのまま進む"
+  },
+  {
+    "q": "光 が 折 れ 曲 が る 性 質 を ， 光 の 何 というか ?",
+    "hint": "光 の く っ 折",
+    "a": "光が 折れ曲がる 性質を 光の くっせつという"
+  },
+  {
+    "q": "光 が ま っ す ぐ 進 む こ と を ，光 の 何 というか　 ?",
+    "hint": "光 の 直 進",
+    "a": "光が まっすぐ 進むことを 光の直進という"
+  },
+  {
+    "q": "光 が 鏡 な ど に よ っ て は ね 返 さ れ る こ と を ， 光 の何 というか　 ?",
+    "hint": "光 の 反 射",
+    "a": "光が鏡などによって はね返されることを 光の反射という"
+  },
+  {
+    "q": "光が物にあたってはね返ることを，光の 反射 というか?",
+    "hint": "光の 反射",
+    "a": "光が物にあたってはね返ることを 光の反射という"
+  },
+  {
+    "q": "鏡 に す い 直 な 線 を ， 何 というか ?",
+    "hint": "法 線",
+    "a": "鏡に すいちょくな 線を 法線という"
+  },
+  {
+    "q": "光は，同じ物の中を進むときはまっすぐに進むか?",
+    "hint": "まっすぐに進む",
+    "a": "光は 同じ物の中を進むときはまっすぐに進む"
+  },
+  {
+    "q": "遠くのものを見るとき、目のレンズは うすく なるか?",
+    "hint": "レンズは うすく なる",
+    "a": "遠くのものを見るとき 目のレンズは うすく なる"
+  },
+  {
+    "q": "方 位 じ し ん の Ｎ 極 は ， ど の 方 位 を さ す か ?",
+    "hint": "北",
+    "a": "方位じしんの Ｎ極は 北をさす"
+  },
+  {
+    "q": "じ し ゃ く に く っ つ く 金 属 を ３ つ いうと?",
+    "hint": "鉄 ・ ニ ッ ケ ル ・ コ バ ル ト",
+    "a": "じしゃくに くっつく金属は　鉄・ニッケル・コバルトである"
+  },
+  {
+    "q": "極には　N極　と　S極があるか?",
+    "hint": "N極　と　S極がある",
+    "a": "極には　N極　と　S極がある"
+  },
+  {
+    "q": "磁石は　同じ極どうしを近づけるとしりぞけ合うか?",
+    "hint": "同じ極どうしを近づけるとしりぞけ合う",
+    "a": "磁石は　同じ極どうしを近づけるとしりぞけ合う"
+  },
+  {
+    "q": "じしゃくの性質　　→　磁石がものをひきつける力は両はしほど強い　両はしは極というか?",
+    "hint": "両はしは極という",
+    "a": "じしゃくの性質　　→　磁石がものをひきつける力は両はしほど強い　両はしは 極という"
+  },
+  {
+    "q": "鉄しんをいれた電磁石の磁力は強いか?",
+    "hint": "鉄しんをいれた電磁石の磁力は強い",
+    "a": "てっしんを いれた電磁石の磁力は強い"
+  },
+  {
+    "q": "コイルに電流を流したものを電磁石というか?",
+    "hint": "電磁石",
+    "a": "コイルに電流を流したものを電磁石という"
+  },
+  {
+    "q": "右ねじの法則　　→　　右ネジを電流のむきに回したとき　ねじの進む向きがコイルのN極となるか?",
+    "hint": "ねじの進む向きがコイルのN極となる",
+    "a": "右ねじの法則→右ネジを電流のむきに回したとき ねじの進む向きが コイルのN極となる"
+  },
+  {
+    "q": "ア オ ム シ に は ，つ め の あ る 足 が 何 本 あ るか 　?",
+    "hint": "６ 本",
+    "a": "アオムシには つめのある足は 6本である"
+  },
+  {
+    "q": "モ ン シ ロ チ ョ ウ の よ う 虫 を ， 何 というか　?",
+    "hint": "ア オ ム シ",
+    "a": "モンシロチョウの ようちゅうを アオムシという"
+  },
+  {
+    "q": "よ う 虫 が 成 虫 に な る こ と を ， 何 というか　?",
+    "hint": "羽 化",
+    "a": "ようちゅうが 成虫になることを ウカという"
+  },
+  {
+    "q": "ア オ ム シ は ， 何 令 よ う 虫 に ま で な る か ?",
+    "hint": "５ 令",
+    "a": "アオムシは ５令ようちゅうにまでなる"
+  },
+  {
+    "q": "こ ん 虫 の か ら だ の ３ つ の 部 分 は？",
+    "hint": "頭 ・ む ね ・ は ら",
+    "a": "こんちゅうのからだの ３つの部分は頭 ・ むね ・ ハラである"
+  },
+  {
+    "q": "ミ カ ン 科 の な か ま を ２ つ は　?",
+    "hint": "カ ラ タ チ ・ サ ン シ ョ ウ",
+    "a": "ミカン科 の なかま フタツは カラタチ ・ サンショウである"
+  },
+  {
+    "q": "モ ン シ ロ チ ョ ウ の た ま ご は ， は じ め 何 色 を し てい るか　?",
+    "hint": "に ゅ う 白 色",
+    "a": "モンシロチョウのたまごは はじめ にゅうはくしょく している"
+  },
+  {
+    "q": "ア ゲ ハ の よ う 虫 は ， 何 科 の 植 物 を 食 べ るか 　?",
+    "hint": "ミ カ ン 科の植物",
+    "a": "アゲハのようちゅうわ ミカン科の植物をたべる"
+  },
+  {
+    "q": "メ ダ カ が 産 卵 を 始 め る 水 温 と 昼 の 長 さ の 条 件 は?",
+    "hint": "水 温 ２ ０ ℃ 以 上 ，  昼 の 長 さ が １ ３ 時 間 以 上",
+    "a": "メダカが産卵を始める 水温と昼の長さの条件は　水温 20ど 以上 昼の長さが 13時間以上である"
+  },
+  {
+    "q": "ア オ ム シ に は ， き ゅ う ば ん の あ る 足 が 何 本 あ る か  ?",
+    "hint": "１ ０ 本",
+    "a": "アオムシには きゅうばんのある足が 10本ある"
+  },
+  {
+    "q": "モ ン シ ロ チ ョ ウ の た ま ご の 高 さ は 何 ｍ ｍ く ら い か　　?",
+    "hint": "１ ｍ ｍ",
+    "a": "モンシロチョウのたまごの高さは 1ミリｍ くらいある"
+  },
+  {
+    "q": "こ ん 虫 の か ら だ に は ， ふ つ う 単 眼 が 何 個 あ り ます か ?",
+    "hint": "３ 個",
+    "a": "こんちゅうの からだには ふつう たんがんが 3個ある"
+  },
+  {
+    "q": "ア オ ム シ は ， 何 回 だ っ 皮 するか  ?",
+    "hint": "４ 回",
+    "a": "アオムシは 4回 だっぴする"
+  },
+  {
+    "q": "こ ん 虫 に は ， 羽 は ふ つ う 何 枚 あ り ま す か  　　?",
+    "hint": "４ 枚",
+    "a": "こんちゅう には ハネは ふつう 4枚ある"
+  },
+  {
+    "q": "こ ん 虫 に は ， 足 が 何 本 あ る か 　?",
+    "hint": "６ 本",
+    "a": "こんちゅう には 足が 6本ある"
+  },
+  {
+    "q": "モ ン シ ロ チ ョ ウ は ， 何 科 の 植 物 を 食 べ る か  ?",
+    "hint": "ア ブ ラ ナ 科",
+    "a": "モンシロチョウは アブラナ科の 植物を たべる"
+  },
+  {
+    "q": "こん虫のからだは,  頭 ・ むね ・ はら の３つの部分に分かれるか?",
+    "hint": "頭 ・ むね ・ はら の３つの部分に分かれる",
+    "a": "こんちゅうの からだは アタマ ・ ムネ ・ ハラ の３つの部分にわかれる"
+  },
+  {
+    "q": "ア オ ム シ の 令 数 は ど こ を 調 べ れ ば わ か る か ?",
+    "hint": "頭 の は ば",
+    "a": "アオムシの 令数は アタマの ハバを 調べればわかる"
+  },
+  {
+    "q": "アオムシは アブラナ 科の植物を食べるか?",
+    "hint": "アオムシは アブラナ 科の植物を食べる",
+    "a": "アオムシは アブラナ科の 植物をたべる”"
+  },
+  {
+    "q": "不 完 全 変 態 を す る こ ん 虫 は　?",
+    "hint": "カ マ キ リ ・ ト ン ボ ・ バ ッ タ ・ セ ミ ・ゴ キ ブ リ",
+    "a": "不完全変態をする こんちゅうわ　カマキリ ・ トンボ ・ バッタ ・ セミ ・ゴキブリ である"
+  },
+  {
+    "q": "ア オ ム シ の 気 門 は ， か ら だ の 中 の ど の 部 分 に つな が っ ているか?",
+    "hint": "気 管",
+    "a": "アオムシの 気門は からだの中の 気管に つながっている"
+  },
+  {
+    "q": "ア オ ム シ の は ら に あ る ， 空 気 の 出 し 入 れ を す る と こ ろ を 何 というか?",
+    "hint": "気 門",
+    "a": "アオムシの ハラにある 空気の 出し入れをするところを 気門という"
+  },
+  {
+    "q": "こん虫は、 気門 で気体を出し入れし， 気管 で呼吸するか?",
+    "hint": "気管 で呼吸する",
+    "a": "こんちゅうわ 気門で気体を出し入れし 気管で呼吸する"
+  },
+  {
+    "q": "こん虫は 気門 で空気の出し入れをして， 気管 で呼吸をしているか?",
+    "hint": "気門",
+    "a": "こんちゅうわ 気門で空気の出し入れをして 気管で呼吸をしている"
+  },
+  {
+    "q": "カ イ コ ガ の よ う 虫 が 食 べ る の は ，何 の 葉 か　?",
+    "hint": "ク ワ の 葉",
+    "a": "カイコガの ようちゅうが たべるのは クワのハである"
+  },
+  {
+    "q": "モ ン シ ロ チ ョ ウ の た ま ご は ， よ う 虫 に な る こ ろ は 何 色 を し ているか　　?",
+    "hint": "こ い 黄 色",
+    "a": "モンシロチョウの たまごは ようちゅうに なるころは こい黄色をしている"
+  },
+  {
+    "q": "ダニは クモ のなかまミジンコは 甲かく 類であるか?",
+    "hint": "甲かく 類",
+    "a": "ダニは クモのなかま ミジンコは 甲かく類である"
+  },
+  {
+    "q": "こん虫には足が ６ 本あり，はねはふつう ４ 枚であるか?",
+    "hint": "こん虫には足が ６ 本あり，はねは ふつう ４ 枚である",
+    "a": "こんちゅうにわ　　あしが 6本あり ハネは ふつう 4枚である"
+  },
+  {
+    "q": "た ま ご か ら か え っ た ば か り の よ う 虫 は ， は じ め に 何 を する か?",
+    "hint": "自 分 の　 た ま ご の か ら を 食 べ る",
+    "a": "たまごから かえったばかりの ようちゅうわ はじめは 自分の たまごのからを たべる"
+  },
+  {
+    "q": "こ ん 虫 の 頭 に つ い て い る つ く り を ３ つ 答 え よ ?",
+    "hint": "し ょ っ 角 ・ 目 ・ 口",
+    "a": "こんちゅうの あたまについている つくりは しょっ角 ・ 目 ・ くち である"
+  },
+  {
+    "q": "足 に ふ し が あ る 動 物 を ， 何 動 物 というか　?",
+    "hint": "節 足 動 物",
+    "a": "足に ふしが ある動物を 節足動物 という"
+  },
+  {
+    "q": "完 全 変 態 の こ ん 虫 は ， ど の よ う に 育つか?",
+    "hint": "た ま ご ・ よ う 虫 ・ さ な ぎ ・ 成 虫",
+    "a": "完全変態の こんちゅう は たまご ・ ようちゅう ・ さなぎ ・ 成虫に そだつ"
+  },
+  {
+    "q": "不 完 全 変 態 の こ ん 虫 は ，ど の よ う に 育つか 　?",
+    "hint": "た ま ご ・ よ う 虫 ・ 成 虫",
+    "a": "不完全変態の こんちゅうわ たまご ・ ようちゅう ・ 成虫に 育つ"
+  },
+  {
+    "q": "アオムシは ４ 回脱皮するか?",
+    "hint": "アオムシは ４ 回脱皮する",
+    "a": "アオムシは 4回 脱皮する"
+  },
+  {
+    "q": "さなぎの時期がないこん虫には， トンボ ・ セミ ・ バッタ ・ コオロギ ・ カマキリ などがいるか?",
+    "hint": "トンボ ・ セミ ・ バッタ ・ コオロギ ・ カマキリがいる",
+    "a": "さなぎの時期がないこんちゅうにわ　　トンボ ・ セミ ・ バッタ ・ コオロギ ・ カマキリ などがいる"
+  },
+  {
+    "q": "羽 が ２ 枚 し か な い こ ん 虫 を ３ つ いうと　?",
+    "hint": "ハ エ ・ ア ブ ・ カ",
+    "a": "ハネが 2枚 しかない こんちゅうわ ハエ ・ アブ ・ カ である"
+  },
+  {
+    "q": "メダカのたまごには，子めだかのからだになる はいばん があるか?",
+    "hint": "からだになる はいばん がある",
+    "a": "メダカのたまごには 子めだかの からだになる はいばんがある"
+  },
+  {
+    "q": "コオロギ・キリギリスは，前羽のつけ根 に，発音器官があるか?",
+    "hint": "発音器官がある",
+    "a": "コオロギ・キリギリスわ マエバネの つけ根に 発音器官がある"
+  },
+  {
+    "q": "はねが２枚のこん虫には ハエ ・ アブ ・ カ などがいるか?",
+    "hint": "ハエ ・ アブ ・ カ などがいる",
+    "a": "はねが 2枚のこんちゅうにわ ハエ ・ アブ ・ カ などがいる"
+  },
+  {
+    "q": "た ま ご か ら か え っ て よ う 虫 に な る こ と を ， 何 というか　?",
+    "hint": "ふ 化する",
+    "a": "たまごから かえって ようちゅうになることを ふかという"
+  },
+  {
+    "q": "メダカのたまごは，水温5℃くらいでふ化するか?",
+    "hint": "ふ化",
+    "a": "メダカのたまごは　水温 5度 くらいで ふかする"
+  },
+  {
+    "q": "水中でふ遊している小さな生物を プランクトン というか?",
+    "hint": "プランクトン という",
+    "a": "水中でふゆうしている小さな生物を プランクトン という"
+  },
+  {
+    "q": "こ ん 虫 の 足 は ， か ら だ の ど の 部 分 に つ い て いるか?",
+    "hint": "む ね",
+    "a": "こんちゅうの 足は からだの むねについている"
+  },
+  {
+    "q": "よ う 虫 が さ な ぎ に な る こ と を ，何 というか　?",
+    "hint": "よ う 化",
+    "a": "ようちゅうが さなぎになることを ようかという"
+  },
+  {
+    "q": "地面に広がって冬ごしをする葉を ロゼット 葉というか?",
+    "hint": "ロゼット 葉",
+    "a": "地面に広がって冬ごしをする葉を ロゼット葉 という"
+  },
+  {
+    "q": "生活で使われるオゾンがオゾン層をはかいしているか?",
+    "hint": "オゾン層をはかいしている",
+    "a": "生活で使われるオゾンがオゾン層を　　はかいしている"
+  },
+  {
+    "q": "生き物が呼吸する酸素は　植物だけがつくりだしているか?",
+    "hint": "酸素は　植物だけがつくりだしている",
+    "a": "生き物が呼吸する酸素は　植物だけがつくりだしている"
+  },
+  {
+    "q": "植物の光合成が自然界の調和をたもっているか?",
+    "hint": "自然界の調和をたもっている",
+    "a": "植物の光合成が自然界の調和をたもっている"
+  },
+  {
+    "q": "生き物は　食べる食べられるの関係でつながっている　　これを食物連鎖というか?",
+    "hint": "食物連鎖",
+    "a": "生き物は　食べる食べられるの関係でつながっている　これを食物連鎖という"
+  },
+  {
+    "q": "生き物の体内には　たくさんの水がふくまれているか?",
+    "hint": "たくさんの水がふくまれている",
+    "a": "生き物の体内には　たくさんの水がふくまれている"
+  },
+  {
+    "q": "太 陽 の 直 径 は ， 地 球 の 何 倍 か?",
+    "hint": "１ ０ ９ 倍",
+    "a": "太陽の直径は 地球の 109倍である"
+  },
+  {
+    "q": "太 陽 は ， ど の 方 位 に し ず むか ?",
+    "hint": "西",
+    "a": "太陽は 西にしずむ"
+  },
+  {
+    "q": "太 陽 の 直 径 は ， お よ そ 何 ｋ ｍ か?",
+    "hint": "１ ４ ０ 万 ｋ ｍ",
+    "a": "太陽の直径は およそ 140万ｋｍである"
+  },
+  {
+    "q": "太 陽 の 直 径 は ， 月 の 何 倍 か ?",
+    "hint": "４ ０ ０ 倍",
+    "a": "太陽の直径は 月の 400倍である"
+  },
+  {
+    "q": "太 陽 の 表 面 の 温 度 は 約 何 ℃ か　?",
+    "hint": "６ ０ ０ ０ ℃",
+    "a": "太陽の表面の温度は 約 6000度ある"
+  },
+  {
+    "q": "日本の時刻は， 兵庫 県 明石 市を通る，東経 １３５ 度が基準になっているか?",
+    "hint": "明石 市を通る，東経 １３５ 度が基準",
+    "a": "日本の時刻は 兵庫県 明石市を通る 東経 135度が基準になっている"
+  },
+  {
+    "q": "太 陽 の 表 面 に あ る ， ま わ り よ り 温 度 の 低 い 部 分を 何 というか?",
+    "hint": "黒 点",
+    "a": "太陽の 表面にある まわりより 温度の低い部分を 黒点という"
+  },
+  {
+    "q": "北の地点に行くほど，南中 高度 は 低 くなるか?",
+    "hint": "南中 高度 は 低 くなる",
+    "a": "北の地点に行くほど なんちゅう高度は 低くなる"
+  },
+  {
+    "q": "東の地点に行くほど，南中 時刻 は早くなるか?",
+    "hint": "早くなる",
+    "a": "東の地点に行くほど なんちゅう時刻は　早くなる"
+  },
+  {
+    "q": "日食は 新 月のときにおこり，太陽 月  地球 の順か?",
+    "hint": "太陽 月 地球 の順",
+    "a": "日食は しんげつ のときにおこり 太陽　　月　　地球　　の順である"
+  },
+  {
+    "q": "太 陽 は ， ど の 方 位 か ら 上 っ て くる か  ?",
+    "hint": "東",
+    "a": "太陽は 東の方位から のぼってくる"
+  },
+  {
+    "q": "１ 年 の 中 で は ，太 陽 高 度 の 最 高 は６月 ご ろ ，地 温 の 最 高 は７月 ご ろ ，気 温 の 最 高 は ８ 月 ご ろ であるか?",
+    "hint": "気 温 の 最 高 は ８ 月 ご ろ である",
+    "a": "1年の中では 太陽高度の 最高は 6月ごろ　　地温の 最高は7月ごろ　　気温の最高は ８月ごろである"
+  },
+  {
+    "q": "太 陽 が ま 南 に く る こ と を 何 というか　?",
+    "hint": "太 陽 の 南 中",
+    "a": "太陽が ま南にくることを 太陽のなんちゅうという"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

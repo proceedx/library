@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中学３年　名詞</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>中学３年　名詞</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "accident",
+    "hint": "中学３年　名詞",
+    "a": "事故"
+  },
+  {
+    "q": "action",
+    "hint": "中学３年　名詞",
+    "a": "行動"
+  },
+  {
+    "q": "address",
+    "hint": "中学３年　名詞",
+    "a": "住所"
+  },
+  {
+    "q": "answer",
+    "hint": "中学３年　名詞",
+    "a": "答え"
+  },
+  {
+    "q": "area",
+    "hint": "中学３年　名詞",
+    "a": "地域"
+  },
+  {
+    "q": "army",
+    "hint": "中学３年　名詞",
+    "a": "陸軍"
+  },
+  {
+    "q": "arrow",
+    "hint": "中学３年　名詞",
+    "a": "矢"
+  },
+  {
+    "q": "artist",
+    "hint": "中学３年　名詞",
+    "a": "芸術家"
+  },
+  {
+    "q": "Asia",
+    "hint": "中学３年　名詞",
+    "a": "アジア"
+  },
+  {
+    "q": "Australia",
+    "hint": "中学３年　名詞",
+    "a": "オーストラリア"
+  },
+  {
+    "q": "barber",
+    "hint": "中学３年　名詞",
+    "a": "床屋"
+  },
+  {
+    "q": "bathroom",
+    "hint": "中学３年　名詞",
+    "a": "浴室"
+  },
+  {
+    "q": "beach",
+    "hint": "中学３年　名詞",
+    "a": "砂浜"
+  },
+  {
+    "q": "beauty",
+    "hint": "中学３年　名詞",
+    "a": "美"
+  },
+  {
+    "q": "billion",
+    "hint": "中学３年　名詞",
+    "a": "１０億"
+  },
+  {
+    "q": "bit",
+    "hint": "中学３年　名詞",
+    "a": "少し"
+  },
+  {
+    "q": "blood",
+    "hint": "中学３年　名詞",
+    "a": "血"
+  },
+  {
+    "q": "bomb",
+    "hint": "中学３年　名詞",
+    "a": "爆弾"
+  },
+  {
+    "q": "bottle",
+    "hint": "中学３年　名詞",
+    "a": "びん"
+  },
+  {
+    "q": "bowl",
+    "hint": "中学３年　名詞",
+    "a": "鉢"
+  },
+  {
+    "q": "branch",
+    "hint": "中学３年　名詞",
+    "a": "枝"
+  },
+  {
+    "q": "brush",
+    "hint": "中学３年　名詞",
+    "a": "筆"
+  },
+  {
+    "q": "calendar",
+    "hint": "中学３年　名詞",
+    "a": "カレンダー"
+  },
+  {
+    "q": "can",
+    "hint": "中学３年　名詞",
+    "a": "カン"
+  },
+  {
+    "q": "Canada",
+    "hint": "中学３年　名詞",
+    "a": "カナダ"
+  },
+  {
+    "q": "captain",
+    "hint": "中学３年　名詞",
+    "a": "船長"
+  },
+  {
+    "q": "care",
+    "hint": "中学３年　名詞",
+    "a": "世話、管理"
+  },
+  {
+    "q": "case",
+    "hint": "中学３年　名詞",
+    "a": "場合、容器"
+  },
+  {
+    "q": "cent",
+    "hint": "中学３年　名詞",
+    "a": "セント"
+  },
+  {
+    "q": "centimeter",
+    "hint": "中学３年　名詞",
+    "a": "センチメートル"
+  },
+  {
+    "q": "century",
+    "hint": "中学３年　名詞",
+    "a": "世紀"
+  },
+  {
+    "q": "cheese",
+    "hint": "中学３年　名詞",
+    "a": "チーズ"
+  },
+  {
+    "q": "China",
+    "hint": "中学３年　名詞",
+    "a": "中国"
+  },
+  {
+    "q": "climate",
+    "hint": "中学３年　名詞",
+    "a": "気候"
+  },
+  {
+    "q": "concert",
+    "hint": "中学３年　名詞",
+    "a": "コンサート"
+  },
+  {
+    "q": "couple",
+    "hint": "中学３年　名詞",
+    "a": "一対"
+  },
+  {
+    "q": "courage",
+    "hint": "中学３年　名詞",
+    "a": "勇気"
+  },
+  {
+    "q": "course",
+    "hint": "中学３年　名詞",
+    "a": "進路"
+  },
+  {
+    "q": "cousin",
+    "hint": "中学３年　名詞",
+    "a": "いとこ"
+  },
+  {
+    "q": "crowd",
+    "hint": "中学３年　名詞",
+    "a": "群衆"
+  },
+  {
+    "q": "curtain",
+    "hint": "中学３年　名詞",
+    "a": "カーテン"
+  },
+  {
+    "q": "custom",
+    "hint": "中学３年　名詞",
+    "a": "習慣"
+  },
+  {
+    "q": "dad",
+    "hint": "中学３年　名詞",
+    "a": "お父ちゃん"
+  },
+  {
+    "q": "damage",
+    "hint": "中学３年　名詞",
+    "a": "被害"
+  },
+  {
+    "q": "death",
+    "hint": "中学３年　名詞",
+    "a": "死"
+  },
+  {
+    "q": "desert",
+    "hint": "中学３年　名詞",
+    "a": "砂漠"
+  },
+  {
+    "q": "discussion",
+    "hint": "中学３年　名詞",
+    "a": "討論"
+  },
+  {
+    "q": "disease",
+    "hint": "中学３年　名詞",
+    "a": "病気"
+  },
+  {
+    "q": "driver",
+    "hint": "中学３年　名詞",
+    "a": "運転手"
+  },
+  {
+    "q": "elephant",
+    "hint": "中学３年　名詞",
+    "a": "象"
+  },
+  {
+    "q": "enemy",
+    "hint": "中学３年　名詞",
+    "a": "敵"
+  },
+  {
+    "q": "energy",
+    "hint": "中学３年　名詞",
+    "a": "エネルギー"
+  },
+  {
+    "q": "engineer",
+    "hint": "中学３年　名詞",
+    "a": "エンジニア"
+  },
+  {
+    "q": "England",
+    "hint": "中学３年　名詞",
+    "a": "イングランド"
+  },
+  {
+    "q": "entrance",
+    "hint": "中学３年　名詞",
+    "a": "入り口、入学"
+  },
+  {
+    "q": "Europe",
+    "hint": "中学３年　名詞",
+    "a": "ヨーロッパ"
+  },
+  {
+    "q": "exam",
+    "hint": "中学３年　名詞",
+    "a": "試験"
+  },
+  {
+    "q": "fact",
+    "hint": "中学３年　名詞",
+    "a": "事実"
+  },
+  {
+    "q": "fence",
+    "hint": "中学３年　名詞",
+    "a": "塀"
+  },
+  {
+    "q": "festival",
+    "hint": "中学３年　名詞",
+    "a": "祭り"
+  },
+  {
+    "q": "film",
+    "hint": "中学３年　名詞",
+    "a": "映画"
+  },
+  {
+    "q": "fishing",
+    "hint": "中学３年　名詞",
+    "a": "魚釣り"
+  },
+  {
+    "q": "flight",
+    "hint": "中学３年　名詞",
+    "a": "飛行"
+  },
+  {
+    "q": "forest",
+    "hint": "中学３年　名詞",
+    "a": "森林"
+  },
+  {
+    "q": "fox",
+    "hint": "中学３年　名詞",
+    "a": "キツネ"
+  },
+  {
+    "q": "frog",
+    "hint": "中学３年　名詞",
+    "a": "カエル"
+  },
+  {
+    "q": "gas",
+    "hint": "中学３年　名詞",
+    "a": "ガス"
+  },
+  {
+    "q": "goal",
+    "hint": "中学３年　名詞",
+    "a": "得点、ゴール"
+  },
+  {
+    "q": "God",
+    "hint": "中学３年　名詞",
+    "a": "神"
+  },
+  {
+    "q": "goods",
+    "hint": "中学３年　名詞",
+    "a": "商品"
+  },
+  {
+    "q": "grade",
+    "hint": "中学３年　名詞",
+    "a": "評点、等級"
+  },
+  {
+    "q": "gram",
+    "hint": "中学３年　名詞",
+    "a": "グラム"
+  },
+  {
+    "q": "grape",
+    "hint": "中学３年　名詞",
+    "a": "ブドウ"
+  },
+  {
+    "q": "gray",
+    "hint": "中学３年　名詞",
+    "a": "灰色"
+  },
+  {
+    "q": "guide",
+    "hint": "中学３年　名詞",
+    "a": "案内人"
+  },
+  {
+    "q": "gym",
+    "hint": "中学３年　名詞",
+    "a": "体育館"
+  },
+  {
+    "q": "habit",
+    "hint": "中学３年　名詞",
+    "a": "習慣"
+  },
+  {
+    "q": "hall",
+    "hint": "中学３年　名詞",
+    "a": "広間、ろうか"
+  },
+  {
+    "q": "heaven",
+    "hint": "中学３年　名詞",
+    "a": "天"
+  },
+  {
+    "q": "hole",
+    "hint": "中学３年　名詞",
+    "a": "穴"
+  },
+  {
+    "q": "honey",
+    "hint": "中学３年　名詞",
+    "a": "蜂蜜"
+  },
+  {
+    "q": "host",
+    "hint": "中学３年　名詞",
+    "a": "主人"
+  },
+  {
+    "q": "husband",
+    "hint": "中学３年　名詞",
+    "a": "夫"
+  },
+  {
+    "q": "ink",
+    "hint": "中学３年　名詞",
+    "a": "インク"
+  },
+  {
+    "q": "iron",
+    "hint": "中学３年　名詞",
+    "a": "鉄"
+  },
+  {
+    "q": "jam",
+    "hint": "中学３年　名詞",
+    "a": "ジャム、混雑"
+  },
+  {
+    "q": "jeans",
+    "hint": "中学３年　名詞",
+    "a": "ジーンズ"
+  },
+  {
+    "q": "jewel",
+    "hint": "中学３年　名詞",
+    "a": "宝石"
+  },
+  {
+    "q": "joy",
+    "hint": "中学３年　名詞",
+    "a": "喜び"
+  },
+  {
+    "q": "juice",
+    "hint": "中学３年　名詞",
+    "a": "ジュース"
+  },
+  {
+    "q": "kilometer",
+    "hint": "中学３年　名詞",
+    "a": "キロメートル"
+  },
+  {
+    "q": "lip",
+    "hint": "中学３年　名詞",
+    "a": "くちびる"
+  },
+  {
+    "q": "list",
+    "hint": "中学３年　名詞",
+    "a": "リスト"
+  },
+  {
+    "q": "London",
+    "hint": "中学３年　名詞",
+    "a": "ロンドン"
+  },
+  {
+    "q": "luck",
+    "hint": "中学３年　名詞",
+    "a": "運"
+  },
+  {
+    "q": "mark",
+    "hint": "中学３年　名詞",
+    "a": "印"
+  },
+  {
+    "q": "match",
+    "hint": "中学３年　名詞",
+    "a": "試合"
+  },
+  {
+    "q": "matter",
+    "hint": "中学３年　名詞",
+    "a": "問題、困ったこと"
+  },
+  {
+    "q": "meaning",
+    "hint": "中学３年　名詞",
+    "a": "意味"
+  },
+  {
+    "q": "melon",
+    "hint": "中学３年　名詞",
+    "a": "メロン"
+  },
+  {
+    "q": "menu",
+    "hint": "中学３年　名詞",
+    "a": "メニュー"
+  },
+  {
+    "q": "merchant",
+    "hint": "中学３年　名詞",
+    "a": "商人"
+  },
+  {
+    "q": "middle",
+    "hint": "中学３年　名詞",
+    "a": "中央"
+  },
+  {
+    "q": "midnight",
+    "hint": "中学３年　名詞",
+    "a": "真夜中"
+  },
+  {
+    "q": "mind",
+    "hint": "中学３年　名詞",
+    "a": "精神"
+  },
+  {
+    "q": "model",
+    "hint": "中学３年　名詞",
+    "a": "模型"
+  },
+  {
+    "q": "mom",
+    "hint": "中学３年　名詞",
+    "a": "おかあちゃん"
+  },
+  {
+    "q": "neighbor",
+    "hint": "中学３年　名詞",
+    "a": "隣人"
+  },
+  {
+    "q": "net",
+    "hint": "中学３年　名詞",
+    "a": "網"
+  },
+  {
+    "q": "ocean",
+    "hint": "中学３年　名詞",
+    "a": "大洋"
+  },
+  {
+    "q": "page",
+    "hint": "中学３年　名詞",
+    "a": "ページ"
+  },
+  {
+    "q": "pain",
+    "hint": "中学３年　名詞",
+    "a": "痛み"
+  },
+  {
+    "q": "painter",
+    "hint": "中学３年　名詞",
+    "a": "画家"
+  },
+  {
+    "q": "pair",
+    "hint": "中学３年　名詞",
+    "a": "一組"
+  },
+  {
+    "q": "pal",
+    "hint": "中学３年　名詞",
+    "a": "友だち"
+  },
+  {
+    "q": "palace",
+    "hint": "中学３年　名詞",
+    "a": "宮殿"
+  },
+  {
+    "q": "percent",
+    "hint": "中学３年　名詞",
+    "a": "パーセント"
+  },
+  {
+    "q": "plant",
+    "hint": "中学３年　名詞",
+    "a": "植物"
+  },
+  {
+    "q": "plate",
+    "hint": "中学３年　名詞",
+    "a": "皿"
+  },
+  {
+    "q": "play",
+    "hint": "中学３年　名詞",
+    "a": "劇"
+  },
+  {
+    "q": "poem",
+    "hint": "中学３年　名詞",
+    "a": "詩"
+  },
+  {
+    "q": "point",
+    "hint": "中学３年　名詞",
+    "a": "点"
+  },
+  {
+    "q": "policeman",
+    "hint": "中学３年　名詞",
+    "a": "警官"
+  },
+  {
+    "q": "pop",
+    "hint": "中学３年　名詞",
+    "a": "ポピュラー音楽"
+  },
+  {
+    "q": "position",
+    "hint": "中学３年　名詞",
+    "a": "位置、地位"
+  },
+  {
+    "q": "power",
+    "hint": "中学３年　名詞",
+    "a": "力"
+  },
+  {
+    "q": "president",
+    "hint": "中学３年　名詞",
+    "a": "大統領"
+  },
+  {
+    "q": "price",
+    "hint": "中学３年　名詞",
+    "a": "価格"
+  },
+  {
+    "q": "prince",
+    "hint": "中学３年　名詞",
+    "a": "王子"
+  },
+  {
+    "q": "prize",
+    "hint": "中学３年　名詞",
+    "a": "賞"
+  },
+  {
+    "q": "problem",
+    "hint": "中学３年　名詞",
+    "a": "問題"
+  },
+  {
+    "q": "promise",
+    "hint": "中学３年　名詞",
+    "a": "約束"
+  },
+  {
+    "q": "queen",
+    "hint": "中学３年　名詞",
+    "a": "女王"
+  },
+  {
+    "q": "quiz",
+    "hint": "中学３年　名詞",
+    "a": "クイズ"
+  },
+  {
+    "q": "race",
+    "hint": "中学３年　名詞",
+    "a": "競走、人種"
+  },
+  {
+    "q": "railway",
+    "hint": "中学３年　名詞",
+    "a": "鉄道"
+  },
+  {
+    "q": "rainbow",
+    "hint": "中学３年　名詞",
+    "a": "虹"
+  },
+  {
+    "q": "reason",
+    "hint": "中学３年　名詞",
+    "a": "理由、原因"
+  },
+  {
+    "q": "reply",
+    "hint": "中学３年　名詞",
+    "a": "返事"
+  },
+  {
+    "q": "report",
+    "hint": "中学３年　名詞",
+    "a": "報告"
+  },
+  {
+    "q": "reporter",
+    "hint": "中学３年　名詞",
+    "a": "レポーター"
+  },
+  {
+    "q": "restaurant",
+    "hint": "中学３年　名詞",
+    "a": "レストラン"
+  },
+  {
+    "q": "root",
+    "hint": "中学３年　名詞",
+    "a": "根"
+  },
+  {
+    "q": "runner",
+    "hint": "中学３年　名詞",
+    "a": "ランナー"
+  },
+  {
+    "q": "rush",
+    "hint": "中学３年　名詞",
+    "a": "殺到"
+  },
+  {
+    "q": "scientist",
+    "hint": "中学３年　名詞",
+    "a": "科学者"
+  },
+  {
+    "q": "secret",
+    "hint": "中学３年　名詞",
+    "a": "秘密"
+  },
+  {
+    "q": "sense",
+    "hint": "中学３年　名詞",
+    "a": "感じ"
+  },
+  {
+    "q": "sentence",
+    "hint": "中学３年　名詞",
+    "a": "文"
+  },
+  {
+    "q": "shade",
+    "hint": "中学３年　名詞",
+    "a": "陰"
+  },
+  {
+    "q": "shock",
+    "hint": "中学３年　名詞",
+    "a": "ショック"
+  },
+  {
+    "q": "sign",
+    "hint": "中学３年　名詞",
+    "a": "合図、標識"
+  },
+  {
+    "q": "signal",
+    "hint": "中学３年　名詞",
+    "a": "信号"
+  },
+  {
+    "q": "silk",
+    "hint": "中学３年　名詞",
+    "a": "絹"
+  },
+  {
+    "q": "silver",
+    "hint": "中学３年　名詞",
+    "a": "銀"
+  },
+  {
+    "q": "smoke",
+    "hint": "中学３年　名詞",
+    "a": "煙"
+  },
+  {
+    "q": "snake",
+    "hint": "中学３年　名詞",
+    "a": "蛇"
+  },
+  {
+    "q": "sofa",
+    "hint": "中学３年　名詞",
+    "a": "ソファー"
+  },
+  {
+    "q": "soil",
+    "hint": "中学３年　名詞",
+    "a": "土"
+  },
+  {
+    "q": "sort",
+    "hint": "中学３年　名詞",
+    "a": "種類"
+  },
+  {
+    "q": "soup",
+    "hint": "中学３年　名詞",
+    "a": "スープ"
+  },
+  {
+    "q": "spelling",
+    "hint": "中学３年　名詞",
+    "a": "綴り"
+  },
+  {
+    "q": "square",
+    "hint": "中学３年　名詞",
+    "a": "正方形"
+  },
+  {
+    "q": "statue",
+    "hint": "中学３年　名詞",
+    "a": "像"
+  },
+  {
+    "q": "stay",
+    "hint": "中学３年　名詞",
+    "a": "滞在"
+  },
+  {
+    "q": "step",
+    "hint": "中学３年　名詞",
+    "a": "足元、階段"
+  },
+  {
+    "q": "stop",
+    "hint": "中学３年　名詞",
+    "a": "停留所"
+  },
+  {
+    "q": "stranger",
+    "hint": "中学３年　名詞",
+    "a": "見知らぬ人"
+  },
+  {
+    "q": "suit",
+    "hint": "中学３年　名詞",
+    "a": "スーツ"
+  },
+  {
+    "q": "sunset",
+    "hint": "中学３年　名詞",
+    "a": "日没"
+  },
+  {
+    "q": "symbol",
+    "hint": "中学３年　名詞",
+    "a": "象徴"
+  },
+  {
+    "q": "taxi",
+    "hint": "中学３年　名詞",
+    "a": "タクシー"
+  },
+  {
+    "q": "tear",
+    "hint": "中学３年　名詞",
+    "a": "涙"
+  },
+  {
+    "q": "tent",
+    "hint": "中学３年　名詞",
+    "a": "テント"
+  },
+  {
+    "q": "theater",
+    "hint": "中学３年　名詞",
+    "a": "劇場"
+  },
+  {
+    "q": "thought",
+    "hint": "中学３年　名詞",
+    "a": "考え"
+  },
+  {
+    "q": "ticket",
+    "hint": "中学３年　名詞",
+    "a": "切符"
+  },
+  {
+    "q": "tie",
+    "hint": "中学３年　名詞",
+    "a": "ネクタイ"
+  },
+  {
+    "q": "toast",
+    "hint": "中学３年　名詞",
+    "a": "トースト"
+  },
+  {
+    "q": "tour",
+    "hint": "中学３年　名詞",
+    "a": "小旅行"
+  },
+  {
+    "q": "tower",
+    "hint": "中学３年　名詞",
+    "a": "塔"
+  },
+  {
+    "q": "toy",
+    "hint": "中学３年　名詞",
+    "a": "おもちゃ"
+  },
+  {
+    "q": "trade",
+    "hint": "中学３年　名詞",
+    "a": "貿易"
+  },
+  {
+    "q": "training",
+    "hint": "中学３年　名詞",
+    "a": "トレイニング"
+  },
+  {
+    "q": "treasure",
+    "hint": "中学３年　名詞",
+    "a": "宝物"
+  },
+  {
+    "q": "type",
+    "hint": "中学３年　名詞",
+    "a": "型"
+  },
+  {
+    "q": "umbrella",
+    "hint": "中学３年　名詞",
+    "a": "かさ"
+  },
+  {
+    "q": "universe",
+    "hint": "中学３年　名詞",
+    "a": "宇宙"
+  },
+  {
+    "q": "use",
+    "hint": "中学３年　名詞",
+    "a": "使用"
+  },
+  {
+    "q": "valley",
+    "hint": "中学３年　名詞",
+    "a": "谷"
+  },
+  {
+    "q": "visitor",
+    "hint": "中学３年　名詞",
+    "a": "訪問者"
+  },
+  {
+    "q": "volleyball",
+    "hint": "中学３年　名詞",
+    "a": "バレーボール"
+  },
+  {
+    "q": "waste",
+    "hint": "中学３年　名詞",
+    "a": "浪費"
+  },
+  {
+    "q": "wave",
+    "hint": "中学３年　名詞",
+    "a": "波"
+  },
+  {
+    "q": "weather",
+    "hint": "中学３年　名詞",
+    "a": "天気"
+  },
+  {
+    "q": "wine",
+    "hint": "中学３年　名詞",
+    "a": "ワイン"
+  },
+  {
+    "q": "yen",
+    "hint": "中学３年　名詞",
+    "a": "円"
+  },
+  {
+    "q": "youth",
+    "hint": "中学３年　名詞",
+    "a": "若さ"
+  },
+  {
+    "q": "zone",
+    "hint": "中学３年　名詞",
+    "a": "地帯"
+  },
+  {
+    "q": "zoo",
+    "hint": "中学３年　名詞",
+    "a": "動物園"
+  },
+  {
+    "q": "abroad",
+    "hint": "中学３年　副詞",
+    "a": "外国へ"
+  },
+  {
+    "q": "across",
+    "hint": "中学３年　副詞",
+    "a": "横切って"
+  },
+  {
+    "q": "ahead",
+    "hint": "中学３年　副詞",
+    "a": "前方に"
+  },
+  {
+    "q": "all",
+    "hint": "中学３年　副詞",
+    "a": "まったく"
+  },
+  {
+    "q": "almost",
+    "hint": "中学３年　副詞",
+    "a": "ほとんど"
+  },
+  {
+    "q": "alone",
+    "hint": "中学３年　副詞",
+    "a": "ひとりきりで"
+  },
+  {
+    "q": "anyway",
+    "hint": "中学３年　副詞",
+    "a": "ともかく"
+  },
+  {
+    "q": "away",
+    "hint": "中学３年　副詞",
+    "a": "離れて"
+  },
+  {
+    "q": "besides",
+    "hint": "中学３年　副詞",
+    "a": "その上"
+  },
+  {
+    "q": "carefully",
+    "hint": "中学３年　副詞",
+    "a": "注意深く"
+  },
+  {
+    "q": "certainly",
+    "hint": "中学３年　副詞",
+    "a": "確かに"
+  },
+  {
+    "q": "down",
+    "hint": "中学３年　副詞",
+    "a": "下に"
+  },
+  {
+    "q": "easily",
+    "hint": "中学３年　副詞",
+    "a": "かんたんに"
+  },
+  {
+    "q": "either",
+    "hint": "中学３年　副詞",
+    "a": "～でない"
+  },
+  {
+    "q": "else",
+    "hint": "中学３年　副詞",
+    "a": "そのほかに"
+  },
+  {
+    "q": "especially",
+    "hint": "中学３年　副詞",
+    "a": "特に"
+  },
+  {
+    "q": "even",
+    "hint": "中学３年　副詞",
+    "a": "～さえ"
+  },
+  {
+    "q": "ever",
+    "hint": "中学３年　副詞",
+    "a": "今まで"
+  },
+  {
+    "q": "everywhere",
+    "hint": "中学３年　副詞",
+    "a": "どこでも"
+  },
+  {
+    "q": "finally",
+    "hint": "中学３年　副詞",
+    "a": "ついに"
+  },
+  {
+    "q": "fine",
+    "hint": "中学３年　副詞",
+    "a": "うまく"
+  },
+  {
+    "q": "forever",
+    "hint": "中学３年　副詞",
+    "a": "永久に"
+  },
+  {
+    "q": "gently",
+    "hint": "中学３年　副詞",
+    "a": "やさしく"
+  },
+  {
+    "q": "happily",
+    "hint": "中学３年　副詞",
+    "a": "幸せに、楽しく"
+  },
+  {
+    "q": "hard",
+    "hint": "中学３年　副詞",
+    "a": "いっしょうけんめい"
+  },
+  {
+    "q": "indeed",
+    "hint": "中学３年　副詞",
+    "a": "実に"
+  },
+  {
+    "q": "just",
+    "hint": "中学３年　副詞",
+    "a": "ちょうど、ただ単に"
+  },
+  {
+    "q": "long",
+    "hint": "中学３年　副詞",
+    "a": "長く"
+  },
+  {
+    "q": "maybe",
+    "hint": "中学３年　副詞",
+    "a": "おそらく"
+  },
+  {
+    "q": "neither",
+    "hint": "中学３年　副詞",
+    "a": "～も～も"
+  },
+  {
+    "q": "never",
+    "hint": "中学３年　副詞",
+    "a": "１度も～ない"
+  },
+  {
+    "q": "off",
+    "hint": "中学３年　副詞",
+    "a": "離れて"
+  },
+  {
+    "q": "once",
+    "hint": "中学３年　副詞",
+    "a": "かつて、１度"
+  },
+  {
+    "q": "perhaps",
+    "hint": "中学３年　副詞",
+    "a": "多分"
+  },
+  {
+    "q": "pretty",
+    "hint": "中学３年　副詞",
+    "a": "かなり"
+  },
+  {
+    "q": "probably",
+    "hint": "中学３年　副詞",
+    "a": "多分"
+  },
+  {
+    "q": "quickly",
+    "hint": "中学３年　副詞",
+    "a": "すばやく"
+  },
+  {
+    "q": "quietly",
+    "hint": "中学３年　副詞",
+    "a": "静かに"
+  },
+  {
+    "q": "quite",
+    "hint": "中学３年　副詞",
+    "a": "まったく"
+  },
+  {
+    "q": "really",
+    "hint": "中学３年　副詞",
+    "a": "本当に"
+  },
+  {
+    "q": "recently",
+    "hint": "中学３年　副詞",
+    "a": "最近"
+  },
+  {
+    "q": "round",
+    "hint": "中学３年　副詞",
+    "a": "まわりに"
+  },
+  {
+    "q": "still",
+    "hint": "中学３年　副詞",
+    "a": "まだ"
+  },
+  {
+    "q": "straight",
+    "hint": "中学３年　副詞",
+    "a": "まっすぐに"
+  },
+  {
+    "q": "suddenly",
+    "hint": "中学３年　副詞",
+    "a": "突然"
+  },
+  {
+    "q": "surely",
+    "hint": "中学３年　副詞",
+    "a": "確かに"
+  },
+  {
+    "q": "then",
+    "hint": "中学３年　副詞",
+    "a": "それから、そのとき"
+  },
+  {
+    "q": "tonight",
+    "hint": "中学３年　副詞",
+    "a": "今夜"
+  },
+  {
+    "q": "twice",
+    "hint": "中学３年　副詞",
+    "a": "２回"
+  },
+  {
+    "q": "awake",
+    "hint": "中学３年　動詞",
+    "a": "目が覚める"
+  },
+  {
+    "q": "bake",
+    "hint": "中学３年　動詞",
+    "a": "オーブンで焼く"
+  },
+  {
+    "q": "belong",
+    "hint": "中学３年　動詞",
+    "a": "ものである"
+  },
+  {
+    "q": "blow",
+    "hint": "中学３年　動詞",
+    "a": "吹く"
+  },
+  {
+    "q": "boil",
+    "hint": "中学３年　動詞",
+    "a": "ゆでる、煮る"
+  },
+  {
+    "q": "break",
+    "hint": "中学３年　動詞",
+    "a": "壊れる、破る"
+  },
+  {
+    "q": "choose",
+    "hint": "中学３年　動詞",
+    "a": "選ぶ"
+  },
+  {
+    "q": "copy",
+    "hint": "中学３年　動詞",
+    "a": "模写する"
+  },
+  {
+    "q": "cover",
+    "hint": "中学３年　動詞",
+    "a": "おおう"
+  },
+  {
+    "q": "cross",
+    "hint": "中学３年　動詞",
+    "a": "横切る"
+  },
+  {
+    "q": "date",
+    "hint": "中学３年　動詞",
+    "a": "デートする"
+  },
+  {
+    "q": "destroy",
+    "hint": "中学３年　動詞",
+    "a": "破壊する"
+  },
+  {
+    "q": "discuss",
+    "hint": "中学３年　動詞",
+    "a": "話し合う"
+  },
+  {
+    "q": "drop",
+    "hint": "中学３年　動詞",
+    "a": "落とす"
+  },
+  {
+    "q": "exercise",
+    "hint": "中学３年　動詞",
+    "a": "練習する"
+  },
+  {
+    "q": "explain",
+    "hint": "中学３年　動詞",
+    "a": "説明する"
+  },
+  {
+    "q": "fight",
+    "hint": "中学３年　動詞",
+    "a": "戦う"
+  },
+  {
+    "q": "fill",
+    "hint": "中学３年　動詞",
+    "a": "いっぱいにする"
+  },
+  {
+    "q": "hand",
+    "hint": "中学３年　動詞",
+    "a": "手渡す"
+  },
+  {
+    "q": "hit",
+    "hint": "中学３年　動詞",
+    "a": "打つ"
+  },
+  {
+    "q": "hurt",
+    "hint": "中学３年　動詞",
+    "a": "傷つける"
+  },
+  {
+    "q": "introduce",
+    "hint": "中学３年　動詞",
+    "a": "紹介する"
+  },
+  {
+    "q": "invent",
+    "hint": "中学３年　動詞",
+    "a": "発明する"
+  },
+  {
+    "q": "kiss",
+    "hint": "中学３年　動詞",
+    "a": "キスをする"
+  },
+  {
+    "q": "knock",
+    "hint": "中学３年　動詞",
+    "a": "ノックする"
+  },
+  {
+    "q": "lie",
+    "hint": "中学３年　動詞",
+    "a": "横たわる、～にある"
+  },
+  {
+    "q": "marry",
+    "hint": "中学３年　動詞",
+    "a": "結婚する"
+  },
+  {
+    "q": "miss",
+    "hint": "中学３年　動詞",
+    "a": "間違う、いなくてさみしく思う"
+  },
+  {
+    "q": "mix",
+    "hint": "中学３年　動詞",
+    "a": "混ぜる"
+  },
+  {
+    "q": "order",
+    "hint": "中学３年　動詞",
+    "a": "注文する"
+  },
+  {
+    "q": "please",
+    "hint": "中学３年　動詞",
+    "a": "気に入る、喜ばせる"
+  },
+  {
+    "q": "print",
+    "hint": "中学３年　動詞",
+    "a": "印刷する"
+  },
+  {
+    "q": "raise",
+    "hint": "中学３年　動詞",
+    "a": "あげる、持ち上げる"
+  },
+  {
+    "q": "reach",
+    "hint": "中学３年　動詞",
+    "a": "着く、届く"
+  },
+  {
+    "q": "realize",
+    "hint": "中学３年　動詞",
+    "a": "理解する、実現する"
+  },
+  {
+    "q": "receive",
+    "hint": "中学３年　動詞",
+    "a": "受け取る"
+  },
+  {
+    "q": "return",
+    "hint": "中学３年　動詞",
+    "a": "帰る"
+  },
+  {
+    "q": "row",
+    "hint": "中学３年　動詞",
+    "a": "こぐ"
+  },
+  {
+    "q": "save",
+    "hint": "中学３年　動詞",
+    "a": "救う、とっておく"
+  },
+  {
+    "q": "select",
+    "hint": "中学３年　動詞",
+    "a": "選ぶ"
+  },
+  {
+    "q": "shake",
+    "hint": "中学３年　動詞",
+    "a": "震える"
+  },
+  {
+    "q": "share",
+    "hint": "中学３年　動詞",
+    "a": "分け合う"
+  },
+  {
+    "q": "shoot",
+    "hint": "中学３年　動詞",
+    "a": "撃つ"
+  },
+  {
+    "q": "smell",
+    "hint": "中学３年　動詞",
+    "a": "においがする"
+  },
+  {
+    "q": "solve",
+    "hint": "中学３年　動詞",
+    "a": "解決する"
+  },
+  {
+    "q": "sound",
+    "hint": "中学３年　動詞",
+    "a": "聞こえる"
+  },
+  {
+    "q": "succeed",
+    "hint": "中学３年　動詞",
+    "a": "成功する"
+  },
+  {
+    "q": "touch",
+    "hint": "中学３年　動詞",
+    "a": "触れる、感動する"
+  },
+  {
+    "q": "train",
+    "hint": "中学３年　動詞",
+    "a": "訓練する"
+  },
+  {
+    "q": "wonder",
+    "hint": "中学３年　動詞",
+    "a": "不思議に思う"
+  },
+  {
+    "q": "eighteenth",
+    "hint": "中学３年　序数",
+    "a": "１８番目の"
+  },
+  {
+    "q": "eighth",
+    "hint": "中学３年　序数",
+    "a": "8番目の"
+  },
+  {
+    "q": "eleventh",
+    "hint": "中学３年　序数",
+    "a": "11番目の"
+  },
+  {
+    "q": "fifteenth",
+    "hint": "中学３年　序数",
+    "a": "１５番目の"
+  },
+  {
+    "q": "fifth",
+    "hint": "中学３年　序数",
+    "a": "5番目の"
+  },
+  {
+    "q": "first",
+    "hint": "中学３年　序数",
+    "a": "1番目の"
+  },
+  {
+    "q": "forth",
+    "hint": "中学３年　序数",
+    "a": "4番目の"
+  },
+  {
+    "q": "fourteenth",
+    "hint": "中学３年　序数",
+    "a": "１４番目の"
+  },
+  {
+    "q": "nineteenth",
+    "hint": "中学３年　序数",
+    "a": "１９番目の"
+  },
+  {
+    "q": "ninth",
+    "hint": "中学３年　序数",
+    "a": "9番目の"
+  },
+  {
+    "q": "second",
+    "hint": "中学３年　序数",
+    "a": "2番目の"
+  },
+  {
+    "q": "seventeenth",
+    "hint": "中学３年　序数",
+    "a": "１７番目の"
+  },
+  {
+    "q": "seventh",
+    "hint": "中学３年　序数",
+    "a": "7番目の"
+  },
+  {
+    "q": "sixteenth",
+    "hint": "中学３年　序数",
+    "a": "１６番目の"
+  },
+  {
+    "q": "sixth",
+    "hint": "中学３年　序数",
+    "a": "6番目の"
+  },
+  {
+    "q": "tenth",
+    "hint": "中学３年　序数",
+    "a": "10番目の"
+  },
+  {
+    "q": "third",
+    "hint": "中学３年　序数",
+    "a": "3番目の"
+  },
+  {
+    "q": "thirteenth",
+    "hint": "中学３年　序数",
+    "a": "１３番目の"
+  },
+  {
+    "q": "thirtieth",
+    "hint": "中学３年　序数",
+    "a": "３０番目の"
+  },
+  {
+    "q": "twelfth",
+    "hint": "中学３年　序数",
+    "a": "１２番目の"
+  },
+  {
+    "q": "twentieth",
+    "hint": "中学３年　序数",
+    "a": "２０番目の"
+  },
+  {
+    "q": "after",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "～の後で"
+  },
+  {
+    "q": "although",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "であるけれど"
+  },
+  {
+    "q": "and",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "～と"
+  },
+  {
+    "q": "another",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "ほかの、もうひとつの"
+  },
+  {
+    "q": "because",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "なぜなら"
+  },
+  {
+    "q": "between",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "～と～の間"
+  },
+  {
+    "q": "brave",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "勇敢な"
+  },
+  {
+    "q": "but",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "しかし"
+  },
+  {
+    "q": "calm",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "落ちついた"
+  },
+  {
+    "q": "central",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "中心の"
+  },
+  {
+    "q": "certain",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "ある"
+  },
+  {
+    "q": "Chinese",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "中国の、中国人の"
+  },
+  {
+    "q": "close",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "接近した"
+  },
+  {
+    "q": "common",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "共通の"
+  },
+  {
+    "q": "crazy",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "気の狂った"
+  },
+  {
+    "q": "cute",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "可愛い"
+  },
+  {
+    "q": "daily",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "毎日の"
+  },
+  {
+    "q": "delicious",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "おいしい"
+  },
+  {
+    "q": "during",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "～の間、～を通じて"
+  },
+  {
+    "q": "excited",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "興奮した"
+  },
+  {
+    "q": "exciting",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "興奮させる"
+  },
+  {
+    "q": "fat",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "太った"
+  },
+  {
+    "q": "final",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "最後の"
+  },
+  {
+    "q": "fond",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "好きで"
+  },
+  {
+    "q": "friendly",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "好意的な"
+  },
+  {
+    "q": "funny",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "おかしな"
+  },
+  {
+    "q": "hello",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "こんにちわ"
+  },
+  {
+    "q": "however",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "しかし"
+  },
+  {
+    "q": "if",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "もし"
+  },
+  {
+    "q": "lazy",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "怠け者の"
+  },
+  {
+    "q": "national",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "国家の、国民の"
+  },
+  {
+    "q": "or",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "それとも"
+  },
+  {
+    "q": "pale",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "青ざめた"
+  },
+  {
+    "q": "real",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "ほんとうの"
+  },
+  {
+    "q": "safe",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "安全な"
+  },
+  {
+    "q": "senior",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "年上の、上級の"
+  },
+  {
+    "q": "silent",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "静かな"
+  },
+  {
+    "q": "simple",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "簡単な、質素な"
+  },
+  {
+    "q": "sleepy",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "眠い"
+  },
+  {
+    "q": "snowy",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "雪の降る"
+  },
+  {
+    "q": "than",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "よりも"
+  },
+  {
+    "q": "though",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "だけれども"
+  },
+  {
+    "q": "tiny",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "小さな"
+  },
+  {
+    "q": "unhappy",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "不幸な"
+  },
+  {
+    "q": "weekly",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "週刊"
+  },
+  {
+    "q": "wet",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "濡れている"
+  },
+  {
+    "q": "when",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "～するとき"
+  },
+  {
+    "q": "while",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "～する間"
+  },
+  {
+    "q": "whole",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "すべての"
+  },
+  {
+    "q": "wrong",
+    "hint": "中学３年　形容詞・副詞・接続詞・前置詞",
+    "a": "間違った、具合が悪い"
+  },
+  {
+    "q": "ashamed",
+    "hint": "中学３年　形容詞",
+    "a": "恥じて"
+  },
+  {
+    "q": "back",
+    "hint": "中学３年　形容詞",
+    "a": "裏の、後ろの"
+  },
+  {
+    "q": "blind",
+    "hint": "中学３年　形容詞",
+    "a": "目の見えない"
+  },
+  {
+    "q": "dumb",
+    "hint": "中学３年　形容詞",
+    "a": "口のきけない"
+  },
+  {
+    "q": "flat",
+    "hint": "中学３年　形容詞",
+    "a": "平らな"
+  },
+  {
+    "q": "fresh",
+    "hint": "中学３年　形容詞",
+    "a": "新鮮な"
+  },
+  {
+    "q": "gentle",
+    "hint": "中学３年　形容詞",
+    "a": "やさしい"
+  },
+  {
+    "q": "healthy",
+    "hint": "中学３年　形容詞",
+    "a": "健康な"
+  },
+  {
+    "q": "holy",
+    "hint": "中学３年　形容詞",
+    "a": "神聖な"
+  },
+  {
+    "q": "interested",
+    "hint": "中学３年　形容詞",
+    "a": "興味のある"
+  },
+  {
+    "q": "international",
+    "hint": "中学３年　形容詞",
+    "a": "国際的な"
+  },
+  {
+    "q": "living",
+    "hint": "中学３年　形容詞",
+    "a": "生きている"
+  },
+  {
+    "q": "lonely",
+    "hint": "中学３年　形容詞",
+    "a": "淋しい、ひとりの"
+  },
+  {
+    "q": "lost",
+    "hint": "中学３年　形容詞",
+    "a": "道に迷った。"
+  },
+  {
+    "q": "lovely",
+    "hint": "中学３年　形容詞",
+    "a": "美しい"
+  },
+  {
+    "q": "merry",
+    "hint": "中学３年　形容詞",
+    "a": "陽気な"
+  },
+  {
+    "q": "modern",
+    "hint": "中学３年　形容詞",
+    "a": "現代的な"
+  },
+  {
+    "q": "monthly",
+    "hint": "中学３年　形容詞",
+    "a": "月刊"
+  },
+  {
+    "q": "musical",
+    "hint": "中学３年　形容詞",
+    "a": "音楽の"
+  },
+  {
+    "q": "natural",
+    "hint": "中学３年　形容詞",
+    "a": "自然の"
+  },
+  {
+    "q": "necessary",
+    "hint": "中学３年　形容詞",
+    "a": "必要な"
+  },
+  {
+    "q": "noisy",
+    "hint": "中学３年　形容詞",
+    "a": "騒がしい"
+  },
+  {
+    "q": "open",
+    "hint": "中学３年　形容詞",
+    "a": "開いている"
+  },
+  {
+    "q": "outside",
+    "hint": "中学３年　形容詞",
+    "a": "外側の"
+  },
+  {
+    "q": "peaceful",
+    "hint": "中学３年　形容詞",
+    "a": "平和な"
+  },
+  {
+    "q": "personal",
+    "hint": "中学３年　形容詞",
+    "a": "個人の"
+  },
+  {
+    "q": "pleased",
+    "hint": "中学３年　形容詞",
+    "a": "喜んで"
+  },
+  {
+    "q": "quick",
+    "hint": "中学３年　形容詞",
+    "a": "速い"
+  },
+  {
+    "q": "raw",
+    "hint": "中学３年　形容詞",
+    "a": "生の"
+  },
+  {
+    "q": "wild",
+    "hint": "中学３年　形容詞",
+    "a": "荒々しい、野生の"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

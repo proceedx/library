@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyGreatsOfJapan</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #f39c12;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #f39c12;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #f39c12;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #f39c12;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">👑</span>
+  <h1>EasyGreatsOfJapan</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "松本良順　生年1832",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "緒方洪庵　生年1810",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三浦梅園　生年1723",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "杉田玄白　生年1733",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "華岡青洲　生年1760",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鮎川義介　生年1876",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "狩野芳崖　生年1828",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "高村光太郎　生年1883",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "円山応挙　生年1733",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "黒田清輝　生年1866",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鏑木清方　生年1878",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "横山大観　生年1868",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大塩平八郎　生年1793",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "菅茶山　生年1748",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "井上円了　生年1858",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "新井白石　生年1657",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "佐久間象山　生年1811",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "賀茂真淵　生年1697",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中江藤樹　生年1608",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "広瀬淡窓　生年1782",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊藤東涯　生年1670",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "本居宣長　生年1730",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "戸田茂睡　生年1629",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中村正直　生年1832",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "林鵞峰　生年1618",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "梅田雲浜　生年1815",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "吉田松陰　生年1830",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "亀井昭陽　生年1773",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山鹿素行　生年1622",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平田篤胤　生年1776",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "黒板勝美　生年1874",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "太宰春台　生年1680",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "元田永孚　生年1818",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "津田左右吉　生年1873",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "上田敏　生年1874",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貝原益軒　生年1630",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大河内正敏　生年1878",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山崎闇斎　生年1619",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北村季吟　生年1625",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "福沢諭吉　生年1835",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山脇東洋　生年1706",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北里柴三郎　生年1853",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "嘉納治五郎　生年1860",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "津田梅子　生年1864",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "米内光政　生年1880",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山本五十六　生年1884",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "西郷従道　生年1843",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "川路利良　生年1834",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "野口英世　生年1849",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東郷平八郎　生年1848",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鈴木貫太郎　生年1868",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "徳川綱吉　生年1646",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "崇徳天皇　生年1119",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "徳川家光　生年1604",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "足利義満　生年1358",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後白河天皇　生年1127",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "徳川慶喜　生年1837",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "徳川吉宗　生年1684",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "徳川家康　生年1543",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "児島惟謙　生年1837",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "夏目漱石　生年1867",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "葛西善蔵　生年1887",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "森鴎外　生年1862",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "志賀直哉　生年1883",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "芥川龍之介　生年1892",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "樋口一葉　生年1872",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小林一茶　生年1763",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "滝沢馬琴　生年1767",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小泉八雲　生年1904",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "谷崎潤一郎　生年1886",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三好達治　生年1900",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "正岡子規　生年1867",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "菱田春草　生年1874",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小林多喜二　生年1903",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "蒋介石　生年1886",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北村透谷　生年1868",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "矢野竜渓　生年1851",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "永井荷風　生年1879",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "徳田秋声　生年1872",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "渋沢栄一　生年1840",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "豊田佐吉　生年1867",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "道元　生年1200",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鈴木正三　生年1579",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一遍　生年1239",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日蓮　生年1222",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "親鸞　生年1173",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "法然　生年1133",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "虎関師錬　生年1278",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "空海　生年774",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最澄　生年767",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "武田信玄　生年1592",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊能忠敬　生年1745",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "加藤高明　生年1860",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "岡田啓介　生年1868",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "若槻礼次郎　生年1866",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原敬　生年1856",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "板垣退助　生年1837",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "犬養毅　生年1855",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "花井卓蔵　生年1868",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "木戸孝允(桂小五郎)　生年1833",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "陸奥宗光（むつむねみつ）　生年1844",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "穂積陳重（ほずみのぶしげ）　生年1855",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "森有礼（もりありのり）　生年1847",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "高橋是清　生年1854",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊達宗城　生年1818",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大久保利通　生年1830",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "榎本武揚　生年1836",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊藤博文　生年1841",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中橋徳五郎　生年1861",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "岩倉具視　生年1825",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大江卓　生年1847",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小松帯刀　生年1835",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "斎藤実　生年1858",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "市村羽佐衛門　生年1880",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "乃木希典　生年1866",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "天璋院・篤姫　生年1835",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "豊臣秀吉　生年1536",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "上杉謙信　生年1530",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "勝海舟　生年1823",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "橋本左内　生年1834",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "毛利元就　生年1497",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "藤田東湖　生年1806",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "後藤象二郎　生年1838",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前原一誠　生年1834",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平野国臣　生年1828",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "川路聖謨　生年1801",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北条時頼　生年1227",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "北条時宗　生年1251",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "間部詮房　生年1666",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "徳川光圀　生年1628",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "水野忠邦　生年1794",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "上杉鷹山　生年1751",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "二宮尊徳　生年1787",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊達政宗　生年1567",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "源実朝　生年1192",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "源頼家　生年1182",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "横井小楠　生年1809",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "高杉晋作　生年1839",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "渡辺華山　生年1793",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "阿部正弘　生年1819",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "島津久光　生年1817",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "井伊直弼　生年1815",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "萩原朔太郎　生年1521",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "坂本龍馬　生年1836",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "桂太郎　生年1848",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "西郷隆盛　生年1827",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "松平容保　生年1836",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "隠元　生年1874",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

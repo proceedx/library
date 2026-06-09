@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyGreatsOfWorld</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #f39c12;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #f39c12;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #f39c12;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #f39c12;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">👑</span>
+  <h1>EasyGreatsOfWorld</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "グリム・ヤーコブ　生年1634",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャンヌダルク　生年1775",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グレゴリウス13世　生年1826",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カレル・チャペック　生年1749",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ペスタロッチ　生年1685",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アルベルト・シュバイツァー　生年1785",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モリエール　生年1862",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロイドジョージ　生年1876",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モンテスキュー　生年1599",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドゥアール・マネ　生年1788",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フリードリヒ2世　生年685",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロバート・ボイル　生年1881",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ダグラス・マッカーサー　生年1880",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アマデウス・モーツァルト　生年1689",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンリー・モートン・スタンリー　生年1770",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ダニエル・ベルヌーイ　生年1834",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランツ・シューベルト　生年1832",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フェリックス・メンデルスゾーン　生年1194",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アン女王　生年1881",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トマス・モア　生年1755",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジュール・ヴェルヌ　生年1871",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トーマス・エジソン　生年1642",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チャールズ・ロバート・ダーウィン　生年1821",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フォン・シーボルト　生年1412",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フェノロサ　生年1845",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニコラウス・コペルニクス　生年1592",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フォン・サヴィニー　生年1746",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ショウペンハウエル　生年1596",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンデル（ゲオルク・フリードリヒ・ヘンデル）　生年1627",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハリー・パークス　生年1849",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オーギュスト・ルノワール　生年1685",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ビクトル・ユーゴー　生年1877",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンリー・ワーズワース・ロングフェロー　生年1824",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロッシーニ　生年1880",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グラハム・ベル　生年1856",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゲラルドゥス・メルカトル　生年1805",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミケランジェロ　生年1828",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カール・バッハ　生年1756",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オノーレ・ミラボー　生年1509",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マルチェロ・マルピーギ　生年1783",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グスタフ・キルヒホフ　生年1508",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エミール・アドルフ・フォン・ベーリング　生年1502",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゴットリープ・ダイムラー　生年1800",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラファイエット夫人　生年1638",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "JSバッハ　生年1841",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンソニー・ヴァン・ダイク　生年1841",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マルタン・デュ・ガール　生年1766",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・モリス　生年1533",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エルンスト・エンゲル　生年1483",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴィルヘルム・レントゲン　生年1859",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コメニウス　生年1841",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランシスコ・デ・ゴヤ　生年1802",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルネ・デカルト　生年1821",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハンス・クリスチャン・アンデルセン　生年1585",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ワシントン・アーヴィング　生年1852",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トマス・ホッブズ　生年1794",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラファエロ・サンティ　生年1807",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エトムント・フッサール　生年1884",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シャルル・ボードレール　生年1551",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ぺリー　生年1872",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オットー・マイヤーホフ　生年1890",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リチャード・トレビシック　生年1865",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "クリスティアーン・ホイヘンス　生年1771",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "レオナルド・ダ・ヴィンチ　生年1905",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランツ・フォン・ズッペ　生年1700",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グスタフ・フェヒナー　生年1629",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シャーロット・ブロンテ　生年1878",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イマヌエル・カント　生年1452",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マックス・プランク　生年1819",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドモンド・カートライト　生年1887",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シェークスピア　生年1791",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サミュエル・モールス　生年1792",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・ポアンカレ　生年1801",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カール・フリードリヒ・ガウス　生年1816",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エカテリーナ2世　生年1779",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マキャベリ　生年1835",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フロイト　生年1746",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・デュナン　生年1755",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バリー　生年-63",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モンジュ　生年1724",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フローレンス・ナイチンゲール　生年1858",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マリア・テレジア　生年1902",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドワード・ジェンナー　生年1875",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バートランド・ラッセル　生年1743",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オノレ・ド・バルザック　生年1583",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アルブレヒト・デューラー　生年1847",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コナン・ドイル　生年1889",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "2カール・フォン・リンネ　生年1564",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴィクトリア女王　生年1860",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラルフ・ワルド・エマーソン　生年1791",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イブン・ハルドゥーン　生年1810",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジュリオ･ドゥーエ　生年1853",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウォルター・ホイットマン　生年1809",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サディ・カルノー　生年1854",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドワード・エルガー　生年1797",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラウル・デュフィ　生年1512",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランソワ・ケネー　生年1777",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アダムスミス　生年1729",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フェルディナント・ブラウン　生年1469",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シューマン　生年1809",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リヒャルト・シュトラウス　生年1665",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トマス・ヤング　生年1856",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シャルル・ド・クーロン　生年1828",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・クルックス　生年1860",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドワード・S・モース　生年1746",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブレーズ・パスカル　生年1820",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フレデリック・ホプキンズ　生年1717",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン=ポール・シャルル・エマール・サルトル　生年1749",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴィルヘルム・フォン・フンボルト　生年1872",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョン・ロス　生年1834",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アントニ・ガウディ　生年1863",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン＝ジャック・ルソー　生年1799",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アーネスト・サトウ　生年1701",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゴットフリート・ライプニッツ　生年1471",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘルマン・ヘッセ　生年1803",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランツ・カフカ　生年1882",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジュゼッペ・ガリバルディ　生年1899",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン・コクトー　生年1869",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Ｊ・Ａ・ホブソン　生年1859",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロックフェラー(ジョン・ロックフェラー)　生年1867",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オットリーノ・レスピーギ　生年1478",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン・カルヴァン　生年1859",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モディリアーニ（アメデオ・モディリアーニ）　生年1707",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "レンブラント　生年1475",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アムンゼン　生年1714",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンドリック・ローレンツ　生年1804",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドガー・ドガ　生年1819",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘミングウェイ　生年1749",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "メンデル　生年1814",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アーサー・バルフォア　生年1332",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カール・ユング　生年1832",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フォイエルバッハ　生年1622",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ダグ・ハマーショルド　生年1869",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンリーフォード1世　生年1835",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・スミス・クラーク　生年1884",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "玄宗　生年1819",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フレミング　生年1769",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カール・リッター　生年1796",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポール・ディラック　生年1857",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アーネスト・トンプソン・シートン　生年1877",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ナポレオン　生年1864",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "デイヴィッド・クロケット　生年1822",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オーヴィル・ライト（弟）　生年1848",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オーブリー・ビアズリー　生年1890",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロバート・ウォルポール　生年1552",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（ゲオルク・ヴィルヘルム・フリードリヒ）ヘーゲル　生年1859",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゲーテ　生年1694",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モーリス・メーテルリンク　生年1723",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アーネスト・ラザフォード　生年1885",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランシス・アストン　生年1850",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アントン・ブルックナー　生年1810",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイ14世　生年1828",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョン・ドルトン　生年1786",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エリザベス1世　生年1864",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ドボルザーク　生年1871",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リシュリュー枢機卿　生年1847",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（ハーバート・ヘンリー・）アスキス　生年1787",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ3世　生年1866",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アプトン・シンクレア　生年1872",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マイケル・ファラデー　生年1888",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オクタヴィアヌス　生年1773",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（アルブレヒト・フォン）ヴァレンシュタイン　生年1676",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マルティン・ハイデッガー　生年1875",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "レオン・ロッシュ　生年1736",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "プロスペル・メリメ　生年1830",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハンス・ガイガー　生年1832",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ガンジー　生年1838",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン＝フランソワ・ミレー　生年1833",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイ・リュミエール　生年1628",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マテオ・リッチ　生年1869",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニールス・ボーア　生年1858",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エルンスト・クレッチマー　生年1623",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミゲル・デ・セルバンテス　生年1863",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジュゼッペ・ヴェルディ　生年1547",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モーリアック　生年1809",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラムゼイ・マクドナルド　生年1813",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フリードリヒ・ニーチェ　生年1830",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・ド・サン＝シモン　生年1861",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・ベルクソン　生年1905",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイス・マンフォード　生年1767",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランツ・リスト　生年1777",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（アントニ・ファン）レーウェンフック　生年1796",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エヴァリスト・ガロア　生年1852",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘルムート・カール・ベルンハルト・フォン）モルトケ　生年1712",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マリー・アントワネット　生年1843",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "キュリー夫人　生年1804",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘルマン・ロールシャッハ　生年1884",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルター　生年1646",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "孫文　生年1877",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アウレリウス・アウグスティヌス　生年1694",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイ18世　生年1883",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（ルイ・ジャック・マンデ・）ダゲール　生年1770",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴィルヘルム・ディルタイ　生年1824",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セルマ・ラーゲルレーヴ　生年1807",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴォルテール　生年1885",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（シャルル・アンドレ・ジョゼフ・ピエール＝マリ・）ド・ゴール　生年1866",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マヌエル・デ・ファリャ　生年1797",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランシス・ホジソン・バーネット　生年1796",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カーネギー　生年1844",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・アームストロング　生年1483",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンデルス・セルシウス　生年354",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイーザ・メイ・オルコット　生年1889",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マーク・トゥエイン　生年1760",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョルジュ・スーラ　生年1859",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ワシリー・カンディンスキー　生年1854",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "クリスティーナ・ロセッティ　生年1834",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エミリー・ディキンソン　生年1895",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハイネ（ハインリヒ・ハイネ）　生年1811",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ティコ・ブラーエ　生年1473",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ギュスターヴ・エッフェル　生年1858",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジェーン・オースティン　生年1879",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベートーベン　生年1632",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベンジャミン・ディズレーリ　生年1779",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニュートン　生年1546",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トーマス・ウッドロウ・ウィルソン　生年1839",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラドヤード・キップリング　生年1832",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・マティス　生年1811",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

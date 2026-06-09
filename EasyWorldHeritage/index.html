@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyWorldHeritage</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #27ae60;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #27ae60;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #27ae60;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #27ae60;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">🏛️</span>
+  <h1>EasyWorldHeritage</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "グランドキャニオン　　世界遺産　アメリカ合衆国アリゾナ州北部にある峡谷であるコロラド高原がコロラド川の浸食作用によって削り出された地形であり、先カンブリア時代からペルム紀までの地層の重なりを目の当たりにできるところでもある地球の歴史を秘めている価値と共に、その雄大な景観から合衆国の初期の国立公園の一つであるグランド・キャニオン国立公園に含まれている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヨセミテ　　世界遺産　そそり立つ白い花崗岩の絶壁、そこを流れ落ちる多くの巨大な滝、谷や木々の間を流れる澄んだ大小の川、ジャイアントセコイアの巨木の林、生物学的な多様性が世界的に知られることとなった公園全体の約95パーセントは原生地域に指定されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イエローストーン　　世界遺産　イエローストーンは世界最古の国立公園であり、ワイオミング州北西部を中心として3,470平方マイル（8,980平方km）にわたるこの国立公園は様々な間欠泉や温泉、地熱によるその他の見所で有名であり、グリズリーやオオカミ、及びアメリカバイソン（バッファロー）やワピチ（エルク）の群れが生息している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カナディアンロッキー　　世界遺産　カナダの西部に存在する、3,000メートル級の山々がいだく氷河、氷河湖、滝、峡谷、鍾乳洞、化石などの今なお残る手つかずの自然が評価されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "キラウエア火山　　世界遺産　キラウエア火山は世界一安全な火山とも言われている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "テオティワカン　　世界遺産　メキシコシティ北東約50キロの地点にあり、紀元前2世紀から6世紀まで存在した、テオティワカン文明の中心となった巨大な宗教都市遺跡当時のアメリカ大陸では最大規模を誇っていた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チチェンイッツァ　　世界遺産　ユカタン半島のユカタン州州都メリダの東、約120キロメートルにある「後古典期マヤ」の遺跡で総面積は約1.5平方マイル半島のつけ根の密林にあるティカルは「古典期マヤ」の遺跡である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オールドハバナ　　世界遺産　　キューバの首都・ハバナを構成する歴史地区であるオールド・ハバナと4つの要塞（フエルサ要塞、モロ要塞、ブンタ要塞、カバーニャ要塞）は、1982年に、「ハバナ旧市街とその要塞群」の名前で、ユネスコの世界遺産に登録された",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンヘルの滝／エンジェルフォール　　世界遺産　　南アメリカ大陸北部のギアナ高地にある世界最大級の滝\nベネズエラのボリバル州グランサバナ  のカナイマ国立公園内に所在する世界最大の落差 979 m 岩にぶつかることなく直下する距離は 807 m を誇る滝として有名である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ガラパゴス諸島　　世界遺産　南米大陸から１０００キロ、太平洋上に浮かぶ絶海の孤島、ガラパゴス諸島１９からなる諸島には、隔絶された環境の中で独自に進化をした生き物たちが数多く生息し、「進化の博物館」と呼ばれている　　　若き生物学者チャールズ・ダーウィンがこの島の珍しい生き物たちの観察をもとに、『進化論』を打ち立てたことで有名である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モアイ像／イースター島　　世界遺産　モアイ(Moai)はチリ領イースター島にある人面を模した石造彫刻のこと島の海に面したアフと呼ばれる高台に、多くの場合海に背を向けて、正確にはかっての住居跡を取り囲むように多数建てられている　　　大きさは3.5m、重量20トン程度のものが多いが最大級のものは20m、重量は90トンに達する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アマゾン川　　世界遺産　アマゾン川（アマゾンがわ）は南米のブラジルとその周辺国の熱帯雨林（アマゾン熱帯雨林）を流れ、大西洋に注ぐ世界最大の河川である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イグアスの滝　　世界遺産　イグアスの滝（イグアスのたき）とは、南米大陸のアルゼンチン (80%)とブラジル(20%)の二国にまたがる、世界最大の滝である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロス・グラシアレス　　世界遺産　ロス・グラシアレスとはスペイン語で氷河を意味する氷河の名をもつロス・グラシアレス国立公園は、アンデス山脈の南端パタゴニアに位置し、南極、グリーンランドに次ぐ世界第3の大きさの南パタゴニア氷原および氷河群がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マチュピチュ遺跡　　世界遺産　山裾からは遺跡の存在は確認できないことから、しばしば「空中都市」「空中の楼閣」「インカの失われた都市」などといわれる　　　遺跡の背後に見える尖った山はワイナ・ピチュ (若い峰)で、標高2720ｍ山頂には神官の住居跡とみられる遺跡があり、山腹にはマチュ・ピチュの太陽の神殿に対する月の神殿が存在する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ナスカの地上絵　　世界遺産　ナスカの地上絵（ナスカのちじょうえ）は、ペルーのナスカ川とインヘニオ川に囲まれた乾燥した盆地状の高原の地表面に「描かれた」幾何学図形、動植物の絵である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バース　　世界遺産　バース市街は、イギリスの南部の単一自治体（Unitary Authority）であるバース・アンド・ノース・イースト・サマセットのバースにある地区である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モンサンミッシェル　　世界遺産　フランス西海岸、サン・マロ湾上に浮かぶ小島であり、\nカトリックの巡礼地のひとつであり「西洋の驚異」と称される　　1979年「モン・サン＝ミシェルとその湾」としてユネスコの世界遺産（文化遺産）に登録され、1994年10月にはラムサール条約登録地となった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ドブロブニク　　世界遺産　1979年に世界遺産に登録された旧市街は「アドリア海の真珠」とも謳われる美しい町並みを誇るアドリア海沿岸でも傑出した観光地であり、多数のクルーズ船が寄港する他、地中海各都市とフェリーで結ばれドゥブロヴニク＝ネレトヴァ郡の中心都市となっている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "プリトヴィツェ湖群国立公園　　世界遺産　プリトヴィツェ湖群国立公園（プリトヴィツェこぐんこくりつこうえん）はクロアチアの国立公園の一つで、ボスニア・ヘルツェゴビナ国境に近いプリトヴィツェ湖群市に位置する大小16の湖と92の滝がエメラルドグリーンの幻想的な景観を作り出しており、1979年にユネスコの世界遺産に登録された",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チェスキークルムロフ　　世界遺産　　チェコ・南ボヘミア州の小さな都市クルムロフ城を含む優れた建築物と歴史的文化財で知られる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハルシュタット　　世界遺産　風光明媚なザルツカンマーグート地方の中でも、真珠に喩えられるハルシュタット湖とダッハシュタイン山塊に囲まれるようにして発達した岩塩採掘の町ハルシュタットは、「世界の湖岸で最も美しい街」ともいわれる　　　独特の景観美を呈している映画『サウンド・オブ・ミュージック』の撮影にも使われた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "タリン　　世界遺産　タリン（Tallinn）は、バルト海東部のフィンランド湾に面するエストニア共和国の首都である　　山の手のトームペアは、石灰岩でできた丘で、トームペア城を中心に歴史的建造物が多い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バレッタ　　世界遺産　マルタ島東部に位置し、港を見下ろすシベラスの丘の上にあるホスピタル騎士団の時代以降の多くの建造物が残る　　　一部の地域では、バロック建築・マニエリスム建築・近代建築・新古典主義建築など多様な要素も見られる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "メテオラ　　世界遺産　メテオラ（Μετέωρα）は、ギリシア北西部、セサリア（テッサリア）地方北端の奇岩群とその上に建設された修道院共同体、いわゆるメテオラ修道院群の総称である　　　その地形及びギリシア正教の修道院文化の価値からユネスコ世界遺産（文化・自然複合遺産）に指定されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヒエラポリス・パムッカレ　　世界遺産　ヒエラポリス-パムッカレはトルコ西部・デニズリ県にある　　ユネスコの世界遺産（複合遺産）の登録名パムッカレは石灰華段丘からなる丘陵地の名前であり、2世紀頃、ヒエラポリスというローマ帝国の都市が存在した現在は遺跡が残る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チュニス　　世界遺産　メディナと呼ばれる、城壁に囲まれた旧市街地は1979年にユネスコの世界遺産に登録されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ンゴロンゴロ保全地域　　世界遺産　ンゴロンゴロ保全地域（Ngorongoro Conservation Area）はタンザニアの北部にある自然保護地域　　　最も近い都市アルーシャから西へ180kmにあり、北西のセレンゲティ国立公園に隣接する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アマルフィ海岸　　世界遺産　アマルフィ海岸（イタリア語: Costiera Amalfitana）は、イタリア南部のソレント半島南岸、アマルフィ一帯（カンパニア州サレルノ県北西部）のサレルノ湾に面した海岸を指す　　　「世界一美しい海岸」と言われる景勝地であり、1997年にユネスコの世界遺産（文化遺産）に登録された",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベネチア　　世界遺産　イタリア共和国北東部に位置する都市で\n中世にはヴェネツィア共和国の首都として栄えた都市である　　「アドリア海の女王」「水の都」「アドリア海の真珠」などの別名をもつ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フィレンツェ　　世界遺産　イタリア共和国中部にある都市で、\n中世には毛織物業と金融業で栄えた　　メディチ家による統治の下、15世紀のフィレンツェはルネサンスの文化的な中心地となった市街中心部は「フィレンツェ歴史地区」としてユネスコの世界遺産に登録されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アルベロベッロ　　世界遺産　アルベロベッロは、イタリア共和国プッリャ州バーリ県にある　　かつてこの地方に広く見られたトゥルッロ群が多数現存し、住居や店舗として利用されている景観は貴重であり、「アルベロベッロのトゥルッリ」は1996年に世界遺産として登録されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グラナダ　　世界遺産　グラナダ（Granada）は、スペイン南部の都市である\nかつてはイベリア半島最後のイスラム王朝ナスル朝グラナダ王国の都であり、壮麗なアルハンブラ宮殿が有名である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トレド　　世界遺産　トレド（Toledo）はスペイン中央部の都市　　\nかつての西ゴート王国の首都であり、中世にはイスラム教・ユダヤ教・キリスト教の文化が交錯した地である　　「町全体が博物館」と言われ、タホ川に囲まれた旧市街は世界遺産に登録されている　　　また、ルネサンス期のスペインを代表するギリシア人画家のエル・グレコが活躍した町としても有名である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セビージャ　　世界遺産　セビリア（Sevilla）はスペイン南部の都市　　　スペイン南部の政治、経済、文化の中心地であり、観光都市である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アユタヤ歴史公園　　世界遺産　アユタヤ歴史公園(アユタヤれきしこうえん)は、タイ、アユタヤにあるアユタヤ王朝の遺跡群周辺の遺跡とともにユネスコの世界遺産に古都アユタヤの名前で登録されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ボロブドゥール寺院遺跡群　　世界遺産　ボロブドゥール寺院遺跡群（ボロブドゥールじいんいせきぐん）はインドネシアにあるユネスコの世界遺産（文化遺産）である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "タージマハル　　世界遺産　タージ・マハルは、インド北部アーグラにある、ムガル帝国第5代皇帝シャー・ジャハーンが、1631年に死去した愛妃ムムターズ・マハルのため建設した総大理石の墓廟　　　インド・イスラーム文化の代表的建築である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "莫高窟（モーガオクー）　　世界遺産　　敦煌市の東南25kmに位置する鳴沙山（めいささん）の東の断崖に南北に1,600mに渡って掘られた莫高窟・西千仏洞・安西楡林窟・水峡口窟など600あまりの洞窟があり、その中に2400余りの仏塑像が安置されている　　壁には一面に壁画が描かれ、総面積は45,000平方メートルになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハロン湾　　世界遺産　ハロン湾は、ベトナム北部、トンキン湾北西部にある　　彫刻作品のような島々の景観は、太陽の位置によって輝きが変化し、雨や霧によってまた趣のある雰囲気を醸し出す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンコールワット　　世界遺産　カンボジアにあるアンコール遺跡の一つで、遺跡群を代表する寺院建築である　　サンスクリット語でアンコールは王都、クメール語でワットは寺院を意味する　　　大伽藍と美しい彫刻からクメール建築の傑作と称えられ、カンボジア国旗の中央にも同国の象徴として描かれている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "万里の長城　　世界遺産　万里の長城（ばんりのちょうじょう）は、中華人民共和国にある城壁の遺跡である　　ユネスコの世界遺産（文化遺産）に登録されており、新・世界七不思議にも選ばれている\n2009年4月18日の中華人民共和国国家文物局の発表により東端の遼寧省虎山から西端の甘粛省嘉峪関まで総延長は8,851.8kmとされていたが、2012年6月5日に総延長は従来の2倍以上の21,196.18kmと発表された",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "九寨溝　　世界遺産　九寨溝は中国四川省北部のアバ・チベット族チャン族自治州九寨溝県にある自然保護区であり、ユネスコの世界遺産（自然遺産）に登録されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グレートバリアリーフ　　世界遺産　グレート・バリア・リーフは、オーストラリア北東岸に広がる世界最大のサンゴ礁地帯　　　南緯10度から24度にかけて広がり、2600km（1,600マイル）を超える　　長さに2,900以上の暗礁群と約900の島を持ち、総面積は344,400km2以上となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カカドゥ　　世界遺産　カカドゥ国立公園（Kakadu National Park）はノーザンテリトリーにあるオーストラリアの国立公園の一つ　　　ユネスコの世界遺産（複合遺産）に登録されている　　　40万年以上前から人が住んだ形跡があり、洞窟壁画が残されている、文化的意義と固有の動物や、氾濫原などを有する環境的意義両方を有する国立公園である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "テ・ワヒポウナム　　世界遺産　テ・ワヒポウナム-南西ニュージーランド（テ・ワヒポウナムなんせいニュージーランド）はニュージーランドにあるユネスコの世界遺産（自然遺産）である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トンガリロ　　世界遺産　トンガリロ国立公園は、ニュージーランドの北島にある、山岳地帯を保護する目的で設定された国立公園である　　　1894年、ニュージーランド初の国立公園となったユネスコの世界遺産（複合遺産）に登録されている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グレーターブルーマウンテンズ　　世界遺産　グレーター・ブルーマウンテンズ地域は、91種ものユーカリが広範囲で自生する地域で、ここ以外には見られない非常に貴重な地域である　　また、オーストラリア大陸が他の大陸と離れる前の痕跡を残す　　気温が上昇するとユーカリに含まれる油が気化し空気中に広がり景観から反射する光の青のスペクトラムを相対的に良く通し、ブルーがかって見えることに由来する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウルル カタジュタ　　世界遺産　ウルル＝カタ・ジュタ国立公園（Uluru-Kata Tjuta National Park）はオーストラリア連邦ノーザンテリトリーにある　　　オーストラリアの国立公園の一つダーウィンから1431km南、アリススプリングの440㎞南西にあり、オーストラリアのほぼ中心に位置するユネスコの世界遺産に1987年登録された",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>a02-sekai-izin-kuizu</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>a02-sekai-izin-kuizu</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "アルベルト・シュバイツァー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フォン・シーボルト",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エミール・アドルフ・フォン・ベーリング",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オットー・マイヤーホフ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フロイト",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドワード・ジェンナー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フォイエルバッハ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミゲル・デ・セルバンテス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アマデウス・モーツァルト",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランツ・シューベルト",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フェリックス・メンデルスゾーン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンデル（ゲオルク・フリードリヒ・ヘンデル）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロッシーニ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カール・バッハ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "JSバッハ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランツ・フォン・ズッペ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドワード・エルガー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シューマン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リヒャルト・シュトラウス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オットリーノ・レスピーギ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイ14世",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リシュリュー枢機卿",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モーリアック",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（アントニ・ファン）レーウェンフック",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランシス・ホジソン・バーネット",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ティコ・ブラーエ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベンジャミン・ディズレーリ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドゥアール・マネ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オーギュスト・ルノワール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ミケランジェロ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンソニー・ヴァン・ダイク",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランシスコ・デ・ゴヤ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラファエロ・サンティ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サミュエル・モールス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アルブレヒト・デューラー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラウル・デュフィ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "レンブラント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アムンゼン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘミングウェイ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイ・リュミエール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴィルヘルム・ディルタイ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ワシリー・カンディンスキー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "クリスティーナ・ロセッティ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グリム・ヤーコブ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ペスタロッチ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モンテスキュー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロバート・ボイル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ダニエル・ベルヌーイ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "チャールズ・ロバート・ダーウィン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フェノロサ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニコラウス・コペルニクス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フォン・サヴィニー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ショウペンハウエル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゲラルドゥス・メルカトル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マルチェロ・マルピーギ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グスタフ・キルヒホフ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エルンスト・エンゲル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴィルヘルム・レントゲン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルネ・デカルト",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トマス・ホッブズ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エトムント・フッサール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "クリスティアーン・ホイヘンス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グスタフ・フェヒナー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イマヌエル・カント",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マックス・プランク",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・ポアンカレ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カール・フリードリヒ・ガウス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モンジュ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フローレンス・ナイチンゲール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バートランド・ラッセル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カール・フォン・リンネ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラルフ・ワルド・エマーソン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "サディ・カルノー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランソワ・ケネー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アダムスミス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フェルディナント・ブラウン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トマス・ヤング",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シャルル・ド・クーロン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・クルックス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドワード・S・モース",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ブレーズ・パスカル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フレデリック・ホプキンズ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン=ポール・シャルル・エマール・サルトル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴィルヘルム・フォン・フンボルト",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン＝ジャック・ルソー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゴットフリート・ライプニッツ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Ｊ・Ａ・ホブソン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン・カルヴァン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モディリアーニ（アメデオ・モディリアーニ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドガー・ドガ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アーサー・バルフォア",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ダグ・ハマーショルド",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "玄宗",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カール・リッター",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ポール・ディラック",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アーネスト・トンプソン・シートン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゲーテ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モーリス・メーテルリンク",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランシス・アストン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アントン・ブルックナー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エリザベス1世",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オクタヴィアヌス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "レオン・ロッシュ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハンス・ガイガー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ガンジー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エルンスト・クレッチマー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・ド・サン＝シモン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・ベルクソン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイス・マンフォード",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランツ・リスト",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エヴァリスト・ガロア",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘルムート・カール・ベルンハルト・フォン）モルトケ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マリー・アントワネット",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルター",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "孫文",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイ18世",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "セルマ・ラーゲルレーヴ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ルイーザ・メイ・オルコット",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ギュスターヴ・エッフェル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トーマス・ウッドロウ・ウィルソン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジェーン・オースティン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オノーレ・ミラボー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘルマン・ロールシャッハ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ダグラス・マッカーサー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ぺリー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジュリオ･ドゥーエ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョン・ロス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジュゼッペ・ガリバルディ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "デイヴィッド・クロケット",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オーヴィル・ライト（弟）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マルティン・ハイデッガー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "キュリー夫人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "レオナルド・ダ・ヴィンチ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アントニ・ガウディ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グレゴリウス13世",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フリードリヒ2世",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アン女王",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エカテリーナ2世",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マリア・テレジア",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴィクトリア女王",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フレミング",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョン・ドルトン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ドボルザーク",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アプトン・シンクレア",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（アルブレヒト・フォン）ヴァレンシュタイン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（ルイ・ジャック・マンデ・）ダゲール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カレル・チャペック",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "モリエール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジュール・ヴェルヌ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ビクトル・ユーゴー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンリー・ワーズワース・ロングフェロー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラファイエット夫人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マルタン・デュ・ガール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・モリス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コメニウス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハンス・クリスチャン・アンデルセン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ワシントン・アーヴィング",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シャルル・ボードレール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シャーロット・ブロンテ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "シェークスピア",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "バリー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オノレ・ド・バルザック",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "コナン・ドイル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウォルター・ホイットマン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘルマン・ヘッセ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フランツ・カフカ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン・コクトー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "メンデル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ナポレオン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロバート・ウォルポール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アーネスト・ラザフォード",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マイケル・ファラデー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジュゼッペ・ヴェルディ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラムゼイ・マクドナルド",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヴォルテール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（シャルル・アンドレ・ジョゼフ・ピエール＝マリ・）ド・ゴール",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カーネギー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マーク・トゥエイン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジョルジュ・スーラ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エミリー・ディキンソン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハイネ（ハインリヒ・ハイネ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ベートーベン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・マティス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ゴットリープ・ダイムラー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "エドモンド・カートライト",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ・デュナン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロックフェラー(ジョン・ロックフェラー)",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・スミス・クラーク",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ウィリアム・アームストロング",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンデルス・セルシウス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トマス・モア",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（ハーバート・ヘンリー・）アスキス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャン＝フランソワ・ミレー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニールス・ボーア",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アウレリウス・アウグスティヌス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "オーブリー・ビアズリー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロイドジョージ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ハリー・パークス",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マキャベリ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "イブン・ハルドゥーン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アーネスト・サトウ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "カール・ユング",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンリーフォード1世",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "（ゲオルク・ヴィルヘルム・フリードリヒ）ヘーゲル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アンリ3世",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "プロスペル・メリメ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "フリードリヒ・ニーチェ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マヌエル・デ・ファリャ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ニュートン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ラドヤード・キップリング",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ジャンヌダルク",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンリー・モートン・スタンリー",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ヘンドリック・ローレンツ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "トーマス・エジソン",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "グラハム・ベル",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "リチャード・トレビシック",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "マテオ・リッチ",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

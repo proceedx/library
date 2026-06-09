@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyJapanesePrimeMinister</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #2c3e50;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #2c3e50;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #2c3e50;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #2c3e50;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">🏯</span>
+  <h1>EasyJapanesePrimeMinister</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "伊藤　博文いとう　ひろぶみ1885-1888第１次内閣初代総理大臣となる　内閣制度発足",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "黒田　清隆くろだ　きよたか1888-1889大日本帝国憲法発布される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山県　有朋やまがた　ありとも1899-1891第１次内閣第１回総選挙実施　教育勅語発布",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "松方　正義まつかた　まさよし1891-1892大津事件起きる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊藤　博文いとう　ひろぶみ1892-1896第２次内閣治外法権の撤廃　日清戦争起こる　下関条約締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "松方　正義まつかた　まさよし1896-1898第２次内閣八幡製鉄所設立",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊藤　博文いとう　ひろぶみ1898-1898第３次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大隈　重信おおくま　しげのぶ1898-1898第１次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山県　有朋やまがた　ありとも1898-1900第２次内閣義和団の乱が清で起きる　北清事変",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伊藤　博文いとう　ひろぶみ1900-1901第４次内閣足尾鉱毒事件発生する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "桂　太郎かつら　たろう1901-1906第１次内閣日英同盟の締結　日露戦争起こる　ポーツマス条約締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "西園寺　公望さいおんじ　きんもち1906-1908第１次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "桂　太郎かつら　たろう1908-1911第２次内閣大逆事件起こる　韓国併合条約締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "西園寺　公望さいおんじ　きんもち1911-1912第２次内閣明治天皇崩御",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "桂　太郎かつら　たろう1912-1913第３次内閣第１次護憲運動開始",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山本　権兵衛やまもと　ごんべえ1913-1914第１次内閣シーメンス事件起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大隈　重信おおくま　しげのぶ1914-1916第２次内閣第１次世界大戦勃発　対華21カ条の要求を出す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "寺内　正毅てらうち　まさたけ1916-1918米騒動起きる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原　敬はら　たかし1918-1921最初の本格的政党内閣　国際連盟に加盟する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "高橋　是清たかはし　これきよ1921-1922ワシントン会議が行われる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "加藤　友三郎かとう　ともさぶろう1922-1923関東大震災起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "山本　権兵衛やまもと　ごんべえ1923-1924第２次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "清浦　奎吾きようら　けいご1924-1924",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "加藤　高明かとう　たかあき1924-1926普通選挙法の成立　治安維持法成立",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "若槻　礼次郎わかつき　れいじろう1926-1927第１次内閣大正天皇崩御",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "田中　義一たなか　ぎいち1927-1929張作霖爆殺事件起きる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "浜口　雄幸はまぐち　おさち1929-1931ロンドン会議",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "若槻　礼次郎わかつき　れいじろう1931-1931第２次内閣満州事変勃発する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "犬養　毅いぬかい　つよし1931-1932満州国建設　五・一五事件起きる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "斎藤　実さいとう　まこと1932-1934国際連盟脱退する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "岡田　啓介おかだ　けいすけ1934-1936二・二六事件起きる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "広田　弘毅ひろた　こうき1936-1937日独防共協定締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "林　銑十郎はやし　せんじゅうろう1937-1937",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "近衞　文麿このえ　ふみまろ1937-1939第１次内閣日中戦争勃発　国家総動員法の発令",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "平沼　騏一郎ひらぬま　きいちろう1939-1939ノモンハン事件起きる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "阿部　信行あべ　のぶゆき1939-1940",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "米内　光政よない　みつまさ1940-1940南京政府(日本の傀儡政権)を樹立",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "近衞　文麿このえ　ふみまろ1940-1941第２次内閣日独伊三国軍事同盟締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "近衞　文麿このえ　ふみまろ1940-1941第３次内閣日ソ中立条約締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東條　英機とうじょう　ひでき1941-1944太平洋戦争はじまる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小磯　国昭こいそ　くにあき1944-1945",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鈴木　貫太郎すずき　かんたろう1945-1945広島、長崎に原爆が投下される　終戦",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "東久邇宮　稔彦王ひがしくにのみや　なるひこおう1945-1945降伏調印する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "幣原　喜重郎しではら　きじゅうろう1945-1946財閥解体、農地改革、婦人参政権など戦後の民主化政策",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "吉田　茂よしだ　しげる1946-1947第１次内閣日本国憲法の公布",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "片山　哲かたやま　てつ1947-1948初の社会主義政党の政権となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "芦田　均あしだ　ひとし1948-1948昭和電工事件起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "吉田　茂よしだ　しげる1948-1949第２次内閣極東軍事裁判行われる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "吉田　茂よしだ　しげる1949-1952第３次内閣サンフランシスコ平和条約を締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "吉田　茂よしだ　しげる1952-1953第４次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "吉田　茂よしだ　しげる1953-1954第５次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鳩山　一郎はとやま　いちろう1954-1955第１次内閣GATTに正式加盟",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鳩山　一郎はとやま　いちろう1955-1955第２次内閣55年体制はじまる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鳩山　一郎はとやま　いちろう1955-1956第３次内閣日ソ共同宣言　国際連合に加盟",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "石橋　湛山いしばし　たんざん1956-1957",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "岸　信介きし　のぶすけ1957-1958第１次内閣新安保条約締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "岸　信介きし　のぶすけ1958-1960第２次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "池田　勇人いけだ　はやと1960-1960第１次内閣所得倍増計画",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "池田　勇人いけだ　はやと1960-1963第２次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "池田　勇人いけだ　はやと1963-1964第３次内閣東京オリンピック開催",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "佐藤　栄作さとう　えいさく1964-1967第１次内閣日韓基本条約締結される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "佐藤　栄作さとう　えいさく1967-1970第２次内閣非核三原則を表明　小笠原諸島返還される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "佐藤　栄作さとう　えいさく1970-1972第３次内閣沖縄が返還される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "田中　角栄たなか　かくえい1972-1972第１次内閣日中共同声明",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "田中　角栄たなか　かくえい1972-1974第２次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三木　武夫みき　たけお1974-1976ロッキード事件発覚",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "福田　赳夫ふくだ　たけお1976-1978日中平和友好条約締結",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大平　正芳おおひら　まさよし1978-1979第１次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大平　正芳おおひら　まさよし1979-1980第２次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鈴木　善幸すずき　ぜんこう1980-1982参議院選挙に比例代表制を導入",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中曽根　康弘なかそね　やすひろ1982-1983第１次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中曽根　康弘なかそね　やすひろ1983-1986第２次内閣国鉄が民営化される",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "中曽根　康弘なかそね　やすひろ1986-1987第３次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "竹下　登たけした　のぼる1987-1989消費税導入　リクルート事件発覚　昭和天皇崩御",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "宇野　宗佑うの　そうすけ1989-1989",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "海部　俊樹かいふ　としき1989-1990第１次内閣湾岸戦争起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "海部　俊樹かいふ　としき1990-1991第２次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "宮澤　喜一みやざわ　きいち1991-1993ＰＫＯ法成立する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "細川　護煕ほそかわ　もりひろ1993-199455年体制の崩壊",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "羽田　孜はた　つとむ1994-1994",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "村山　富市むらやま　とみいち1994-1996阪神大震災　地下鉄サリン事件起きる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "橋本　龍太郎はしもと　りゅうたろう1996-1996第１次内閣住専処理法成立",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "橋本　龍太郎はしもと　りゅうたろう1996-1998第２次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小渕　恵三おぶち　けいぞう1998-2000国旗・国歌法成立　二千円札の発行",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "森　喜朗もり　よしろう2000-2000第１次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "森　喜朗もり　よしろう2000-2001第２次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小泉　純一郎こいずみ　じゅんいちろう2001-2003第１次内閣郵政改革を旗印に登場",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小泉　純一郎こいずみ　じゅんいちろう2003-2005第２次内閣イラク派兵を決定",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "小泉　純一郎こいずみ　じゅんいちろう2005-2006第３次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "安倍　晋三あべ　しんぞう2006-2007第１次内閣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "福田　康夫ふくだ　やすお2007-2008",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "麻生　太郎あそう　たろう2008-2009",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鳩山由紀夫はとやま　ゆきお2009-2010民主党が政権となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "菅 直人かん　なおと2010-2011  東日本大震災、福島原発事故が起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "野田　佳彦のだ　よしひこ2011-2012",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "安倍　晋三 あべ　しんぞう2012～ 第２次内閣アベノミクス",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

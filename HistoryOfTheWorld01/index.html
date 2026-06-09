@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>紀元前まで</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #8b6914;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #8b6914;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #8b6914;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #8b6914;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📜</span>
+  <h1>紀元前まで</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "B.C3000頃",
+    "hint": "紀元前まで",
+    "a": "エジプト、統一国家の形成"
+  },
+  {
+    "q": "B.C3000頃",
+    "hint": "紀元前まで",
+    "a": "メソポタミア文明が栄える　ティグリス川とユーフラテス川の流域で発生した文明である"
+  },
+  {
+    "q": "BC2500頃",
+    "hint": "紀元前まで",
+    "a": "インダス文明が栄える　パキスタン・インド・アフガニスタンのインダス川及び並行して流れていたとされるガッガル・ハークラー川周辺に栄えた文明"
+  },
+  {
+    "q": "B.C2000頃",
+    "hint": "紀元前まで",
+    "a": "古バビロニア王国成立　メソポタミア地方で栄えたアムル系王朝"
+  },
+  {
+    "q": "B.C1800頃",
+    "hint": "紀元前まで",
+    "a": "ハムラビ法典制定　バビロニアを統治したハンムラビ（ハムラビ）王が発布した法典"
+  },
+  {
+    "q": "B.C1600頃",
+    "hint": "紀元前まで",
+    "a": "黄河文明が栄える　黄河の中・下流域で栄えた古代の中国文明のひとつ"
+  },
+  {
+    "q": "B.C1500頃",
+    "hint": "紀元前まで",
+    "a": "殷王朝の成立　考古学的に実在が確認されている中国最古の王朝"
+  },
+  {
+    "q": "B.C1050頃",
+    "hint": "紀元前まで",
+    "a": "周王朝による華北の統一"
+  },
+  {
+    "q": "B.C1000頃",
+    "hint": "紀元前まで",
+    "a": "バラモン教の成立　→インドのカースト制度"
+  },
+  {
+    "q": "B.C960頃",
+    "hint": "紀元前まで",
+    "a": "ソロモン王（～922）優れた政治家であるともに人並み外れた知恵者"
+  },
+  {
+    "q": "B.C776",
+    "hint": "紀元前まで",
+    "a": "ギリシアで第１回オリンピア競技始まる"
+  },
+  {
+    "q": "B.C770",
+    "hint": "紀元前まで",
+    "a": "周の東遷　→東周時代（～403）"
+  },
+  {
+    "q": "B.C750頃",
+    "hint": "紀元前まで",
+    "a": "古代ローマが建国される　地中海世界の全域を支配する世界帝国までになった国"
+  },
+  {
+    "q": "B.C722",
+    "hint": "紀元前まで",
+    "a": "春秋の記述、この年から始まる"
+  },
+  {
+    "q": "B.C594",
+    "hint": "紀元前まで",
+    "a": "ソロンの改革　「負債の帳消し」「債務奴隷の禁止」「財産政治の実施」が特徴"
+  },
+  {
+    "q": "B.C557",
+    "hint": "紀元前まで",
+    "a": "シャカが生まれる"
+  },
+  {
+    "q": "B.C551",
+    "hint": "紀元前まで",
+    "a": "孔子生まれる　春秋時代の中国の思想家、哲学者。儒家の始祖"
+  },
+  {
+    "q": "B.C508",
+    "hint": "紀元前まで",
+    "a": "クレイステネスの改革"
+  },
+  {
+    "q": "B.C451",
+    "hint": "紀元前まで",
+    "a": "十二表法成立される　前451‐前450年に成立し，その後の法発展の基礎となったローマ最古の包括的法典"
+  },
+  {
+    "q": "B.C450頃",
+    "hint": "紀元前まで",
+    "a": "ギリシア文化の全盛時代"
+  },
+  {
+    "q": "B.C431頃",
+    "hint": "紀元前まで",
+    "a": "仏教成立"
+  },
+  {
+    "q": "B.C403",
+    "hint": "紀元前まで",
+    "a": "戦国時代の開始（～221）"
+  },
+  {
+    "q": "B.C334",
+    "hint": "紀元前まで",
+    "a": "アレクサンドロス大王の東征開始する"
+  },
+  {
+    "q": "B.C333",
+    "hint": "紀元前まで",
+    "a": "イッソスの戦　マケドニア軍(ギリシア連合軍)とペルシア軍の戦い"
+  },
+  {
+    "q": "B.C330",
+    "hint": "紀元前まで",
+    "a": "アケメネス朝ペルシア帝国滅亡した"
+  },
+  {
+    "q": "B.C301",
+    "hint": "紀元前まで",
+    "a": "イプソスの戦い（現在のトルコ中西部の地域）で起こった会戦"
+  },
+  {
+    "q": "B.C264",
+    "hint": "紀元前まで",
+    "a": "第１回ポエニ戦争（～241）　共和政ローマとカルタゴとの間で地中海の覇権を賭けて争われた一連の戦争である"
+  },
+  {
+    "q": "B.C247",
+    "hint": "紀元前まで",
+    "a": "始皇帝が即位（～210）"
+  },
+  {
+    "q": "B.C221",
+    "hint": "紀元前まで",
+    "a": "秦が中国を統一した"
+  },
+  {
+    "q": "B.C218",
+    "hint": "紀元前まで",
+    "a": "第２回ポエニ戦争（～201）"
+  },
+  {
+    "q": "B.C202",
+    "hint": "紀元前まで",
+    "a": "前漢、成立　秦滅亡後の楚漢戦争（項羽との争い）に勝利した劉邦によって建てられ、長安を都とした"
+  },
+  {
+    "q": "B.C168",
+    "hint": "紀元前まで",
+    "a": "ピュトナの戦　～マケドニア滅亡"
+  },
+  {
+    "q": "B.C149",
+    "hint": "紀元前まで",
+    "a": "第３回ポエニ戦争（～146）共和政ローマとカルタゴとの間で地中海の覇権を賭けて争われた一連の戦争"
+  },
+  {
+    "q": "B.C136",
+    "hint": "紀元前まで",
+    "a": "五経博士をおく　～儒教の国教化"
+  },
+  {
+    "q": "B.C133",
+    "hint": "紀元前まで",
+    "a": "ティベリウス・グラックスの改革"
+  },
+  {
+    "q": "B.C127",
+    "hint": "紀元前まで",
+    "a": "武帝が匈奴を攻撃する"
+  },
+  {
+    "q": "B.C100頃",
+    "hint": "紀元前まで",
+    "a": "カエサル（～44）後の帝政の基礎を築いた"
+  },
+  {
+    "q": "B.C97",
+    "hint": "紀元前まで",
+    "a": "司馬遷　『史記』　武帝の時代に司馬遷によって編纂された中国の歴史書"
+  },
+  {
+    "q": "B.C91",
+    "hint": "紀元前まで",
+    "a": "同盟市戦争（ソキイ戦争）～同盟市のローマ市民権要求"
+  },
+  {
+    "q": "B.C73",
+    "hint": "紀元前まで",
+    "a": "スパルタクスの反乱（～71）「スパルタクスの反乱」と称される第三次奴隷戦争の指導者"
+  },
+  {
+    "q": "B.C60",
+    "hint": "紀元前まで",
+    "a": "第１回三頭政治～ポンペイウス、クラックス、カエサル"
+  },
+  {
+    "q": "B.C48",
+    "hint": "紀元前まで",
+    "a": "ポンペイウスがエジプトで暗殺される"
+  },
+  {
+    "q": "B.C44",
+    "hint": "紀元前まで",
+    "a": "カエサルが暗殺される　共和政ローマ期の政治家、軍人であり、文筆家「賽は投げられた」"
+  },
+  {
+    "q": "B.C43",
+    "hint": "紀元前まで",
+    "a": "第２回三頭政治～オクタヴィアヌス、アントニウス、レピドゥス"
+  },
+  {
+    "q": "B.C31",
+    "hint": "紀元前まで",
+    "a": "アクティウムの海戦～オクタヴィアヌスがアントニウスとクレオパトラの連合軍を破る"
+  },
+  {
+    "q": "B.C30",
+    "hint": "紀元前まで",
+    "a": "クレオパトラが自殺、プトレマイオス朝滅亡"
+  },
+  {
+    "q": "B.C27",
+    "hint": "紀元前まで",
+    "a": "オクタヴィアヌスが元老院からアウグストゥスの尊称を受ける～ローマ帝政の開始"
+  },
+  {
+    "q": "4頃",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "イエス・キリスト生まれる"
+  },
+  {
+    "q": "8",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "前漢滅亡、王莽が新を建国（～23）する"
+  },
+  {
+    "q": "25",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "劉秀が後漢を建国、洛陽に都をおく（～220）"
+  },
+  {
+    "q": "30",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "キリストが処刑される"
+  },
+  {
+    "q": "40",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "パウロの伝道活動（～60）"
+  },
+  {
+    "q": "64",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "皇帝ネロがキリスト教徒を迫害する"
+  },
+  {
+    "q": "67",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "中国に仏教伝来"
+  },
+  {
+    "q": "80",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ローマにコロセウムができる　ローマ市内の古代ローマ帝政期の円形闘技場の通称"
+  },
+  {
+    "q": "96",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ローマ五賢帝時代（～180）ネルウァ、トラヤヌス、ハドリアヌス、アントニヌス・ピウス、マルクス・アウレリウスの5人の皇帝"
+  },
+  {
+    "q": "100",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "北朝鮮に高句麗が起こる"
+  },
+  {
+    "q": "105",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "蔡倫、紙を発明"
+  },
+  {
+    "q": "150",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "このころローマ帝国の全盛時代となる"
+  },
+  {
+    "q": "184",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "黄巾の乱おこる　（中平1年）に太平道の教祖張角が起こした農民反乱"
+  },
+  {
+    "q": "207",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "劉備、三顧の礼で諸葛亮を迎える"
+  },
+  {
+    "q": "208",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "赤壁の戦"
+  },
+  {
+    "q": "212",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "万民法（アントニヌス法）が全帝国内に及ぶ"
+  },
+  {
+    "q": "220",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "後漢滅亡、魏・呉・蜀の三国分立"
+  },
+  {
+    "q": "226",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ササン朝ペルシア成立（～651）"
+  },
+  {
+    "q": "280",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "晋が中国を統一（～316）した"
+  },
+  {
+    "q": "284",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ディオクレティアヌスが帝国4分治制を採用"
+  },
+  {
+    "q": "313",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ローマ皇帝がキリスト教を公認する"
+  },
+  {
+    "q": "325",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ニケーア公会議　～アタナシウス派を正統"
+  },
+  {
+    "q": "350",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "朝鮮に高句麗・百済・新羅の三国が成立した"
+  },
+  {
+    "q": "375",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ゲルマン人の移動が始まる"
+  },
+  {
+    "q": "392",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ローマ帝国、キリスト教を国教とする"
+  },
+  {
+    "q": "395",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ローマ帝国が東西に分かれる"
+  },
+  {
+    "q": "395",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "５世紀の初め、ゲルマン人がヨーロッパ各地に建国"
+  },
+  {
+    "q": "420",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "宋、成立（南朝）（～479）中国の王朝の一つ　趙匡胤が五代最後の後周から禅譲を受けて建国した"
+  },
+  {
+    "q": "439",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "北魏が華北を統一（北朝）"
+  },
+  {
+    "q": "476",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "西ローマ帝国が滅びる"
+  },
+  {
+    "q": "485",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "北魏の孝文帝が均田制を実施"
+  },
+  {
+    "q": "486",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "フランク王国が建国される"
+  },
+  {
+    "q": "527",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "東ローマ皇帝ユスティニアヌス大帝（～565）"
+  },
+  {
+    "q": "533",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ローマ法大全ができる"
+  },
+  {
+    "q": "537",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "セント・ソフィア聖堂完成"
+  },
+  {
+    "q": "570頃",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "マホメット生まれる　歴史上の人物としてのマホメットは、宗教家であると同時に政治家であり、ある時は軍事指揮官でもあった"
+  },
+  {
+    "q": "581",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "楊堅が隋を建国"
+  },
+  {
+    "q": "589",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "隋が中国を統一する"
+  },
+  {
+    "q": "604",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "煬帝が即位（～618）"
+  },
+  {
+    "q": "605",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "煬帝が大運河を開く"
+  },
+  {
+    "q": "610",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "マホメットがイスラム教を開く"
+  },
+  {
+    "q": "618",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "唐が中国を統一する"
+  },
+  {
+    "q": "622",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "マホメットがメジナに逃れる（ヘジラ・回教紀元元年）"
+  },
+  {
+    "q": "626",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "唐の太宗が即位　　貞観の治（627～649）"
+  },
+  {
+    "q": "630",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "マホメット、アラブを征服（シリア、メソポタミア、イラン、エジプト）（～651）"
+  },
+  {
+    "q": "661",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "イスラム帝国ができる"
+  },
+  {
+    "q": "663",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "新羅が百済を滅ぼす"
+  },
+  {
+    "q": "668",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "高句麗が唐に滅ぼされる"
+  },
+  {
+    "q": "676",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "新羅が朝鮮半島を統一"
+  },
+  {
+    "q": "711",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "サラセン人が西ゴートを滅ぼし、サラセン文化がヨーロッパに広まる"
+  },
+  {
+    "q": "712",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "唐の玄宗が即位　→開元の治（713～741）"
+  },
+  {
+    "q": "713",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "渤海が建国"
+  },
+  {
+    "q": "726",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "東ローマ皇帝レオ３世が偶像崇拝禁止令を出す"
+  },
+  {
+    "q": "750",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "サラセン帝国にアッバーズ朝成立、ウマイア朝滅亡"
+  },
+  {
+    "q": "751",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "中国から製紙法が西方に伝わる"
+  },
+  {
+    "q": "755",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "安史の乱（～763）9年におよぶ大乱で，中国社会の様相が大きく変化する契機となった"
+  },
+  {
+    "q": "768",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "カール大帝（～814）フランク王国の王(在位768‐814"
+  },
+  {
+    "q": "768",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "このころから、ヨーロッパが封建制度の時代に向かう"
+  },
+  {
+    "q": "774",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "カール大帝がロンバルド王国征服"
+  },
+  {
+    "q": "780",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "唐、両税法を施行　夏と秋の二回徴税されるのでこの名前がある"
+  },
+  {
+    "q": "786",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "アッパーズ朝のカリフ・ハールーン・アッラーシード（～809）"
+  },
+  {
+    "q": "786",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "サラセン文化の全盛"
+  },
+  {
+    "q": "843",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ベルダン条約でフランク王国が三分される"
+  },
+  {
+    "q": "862",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "ルーリックがノヴゴロド王国建設　→ロシアの起原"
+  },
+  {
+    "q": "870",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "フランク王国が３つに分割（仏・独・伊）"
+  },
+  {
+    "q": "875",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "黄巣の乱　中国，唐末の民衆反乱"
+  },
+  {
+    "q": "907",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "唐滅亡、五代十国成立（～960）"
+  },
+  {
+    "q": "918",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "朝鮮に高麗が起こる"
+  },
+  {
+    "q": "927",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "満州の渤海が滅ぶ"
+  },
+  {
+    "q": "935",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "高麗が朝鮮半島を統一"
+  },
+  {
+    "q": "960",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "宋建国"
+  },
+  {
+    "q": "962",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "神聖ローマ帝国、オットー即位（～973）"
+  },
+  {
+    "q": "987",
+    "hint": "紀元後　１年 ～ 1000年",
+    "a": "フランスにカペー王朝が起こる　ユーグ＝カペーからシャルル4世にいたる王朝（987～1328）をさす"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

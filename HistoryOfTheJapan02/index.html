@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鎌　倉　時　代</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #8b6914;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #8b6914;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #8b6914;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #8b6914;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📜</span>
+  <h1>鎌　倉　時　代</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "1185",
+    "hint": "鎌　倉　時　代",
+    "a": "屋島の戦い・壇ノ浦の戦い（平氏滅亡）"
+  },
+  {
+    "q": "1185",
+    "hint": "鎌　倉　時　代",
+    "a": "源頼朝、全国に守護・地頭を設置"
+  },
+  {
+    "q": "1185",
+    "hint": "鎌　倉　時　代",
+    "a": "三世一身の法制定（元正天皇）墾田の奨励のため開墾者から三世代（または本人一代）までの墾田私有を認めた法令"
+  },
+  {
+    "q": "1192",
+    "hint": "鎌　倉　時　代",
+    "a": "将軍源頼朝が鎌倉幕府ひらく"
+  },
+  {
+    "q": "1203",
+    "hint": "鎌　倉　時　代",
+    "a": "源実朝、将軍就任"
+  },
+  {
+    "q": "1203",
+    "hint": "鎌　倉　時　代",
+    "a": "北条時政、執権就任"
+  },
+  {
+    "q": "1205",
+    "hint": "鎌　倉　時　代",
+    "a": "新古今和歌集編纂（後鳥羽上皇・藤原定家）"
+  },
+  {
+    "q": "1206",
+    "hint": "鎌　倉　時　代",
+    "a": "チンギス・ハン、モンゴル帝国建国"
+  },
+  {
+    "q": "1219",
+    "hint": "鎌　倉　時　代",
+    "a": "源実朝、公暁に殺される　　　　 北条義時、公暁を殺す(源氏正統断絶)"
+  },
+  {
+    "q": "1221",
+    "hint": "鎌　倉　時　代",
+    "a": "承久の乱(北条義時/政子) 六波羅探題設置　　後鳥羽上皇、隠岐に流される"
+  },
+  {
+    "q": "1232",
+    "hint": "鎌　倉　時　代",
+    "a": "御成敗（貞永）式目制定（北条泰時）"
+  },
+  {
+    "q": "1271",
+    "hint": "鎌　倉　時　代",
+    "a": "フビライ・ハン、元建国"
+  },
+  {
+    "q": "1274",
+    "hint": "鎌　倉　時　代",
+    "a": "文永の役（元寇）"
+  },
+  {
+    "q": "1281",
+    "hint": "鎌　倉　時　代",
+    "a": "弘安の役（元寇）"
+  },
+  {
+    "q": "1297",
+    "hint": "鎌　倉　時　代",
+    "a": "永仁の徳政令"
+  },
+  {
+    "q": "1318",
+    "hint": "鎌　倉　時　代",
+    "a": "後醍醐天皇即位"
+  },
+  {
+    "q": "1324",
+    "hint": "鎌　倉　時　代",
+    "a": "正中の変(後醍醐天皇、倒幕計画失敗)"
+  },
+  {
+    "q": "1331",
+    "hint": "鎌　倉　時　代",
+    "a": "元弘の変(後醍醐天皇、倒幕計画失敗)　   　る"
+  },
+  {
+    "q": "1333",
+    "hint": "鎌　倉　時　代",
+    "a": "鎌倉幕府滅亡"
+  },
+  {
+    "q": "1336",
+    "hint": "鎌　倉　時　代",
+    "a": "後醍醐天皇→隠岐から脱出、再度倒幕"
+  },
+  {
+    "q": "1334",
+    "hint": "鎌　倉　時　代",
+    "a": "建武の新政"
+  },
+  {
+    "q": "1336",
+    "hint": "鎌　倉　時　代",
+    "a": "建武式目制定"
+  },
+  {
+    "q": "1336",
+    "hint": "鎌　倉　時　代",
+    "a": "南北朝時代へ（後醍醐天皇吉野へ→南朝）"
+  },
+  {
+    "q": "1338",
+    "hint": "室　町　時　代",
+    "a": "足利尊氏、征夷大将軍に就任"
+  },
+  {
+    "q": "1341",
+    "hint": "室　町　時　代",
+    "a": "天竜寺：尊氏が後醍醐天皇の死を悼んで建立"
+  },
+  {
+    "q": "1342",
+    "hint": "室　町　時　代",
+    "a": "天竜寺船を元に派遣"
+  },
+  {
+    "q": "1368",
+    "hint": "室　町　時　代",
+    "a": "足利義満、征夷大将軍に就任"
+  },
+  {
+    "q": "1368",
+    "hint": "室　町　時　代",
+    "a": "明建国（朱元璋：太祖・洪武帝）"
+  },
+  {
+    "q": "1378",
+    "hint": "室　町　時　代",
+    "a": "足利義満、花の御所を造営(室町へ移る)"
+  },
+  {
+    "q": "1392",
+    "hint": "室　町　時　代",
+    "a": "足利義満、南北朝合一"
+  },
+  {
+    "q": "1392",
+    "hint": "室　町　時　代",
+    "a": "李氏朝鮮建国（李成桂）"
+  },
+  {
+    "q": "1397",
+    "hint": "室　町　時　代",
+    "a": "足利義満、鹿苑寺金閣造営 　　北山文化"
+  },
+  {
+    "q": "1401",
+    "hint": "室　町　時　代",
+    "a": "日明貿易開始　日本が中国の明朝と行った貿易"
+  },
+  {
+    "q": "1404",
+    "hint": "室　町　時　代",
+    "a": "勘合貿易開始"
+  },
+  {
+    "q": "1428",
+    "hint": "室　町　時　代",
+    "a": "正長の土一揆　農民が起こした初めての一揆"
+  },
+  {
+    "q": "1429",
+    "hint": "室　町　時　代",
+    "a": "琉球王朝成立(中山 尚巴志が統一)"
+  },
+  {
+    "q": "1467",
+    "hint": "室　町　時　代",
+    "a": "応仁の乱がはじまる　応仁元年（1467年）に発生し、文明9年（1477年）までの約10年間にわたって継続した内乱"
+  },
+  {
+    "q": "1485",
+    "hint": "室　町　時　代",
+    "a": "山城の国一揆"
+  },
+  {
+    "q": "1488",
+    "hint": "室　町　時　代",
+    "a": "加賀の一向一揆"
+  },
+  {
+    "q": "1489",
+    "hint": "室　町　時　代",
+    "a": "足利義政、慈照寺銀閣造営 　　東山文化"
+  },
+  {
+    "q": "1543",
+    "hint": "室　町　時　代",
+    "a": "鉄砲伝来する　ヨーロッパから火縄銃型の鉄砲が伝わった"
+  },
+  {
+    "q": "1549",
+    "hint": "室　町　時　代",
+    "a": "キリスト教伝来"
+  },
+  {
+    "q": "1553",
+    "hint": "室　町　時　代",
+    "a": "川中島の戦い　上杉謙信と武田信玄"
+  },
+  {
+    "q": "1560",
+    "hint": "室　町　時　代",
+    "a": "桶狭間の戦い(今川義元を破る)"
+  },
+  {
+    "q": "1568",
+    "hint": "室　町　時　代",
+    "a": "足利義昭を奉じて入京"
+  },
+  {
+    "q": "1570",
+    "hint": "室　町　時　代",
+    "a": "姉川の戦い(浅井長政,朝倉義景を破る)　　　石山合戦がはじまる（～1580）"
+  },
+  {
+    "q": "1571",
+    "hint": "室　町　時　代",
+    "a": "比叡山焼打ち"
+  },
+  {
+    "q": "1573",
+    "hint": "室　町　時　代",
+    "a": "室町幕府が滅亡"
+  },
+  {
+    "q": "1575",
+    "hint": "安土桃山時代",
+    "a": "長篠の戦い(家康と組み武田勝頼を破る)"
+  },
+  {
+    "q": "1576",
+    "hint": "安土桃山時代",
+    "a": "安土城築城（翌年安土で楽市）"
+  },
+  {
+    "q": "1580",
+    "hint": "安土桃山時代",
+    "a": "石山合戦が終わる（蓮如と和解）"
+  },
+  {
+    "q": "1582",
+    "hint": "安土桃山時代",
+    "a": "天正少年遣欧使節が長崎を出航"
+  },
+  {
+    "q": "1582",
+    "hint": "安土桃山時代",
+    "a": "本能寺の変(明智光秀　　信長自害)"
+  },
+  {
+    "q": "1582",
+    "hint": "安土桃山時代",
+    "a": "山崎の戦い（明智光秀負ける）"
+  },
+  {
+    "q": "1582",
+    "hint": "安土桃山時代",
+    "a": "太閤検地　豊臣秀吉が全国的に行った検地（田畑の測量及び収穫量調査）"
+  },
+  {
+    "q": "1583",
+    "hint": "安土桃山時代",
+    "a": "賤ヶ岳の戦い(柴田勝家を破る)"
+  },
+  {
+    "q": "1583",
+    "hint": "安土桃山時代",
+    "a": "大阪城築城（石山本願寺跡）"
+  },
+  {
+    "q": "1584",
+    "hint": "安土桃山時代",
+    "a": "小牧・長久手の戦い （徳川家康・織田信雄と和睦）"
+  },
+  {
+    "q": "1585",
+    "hint": "安土桃山時代",
+    "a": "関白就任する"
+  },
+  {
+    "q": "1585",
+    "hint": "安土桃山時代",
+    "a": "四国平定（長宗我部元親を破る）"
+  },
+  {
+    "q": "1586",
+    "hint": "安土桃山時代",
+    "a": "太政大臣就任（豊臣姓を賜る）"
+  },
+  {
+    "q": "1587",
+    "hint": "安土桃山時代",
+    "a": "九州平定（島津義久を破る）"
+  },
+  {
+    "q": "1587",
+    "hint": "安土桃山時代",
+    "a": "バテレン追放令を出す"
+  },
+  {
+    "q": "1588",
+    "hint": "安土桃山時代",
+    "a": "秀吉が刀狩り"
+  },
+  {
+    "q": "1590",
+    "hint": "安土桃山時代",
+    "a": "豊臣秀吉が全国統一する"
+  },
+  {
+    "q": "1592",
+    "hint": "安土桃山時代",
+    "a": "文禄の役　　　　　朱印船を明に派遣"
+  },
+  {
+    "q": "1594",
+    "hint": "安土桃山時代",
+    "a": "伏見城を築城"
+  },
+  {
+    "q": "1597",
+    "hint": "安土桃山時代",
+    "a": "慶長の役　1592年（文禄元年）から1598年（慶長3年）にかけて行われた戦争"
+  },
+  {
+    "q": "1598",
+    "hint": "安土桃山時代",
+    "a": "豊臣秀吉死去"
+  },
+  {
+    "q": "1600",
+    "hint": "安土桃山時代",
+    "a": "リーフデ号豊後に漂着"
+  },
+  {
+    "q": "1600",
+    "hint": "安土桃山時代",
+    "a": "関が原の戦い　　日本最大の合戦"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

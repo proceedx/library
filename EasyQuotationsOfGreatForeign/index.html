@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyQuotationsOfGreatForeign</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>EasyQuotationsOfGreatForeign</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "ほとんどすべての人間は、もうこれ以上アイディアを考えるのは不可能だというところまで行きつき、そこでやる気をなくしてしまう　　　いよいよこれからだというのに　アイスキュロス　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "“垣根”は相手が作っているのではなく、自分が作っている　アインシュタイン　学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どうか僕を幸福にしようとしないで下さい　　それは僕に任せてください　アインシュタイン　学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どんな長所をもった人物も、世間の支持がなければ、石ころだらけの道を歩まねばならない　　　善意の衣をほどよくまとえ、他人にあらさがしされることはまずない世間はそいういう人の短所は見たがらない　アラン・クライン　実業家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もっとも明らかな観念も、しばしば、複雑な論究によって不明瞭になる　アラン・コーエン　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方が成すべきことを成さねばならないのなら、したいことをするための賢明さも持たなくてはならない　アリストテレス　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どれほど苦しいかではなく、どれほどの喜びを感じるかが肝心なのだ　アンドレ・レニエ　貴族",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "やがていつかは身も軽く、心楽しい朝が来よう　イグナス・バーンスタイン　その他",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "まず吾を笑う者は人に笑われない　ウォルポール　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ぶらぶら歩きは生きるための偉大な技術である　ウスペンスキー＆グルジェフ　作曲家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "すべての日がそれぞれの贈り物をもっている　エマーソン　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "しばしの別離は再会をいっそう快いものにする　エマーソン　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もし自分にできることをすべて実行すれば、その結果に文字通り、びっくり仰天することだろう　エリカ・ジョング　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１つのドアが閉まれば、もう１つのドアが必ず開きます　　それはバランスをとるための、自然の法則なのだ　エリノア・ルーズベルト　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "「私は～しなければならない」と私たちが言う時はいつも、実際にそれをやる場合より、すっと多くのエネルギーを消耗しているのだ　オウィディウス　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一人でいる力をつけよう　オスカー・ワイルド　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もし変化を望むなら、その変化が起こる前に、貴方が変化そのものにならなくてはなりません　Ｄ・カーネギー　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あらあらしい毒づいた言葉は、根拠の弱いものであることが多い　カーネギー　実業家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "わたしたちは当然ながら自分の思い描くものになる　カフカ　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方の周りを変えようとしてもほとんど意味がない　　まず最初に、自分の信念を変えなさいそうすれば、貴方の周りのあらゆることがそれに応じて、変わる　キケロ　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "つねに素直に語れ、そうそれば卑しい人間は君を避けるだろう　キケロ　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "まず事実をつかめ、それから思うままに曲解せよ　ギタ・ベリン　その他",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方に配られたトランプのカードは不利ではない　　　貴方の考えや感情が不利にも有利にも作用するのだ　ギタ・ベリン　その他",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ここで今これ以上骨を折っても無駄だ！バラならば、花咲くだろう　クロード・Ｍ・ブリストル　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "なにはともあれ、笑うのはいいことだ　　　藁が人間をくすぐって笑わすなら、それは幸せをもたらす道具である　ゲーテ　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "いかなる時でも、お辞儀はし足りないよりも、し過ぎたほうがいい　ゲーテ　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どんなに仲のよい、美しい打ちとけた関係であっても、相手の気に入ることを言ったり、賞賛したりするのは、車輪の進行に必要なように、是非なくてはならないものである　ゲーテ　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "わたしたちは踏みなれた生活の軌道から放りだされると、もうだめだ、と思いますが、実際はそこに、ようやく新しいものが始まるのだ生命のある間は幸福があります　ゲーテ　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方の心からくるものは、人の心を動かす　ゲーテ　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ものごとには限界というものがあって、我慢が美徳でなくなるときがある　ゲーテ　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ほんとうにまじめに努力することは、なかば到達したことと同じだ　ゲオルギウ　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "すべてをいますぐに知ろうとは無理なこと雪が解ければ見えてくる　ケラー　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方が持ち合わせた力に余る強さなど、人生は要求しない　　　貴方にたて得るただひとつの手柄は、そこから逃げないこと　Ｌ・Ｌ・コルベルト　事業家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ただはつらつとした活動によってのみ、不愉快なことは克服される　ゴーリキー　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ただの１日は間違いと失敗にすぎぬが、それが積み重なって、ある期間になれば結果や成功がもたらされる　コレット　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どうあろうと人生常によいものだ　サマセット・モーム　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "我々が理解しないことは制御しがたい　サン・テグジュペリ　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どんな不幸のなかにも幸福がひそんでいる　　　どこに善いことがあり、どこに悪いことがあるのか、我々が知らないだけである　Ｊ・ジェローム　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ねたみ心は、理由のあるものもないものも、りっぱな愛情に必要な品位をこわしてしまう　シェイクスピア　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "うまくいかなかった日は、寝る前に自問する　　今ここで何かできることがあるのか、となければぐっすり寝る　シェイクスピア　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どんな些細な勝利でも、一度自分に勝つと人間は急に強くなれるものである　シェイクスピア　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "わたしの人生はなんと素晴らしかったのだろう！　　もっと早く気がつけばよかった　シェイクスピア　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ユーモアのセンスを持っていると、人間性の矛盾を楽しむようになる　シェイクスピア　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "わかるだろうか・・・人生には解決なんてないのだ　　　ただ、進んでいくエネルギーがあるばかりだ　　　そういうエネルギーをつくりださねばならない解決はそのあとでくる　シェイクスピア　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "よほど巧みに嘘をつけない限り、真実を語るに越したことはない　シェイクスピア　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方がたとえ氷のように潔癖で雪のように潔白であろうとも、世の悪口はまぬがれまい　シェイクスピア　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方の遊びに言い訳はいらない言い訳を決して言うな　シェイクスピア　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "そうあるべきことは、やがてそうなっていくだろう　ジミー・コーナーズ　運動選手",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どんなによい物事でも、めったやたらにそれを誇張すると、だいなしになってしまうことがよくあるものだよ　シモーヌ・ド・ボーボワール　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もっと早く終わるように、少し休みなさい　ジャーミー　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "よく狩りをする者はよく獲物を見つける　釈迦　宗教家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もし人間が確信をもって何かを始めれば、疑惑に終わろう　　　しかし疑惑をもって始めることで満足すれば、確信に終わるであろ　ジョン・F・ケネディ　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "やさしい言葉は、たとえ簡単な言葉でも、ずっとずっと心にこだまする　ジョン・レー　探検家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ことごとくの雲が嵐をなすというわけではない　スタール夫人　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この世は絶え間のないシーソーだ　スピノザ　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "うぬぼれというものがついぞなかったら、人生はてんで楽しくあるまい　セネカ　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "しかし、所詮は人間、いかに優れた者でも時には我を忘れます　セルバンテス　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "テンポがくずれ、音のバランスが狂うと、甘い音楽も不快なもの！人の暮らしもおなじなんだ　ソロー　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どんな傷でも治るときはじょじょに治ったのではないか　ソロー　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ときどき孤独になりたい思いが、男にも女にもわく二人が相愛の仲であれば、相手のそのような思いを互いに嫉妬するものである　ダグ・マハーショルド　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ムダな努力をしたことが分かっただけでも十分に大きな収穫であるムダが発見できたことは、自分の中に新たな能力が生れてきたからだ　チャップリン　役者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "アイデアは、それを一心に求めてさえいれば必ず生まれる　ディズニー　事業家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方の考えが積極的で、建設的で愛に満ちていれば正しい結論は必然的に得られます　デニス・ウェイトリー　その他",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その仕事につきものの単調で嫌な部分が苦にならないなら、その仕事は自分に向いているのだ　トーマス・エジソン　発明家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "いつも楽しく暮らすよう心がければ、外的環境から完全にあるいはほとんど解放される　トーマス・エジソン　発明家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ひとつの顔は神があたえてくださった　　もうひとつの顔は自分で造るのだ　トマス・ブラウン　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もっとよく、というあがきが、往々にして、すでによいことを台無しにしてしまう　ドライデン　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "わが手にあるものは正当に値踏みをしないが、一度それを失うと価値をつけたくなるのが人情である　トルストイ　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "１試合にわたって集中力を維持するためには、適度にリラックスすることが絶対に必要だと思う　トルストイ　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どうにも乗り越えられない障害にぶつかった時は、頑固さほど役に立たないものはない　トルストイ　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方の人生は貴方の思いどおりに変えられる　　　なぜなら貴方自身によってデザインされるのが貴方の人生だからだ　ドン・シベット　その他",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "よもや他人の迷惑にはなるまいと思っているときに、他人の迷惑になっていることがよくあるものである　エドマンド・バーク　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "しゃべったことより、しゃべらずにいたことのほうが力がある　Ｇ・ハーバート　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方は他人の責任をとる必要はない　　　貴方が他人に対して負っていることといえば、それは愛と善意だ　パブリア　その他",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "我々は、たとえどれほどの恥辱を自ら招いたとしても、ほとんど必ず自分の力で名誉を挽回できるものである　バルタサール・グラシアン　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もし幸せになるために誰かを頼っていたら、貴方は奴隷になり、隷属し、とらわれの身となる　バルタザール・グラシアン　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "おのれの得るところを軽んずるなかれ　ビクトル・ユーゴー　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ほとんどたいていの物事は、何の疑いもなく朗らかに受け入れれば、様相をあらたにする　ビスマルク　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もはや手のほどこしようのない事態になったら、事態の成り行きにまかせるだけだ　ビスマルク　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ユーモアにはどんな場面もスムーズに進める力がある　ビュフェ　画家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "やるべきことはやる自分がどうなろうとも、いかなる障害、危険、圧力があろうともこれは人間道徳の基本　Ｅ・Ｍ・フォースター　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "まちがうのは人間の特性であり、道理をわきまえぬ者だけが自分の過ちにこだわる　フラー　建築家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方がたの人間性を心にとどめ、そして他のことを忘れよ　ブライアン・アダムス　音楽家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "我々が進もうとしている道が正しいかどうかを、神は前もっては教えてくれない　ブライアン・アダムス　音楽家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "よい人間関係を築こうと思ったら、貴方の愛の気持ちを相手に示すことだ　ブレーク　画家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方の知る最善をなせもし貴方がランナーであれば走れ、鐘であれば鳴れ　フンボルト　学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ひとかどの人間になるには、ながく持ちこたえなければならない　フランシス・ベーコン　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ロバにはロバが美しく、ブタにはブタが美しい　ヘミングウェー　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "いかなるものも変化しつつある　　これは真理だだから貴方がいまどんな苦境にあろうとも、その状態を保持する努力をしない限り、永久に続くはずはないのだ　ヘンリー・Ｓ・ハスキンズ　その他",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "しなくちゃいけない仕事には、何か楽しめる要素があるもの　ヘンリー・フォード　事業家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "我々は、自分に関心を寄せてくれる人に関心を寄せる　ホラティウス　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "おだやかな心は問題を解決します　　　怒りにふるえ、悲しみに打ちひしがれ、嫉妬に狂った心は問題をますます混乱させます問題の解決は心のおだやかな時にしなさい　マーガレット・ボナーノ　その他",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "すべてを納得すれば、心はきわめて寛大になる　マーガレット・ミッチェル　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ありあまるほど自由な時間のある人間は、たいてい悪いことを考えるものである　マーク・トゥエーン　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方の心が正しいと感じることを行いなさい　　行なえば非難されるだろうが、行なわなければ、やはり非難されるのだから　マーフィー　軍人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もし一年を通して太陽の日と雲の日とを数えてみれば、晴れた日の方が多かったということが分かるだろう　マーフィー　軍人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "わずかばかりの誠実さは危険、度を越した誠実さは致命的　マーフィー　軍人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "およそ人を扱う場合には、相手を論理の動物だと思ってはならない　　　相手は感情の動物であり、しかも偏見に満ち、自尊心と虚栄心によって行動するということを、よく心得ておかねばならない　マーフィー　軍人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "たいていの者は、自分でも思いがけないほど、すばらしい勇気を持っている　マーフィー　軍人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方と世の中との戦いなら、世の中のほうに賭けなさい　マーフィー　軍人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "わたしの立場にあっては我意をとおすことは場合によってはまさに犯罪行為である　　　責任のない立場にあれば、そんなぜいたくも許されようが　マザー・テレサ　宗教家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方の進歩を妨げているのは、貴方が何であるかではなく、貴方が自分を何だと思っているかである　マルコム・フォーブズ　事業家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "もう少し多くを知り、もう少しゆっくり生きよ　マルティアリス　詩人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過去はもはや関係がなく、未来はまだ来ぬ　ミルトン　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どんな困難な状況にあっても、解決策は必ずある救いのない運命というものはない　　　災難にあわせて、どこか一方の扉をあけて、救いの道を残している　モリエール　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あまり多くを求めないことだとくに他人に対しては　モンテーニュ　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "この世は、考える者にとっては喜劇であり、感じるものにとっては悲劇である　ラ・ロシュフコー　学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "できることから始めなさい　　まず、第一歩から始めなさい　　いつも必ずこれ以上できないという限界があります　　あまり多くやろうとすると、何事もなし得ないだろう　ラ・ロシュフコー　学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "貴方が今、夢中になっているものを大切にしなさい　　それは貴方が真に求めているものだから　ラ・ロシュフコー　学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "我々は愛と好意にはたやすくまるめこまれるおそらくはあまりにたやすく　しかし脅しによってまるめこまれることは絶対にない！　ラジニシ　宗教家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あまり人を理解できるとは思わないわかるのは、好きか嫌いかだけだ　ルース・ゴードン　女優",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どんな人でも生きているかぎり存在の必要がある　レオ・Ｃ・ローステン　学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "その光を和らげ、その塵に同ず　老子　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "つま立つ者は立たず　老子　哲学者",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "おのれの職分を守り黙々として勤めることは、中傷に対する最上の答えである　ローガン・ピアソール・スミス　評論家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "すべての不幸は未来への踏み台にすぎない　ロバート・ルイス・スティーブンソン　作家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "あきらめてしまうと、癒しようのない不幸も和らげる　ワシントン　政治家",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "それからはずっと幸せに暮らしましたとさ、というのは一日一日の積み重ねによってのみ可能なのだ　ワトソン　政治家",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

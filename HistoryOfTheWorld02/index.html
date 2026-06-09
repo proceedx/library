@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>紀元後1001年 ～ 1500年</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #8b6914;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #8b6914;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #8b6914;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #8b6914;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📜</span>
+  <h1>紀元後1001年 ～ 1500年</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "1010",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "李朝大越国、成立（～1225）"
+  },
+  {
+    "q": "1038",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ペルシアにセルジューク朝、成立（～1157）"
+  },
+  {
+    "q": "1054",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ギリシア･ローマの両教会が完全に分裂"
+  },
+  {
+    "q": "1066",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ノルマンジーがイングランドを征服する"
+  },
+  {
+    "q": "1069",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "王安石の改革　北宋の財政難を解決するために、新法を実施"
+  },
+  {
+    "q": "1077",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "カノッサの屈辱　～ドイツ皇帝がローマ法王に屈伏"
+  },
+  {
+    "q": "1096",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "十字軍の遠征が始まる（～1270）"
+  },
+  {
+    "q": "1099",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "十字軍がエルサレム王国を建てる"
+  },
+  {
+    "q": "1115",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "中国東北部に金が建国"
+  },
+  {
+    "q": "1125",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "金が遼を滅ぼす"
+  },
+  {
+    "q": "1127",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "宋が金の侵攻で南渡（南宋）（～1279）"
+  },
+  {
+    "q": "1130",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "イタリアにナポリ王国が成立"
+  },
+  {
+    "q": "1142",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "紹興の和議　　金と南宋の間の対立を終結させた条約"
+  },
+  {
+    "q": "1143",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ポルトガル王国が成立"
+  },
+  {
+    "q": "1147",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "第2回十字軍（～1149）"
+  },
+  {
+    "q": "1150頃",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "カンボジアでアンコール・ワット建設"
+  },
+  {
+    "q": "1187",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "エルサレム王国が滅ぶ"
+  },
+  {
+    "q": "1189",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "第3回十字軍遠征（～1192）"
+  },
+  {
+    "q": "1190",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ドイツ騎士団が生まれる　十字軍の時代にエルサレム王国の港湾都市アッコンで設立された騎士修道会（軍事力を備えたカトリック修道会）"
+  },
+  {
+    "q": "1195",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "イスラム教徒がスペインを占領"
+  },
+  {
+    "q": "1202",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "第4回十字軍遠征（～1204）、十字軍がラテン帝国を建設"
+  },
+  {
+    "q": "1204",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "第4回十字軍がビザンチン帝国を征服"
+  },
+  {
+    "q": "1206",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "奴隷王朝、成立（～1290）"
+  },
+  {
+    "q": "1206",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "チンギス・ハンがモンゴルを統一　世界最大の征服者"
+  },
+  {
+    "q": "1215",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ジョン王が大憲章（マグナ・カルタ）を承認"
+  },
+  {
+    "q": "1219",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "チンギス・ハンの西征（～1925）"
+  },
+  {
+    "q": "1224",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "モンゴル帝国が南ロシアを征服する"
+  },
+  {
+    "q": "1228",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "第5回十字軍"
+  },
+  {
+    "q": "1234",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "モンゴル帝国が金を滅ぼす"
+  },
+  {
+    "q": "1241",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "モンゴル帝国がワールシュタットの戦いでヨーロッパ軍を破る"
+  },
+  {
+    "q": "1358",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ドイツにハンザ同盟が成立"
+  },
+  {
+    "q": "1248",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "第6回十字軍"
+  },
+  {
+    "q": "1260",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "フビライ・ハンがモンゴル帝国第5代皇帝に即位"
+  },
+  {
+    "q": "1261",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "東ローマ帝国が再興"
+  },
+  {
+    "q": "1264",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "フビライ・ハンが大都（現在の北京）に遷都"
+  },
+  {
+    "q": "1265",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "イギリス国会（下院）が創設される"
+  },
+  {
+    "q": "1270",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "第7回十字軍"
+  },
+  {
+    "q": "1271",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "フビライ・ハンが元建国 　中国大陸各地を遠征し、モンゴルの領土を拡大、1271年首都を現在の北京であるエンキョウ：燕京に移し、首都名を「大都」、国名を「元」とした"
+  },
+  {
+    "q": "1272",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "十字軍が聖地を退く"
+  },
+  {
+    "q": "1275",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "マルコ・ポーロ　元に到着"
+  },
+  {
+    "q": "1279",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "元が南宋を滅ぼす。このころ元の全盛期で東西交通が栄える"
+  },
+  {
+    "q": "1280",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "郭守敬がイスラム暦をもとに綬時暦を作成"
+  },
+  {
+    "q": "1295",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "イギリスで模範会議"
+  },
+  {
+    "q": "1299",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "オスマン・トルコ帝国の建国"
+  },
+  {
+    "q": "1299",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "マルコ・ポーロの『東方見聞録』なる"
+  },
+  {
+    "q": "1302",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "フィリップ4世が三部会を招集した"
+  },
+  {
+    "q": "1303",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "アナーニ事件　1303年、フランス国王フィリップ4世がローマ教皇ボニファティウス8世をイタリアの山間都市アナーニで捕らえた事件"
+  },
+  {
+    "q": "1309",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "教皇のバビロン捕囚　ユダ王国のユダヤ人たちがバビロンを初めとしたバビロニア地方へ捕虜として連行され移住させられた事件"
+  },
+  {
+    "q": "1313",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ドイツで火薬が発明される"
+  },
+  {
+    "q": "1313",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ダンテの『神曲』ができる　地獄篇、煉獄篇、天国篇の3部から成る、全14,233行の韻文による長編叙事詩"
+  },
+  {
+    "q": "1313",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "このころからイタリアにルネッサンス（文芸復興）が始まる"
+  },
+  {
+    "q": "1333頃",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "アルハンブラ宮殿なる"
+  },
+  {
+    "q": "1339",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "英仏間に百年戦争はじまる（～1453）"
+  },
+  {
+    "q": "1347",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ヨーロッパにペストが流行（～1350）"
+  },
+  {
+    "q": "1347",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "このころハンザ同盟の全盛期　 13世紀から17世紀へかけて北ヨーロッパに成立していた都市連合体"
+  },
+  {
+    "q": "1353",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ボッカチオの「デカメロン」完成"
+  },
+  {
+    "q": "1356",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "金印勅書　皇帝の命令が記され、黄金製の印章が付された公文書"
+  },
+  {
+    "q": "1368",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "明建国 される"
+  },
+  {
+    "q": "1369",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "中央アジアにティムール帝国が起こる　（現在のウズベキスタン中央部）に勃興したモンゴル帝国の継承政権のひとつ"
+  },
+  {
+    "q": "1378",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "教会分裂（～1417）"
+  },
+  {
+    "q": "1381",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "イギリスに農民一揆が起こる（ワット・タイラー）"
+  },
+  {
+    "q": "1381",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ティムールがアフガニスタン・イラン遠征"
+  },
+  {
+    "q": "1392",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "高麗が滅び、朝鮮がおこる"
+  },
+  {
+    "q": "1393",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ティムールがイル・ハン国を征服"
+  },
+  {
+    "q": "1398",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ティムールがデリーに侵入し、トゥグルク王朝を攻撃"
+  },
+  {
+    "q": "1402",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "アンゴラの戦い　～ティムールがオスマン・トルコを破る"
+  },
+  {
+    "q": "1402",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "明の永楽帝、即位する"
+  },
+  {
+    "q": "1403",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "朝鮮で活字ができる"
+  },
+  {
+    "q": "1405",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "明の鄭和が第１回の南海遠征に出発"
+  },
+  {
+    "q": "1414",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "コンスタンツ公会議（～1418）"
+  },
+  {
+    "q": "1419",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ドイツでフス戦争が始まる（～1436）中央ヨーロッパで起こった戦争"
+  },
+  {
+    "q": "1429",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "フランスの少女ジャンヌ・ダルクがオルレアンの包囲を破る"
+  },
+  {
+    "q": "1450頃",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "ドイツのグーテンベルクが活版印刷術を発明"
+  },
+  {
+    "q": "1453",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "東ローマ帝国が滅びる"
+  },
+  {
+    "q": "1455",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "イギリスでばら戦争（～1485）30年間にわたって「赤ばらランカスター家」と「白ばらヨーク家」とが王位をめぐって争った"
+  },
+  {
+    "q": "1480",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "モスクワ大公国独立　キエフ・ルーシの北東辺境地にあったルーシ系のウラジーミル・スズダリ公国のもとに成立した国家である"
+  },
+  {
+    "q": "1488",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "バーソロミュー・ディアスが喜望峰を発見"
+  },
+  {
+    "q": "1492",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "コロンブスが新大陸を発見　　探検家・航海者・コンキスタドール、奴隷商人でもあった"
+  },
+  {
+    "q": "1498",
+    "hint": "紀元後1001年 ～ 1500年",
+    "a": "バスコ・ダ・ガマがインドに着く 　ヨーロッパからアフリカ南岸を経てインドへ航海した記録に残る最初のヨーロッパ人"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

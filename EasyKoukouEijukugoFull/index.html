@@ -1,0 +1,2365 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyKoukouEijukugoFull</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #3a86ff;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #3a86ff;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #3a86ff;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📚</span>
+  <h1>EasyKoukouEijukugoFull</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "a couple of 　～　　　少数の　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a few (　～　)　　少数の　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a good many 　～　　　非常に多くの　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a good/great deal of 　～　　　たくさんの",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a great many 　～　　　非常に多くの　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a handful of 　～　　　一握りの　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a little　　少し",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a little too 　～　　　少し　～　過ぎる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a lot of 　～　　　たくさんの　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a minute　　少しの間",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a moment　　少しの間",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a number of 　～　　　いくつかの　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a point of view　　観点，見方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a series of 　～　　　一連の　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a variety of 　～　　　さまざまな　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a 形容詞 amount of 　～　　　＜形容詞＞な量の　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "a 形容詞 number of 　～　　　＜形容詞＞な数の　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "above all　　とりわけ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "according to 　～　　　　～　によれば",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "adapt (oneself) to 　～　　　　～　に適応する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "add A to B　　AをBに付け加える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "after a while　　しばらくして",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "after all　　結局",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "agree to 　～　　　　～　を承諾する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "agree to 　○○　　　　○○　することに同意する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "agree with 　～　　　　～　に賛成である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "aim to 　○○　　　　○○　することを目指す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all at once　　突然",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all but 名詞　　　～　を除いて全て",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all but 形容詞　　ほとんど　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all day long　　一日中",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all of a sudden　　突然",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all over 　～　　　　～　の至る所に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all right　　Oｋである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all the time　　いつでも",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "all the 比較級 (for 　～　)　　（　～　が理由で）なお一層　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "along with 　～　　　　～　と共に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "amount to 　～　　　（総計が）　～　に達する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "an average of 　～　　　平均　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "and yet　　しかし",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "～　 and I　　私と　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "～　 and so forth　　　～　など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "～　 and so on　　　～　など",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "anything but 　～　　　決して　～　でない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as a matter of fact　　実際のところ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as a result (of 　～　)　　（　～　の）結果",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as a rule　　一般に，ふつうは",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "～　 as a whole　　　～　全体",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as for 　～　　　　～　はというと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as good as 　～　　　　～　も同然で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as if ～　　まるで～かのように",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as it is　　現状では",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as it were　　言わば",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as long as 　～　　　なんと　～　も（の長さで）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as many/much A as B　　Bと同じ数/量のA",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as much as 　～　　　なんと　～　も（の量・額で）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as soon as possible　　できるだけ早く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as to 　～　　　　～　に関して",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as usual　　いつものように",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as well　　同様に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as well as 　～　　　　～　と同様に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "as/so long as ～　　～する限り",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "asｋ 　～　 if ～　　　～　に～かどうかを尋ねる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at first　　最初は",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at first sight　　一目見て",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at home　　自国で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at last　　ついに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at least　　少なくとも",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at length　　詳しく，長々と",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at present　　現在は",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at the latest　　遅くとも",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at the moment　　現時点では",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at (the) most　　最大でも，せいぜい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at the sight of 　～　　　　～　を見て",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at the/that time　　当時は",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at times　　時々",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "at (the) worst　　最も悪く言えば",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "attend to 　～　　　　～　に対処する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be about to 　○○　　　　○○　する寸前である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be afraid of 　～　　　　～　を恐れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be against 　～　　　　～　に反対である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be anxious to 　○○　　　とても　○○　したがっている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be apt to 　○○　　　　○○　する傾向がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be ashamed of 　～　　　　～　を恥じている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be based on 　～　　　　～　を基礎［根拠］にしている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be believed to 　○○　　　　○○　だと信じられている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be busy □□ing　　□□　するのに忙しい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be careful not to 　○○　　　　○○　しないように気をつける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be certain (that) ～ .　　～を確信している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be certain to 　○○　　　　○○　するのは確実だ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be concerned with 　～　　　　～　とかかわりがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be content with 　～　　　　～　に満足している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be covered with 　～　　　　～　に覆われている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be different from 　～　　　　～　とは異なる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be due to 　○○　　　　○○　する予定である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be eager to 　○○　　　　○○　したいと強く願う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be engaged in 　～　　　　～　に従事している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be famous for 　～　　　　～　で有名である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be filled with 　～　　　　～　で満たされている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be fond of 　～　　　　～　が好きである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be full of 　～　　　　～　でいっぱいである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be going to 　○○　　　　○○　することになっている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be good at 　～　　　　～　が上手だ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be good for 　～　　　　～　にとって良い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be in trouble　　困っている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be independent of 　～　　　　～　から独立している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be interested in 　～　　　　～　に興味がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be involved in 　～　　　　～　に関わっている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be ｋnown as 　～　　　～　として知られている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be late □□ing　　□□　するのが遅い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be liｋely to 　○○　　　　○○　する可能性が高い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be made of 　～　　　　～　でできている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be opposed to 　～　　　　～　には反対である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be out of breath　　息が切れている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be over　　終わっている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be proud of 　～　　　　～　のことを自慢に思う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be related to 　～　　　　～　と関係がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be responsible for 　～　　　　～　に対して責任がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be satisfied with 　～　　　　～　に満足している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be sensitive to 　～　　　　～　に敏感である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be sold out　　売り切れている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be suited to 　～　　　　～　に適している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be supposed to 　○○　　　　○○　することになっている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be sure of 　～　　　　～　を確信している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be to 　○○　　　○○　しなければならない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be typical of 　～　　　　～　に典型的である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be worth □□ing　　　□□　する価値がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "be worthy of 　～　　　　～　の価値がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "because of 　～　　　　～　が理由で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "begin to 　○○　　　　○○　し始める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "begin □□ing　　　□□　し始める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "believe in 　～　　　　～　の正しさを信じる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "belong to 　～　　　　～　に属している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "between A and B　　AとBの間に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "blame A on B　　AをBのせいだとする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "both A and B　　AとBの両方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "breaｋ down　　故障する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "breaｋ into 　～　　　　～　に押し入る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "breaｋ out　　勃発する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "bring 　～　 about　　　～　を引き起こす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "bring 　～　 up　　　～　を育てる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by accident　　偶然に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by cash/checｋ　　現金で/小切手で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by chance　　偶然に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by now　　今頃はもうすでに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by oneself　　一人で，自分だけで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by the time ～　　～するまでには",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by the way　　ところで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "by train/bus/car, 　　電車/バス/車. で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "call 　～　 bacｋ　　　～　に折り返し電話をかける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Can I 　○○　?　　　○○　してもかまいませんか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "can't 　○○　 too 　～　　　いくら　～　に　○○　してもし過ぎにはならない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "care for 　～　　　　～　の面倒を見る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "catch up with 　～　　　　～　に追いつく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "cling to 　～　　　　～　にしがみつく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "coincide with 　～　　　　～　と一致する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "come true　　実現する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "come up with 　～　　　　～　を考え出す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "consent to 　～　　　　～　を承諾する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "considering 　～　　　　～　を考慮すると",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "consist of 　～　　　　～　から成る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "continue to 　○○　　　　○○　し続ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "contrary to 　～　　　　～　に反して",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "cry out　　叫ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "cut down (on) 　～　　　　～　を切り詰める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "day after day　　毎日",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "deal with 　～　　　　～　に対処［対応］する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "decide to 　○○　　　　○○　することに決める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "depend on 　～　　　　～　に依存する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "do without 　～　　　　～　なしで済ます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Don't mention it.　　どういたしまして",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Don't worry.　　心配しないで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "drag on　　ずるずると長引く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "due to 　～　　　　～　が原因で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "either A or B　　AかBのどちらか一方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "enable 　～　 to 　○○　　　　～　が　○○　するのを可能にする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "enjoy oneself　　楽しく時を過ごす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "enough to 　○○　　　　○○　するのに十分",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "even if ～　　たとえ～だとしても",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "every other day　　一日おきに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "every time ～　　～する時はいつでも",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "far from 　～　　　　～　どころか，決して　～　ではなく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "feel liｋe □□ing　　　□□　したい気分である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "find out that ～　　～だとわかる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "for a while　　しばらくの間",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "for free　　無料で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "for instance　　例えば",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "for nothing　　無料で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "for that matter　　さらに言えば",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "for the saｋe of 　～　　　　～　のために",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "～ , for 　～　.　　～である　というのは　～　だからだ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "forget to 　○○　　　　○○　し忘れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "forget □□ing　　　□□　したことを忘れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "from A to B　　AからBまで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "from a distance　　離れた場所から",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "from time to time　　時々",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "generally speaｋing　　一般的に言うと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get 　～　 done　　　～　をやり終える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get along with 　～　　　　～　とうまくやっていく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get bacｋ　　元の場所へ戻る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get home　　帰宅する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get into 　～　　　　～　の中に入る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get lost　　道に迷う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get off (　～　)　　（　～　から）降りる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get on (　～　)　　（　～　に）乗り込む",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get out of 　～　　　　～　の外に出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get over 　～　　　　～　を乗り越える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get to sleep　　眠る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "get to 　○○　　　　○○　するようになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "give 　～　 a ride　　　～　を車に乗せる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "give 　～　 up　　　～　をやめる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go 　○○　　　　○○　しに行く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go banｋrupt　　倒産する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go by　　過ぎ去る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go for a swim/drive　　泳ぎ/ドライブに行く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go on a trip (to 　～　)　　旅行（で　～　）に行く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go out　　外出する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go □□ing　　□□　しに行く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go without (　～　)　　（　～　）なしに済ます",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "go wrong　　うまく行かない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "graduate from 　～　　　　～　を卒業する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "grow up　　大人になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "happen to 　～　　　　～　に起こる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "have a dream/nightmare　　夢/悪夢を見る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "have a good time　　楽しい時を過ごす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "have a hard time □□ing　　　□□　するのに苦労する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "have been to 　～　　　　～　へ行った［来た］ことがある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "have got 　～　　　　～　を持っている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "have to 　○○　　　　○○　しなければならない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "hear from 　～　　　　～　から便りをもらう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "help A with B　　AのBを助ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Here is/are 　～　　　ここに　～　がある　　これは　～　です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "hit on 　～　　　　～　を（急に）思いつく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "hold on　　そのままで待つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How about 　～　?　　　～　についてはどうですか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "How do you liｋe 　～　?　　　～　は気に入っていますか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "how to 　○○　　　　○○　する方法",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "hundreds of 　～　　　数百の　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "hurry up　　急ぐ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I beg your pardon?　　もう一度言っていただけますか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I guess ～ .　　たぶん～だと思う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I hear (that) ～.　　～だと聞いています",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I suppose ～ .　　たぶん～だと思う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I wonder ～ .　　～かなぁ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I'm afraid ～.　　残念ながら～です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I'm sorry to 　○○　　　　○○　してすみません",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "I'm sure (that) ～ .　　～を確信している",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "if possible　　もし可能なら",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "if 　～　 should 　○○　　　仮に　～　が　○○　するとしたら",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in a hurry　　急いで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in a word　　要するに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in addition to 　～　　　　～　に付け加えて",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in detail　　詳細に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in fact　　実際には（むしろ）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in front of 　～　　　　～　の前に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in general　　一般的に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in order to 　○○　　　　○○　するために",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in other words　　言い換えると",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in school　　在学中に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in short　　要するに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in spite of 　～　　　　～　にもかかわらず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in the corner　　角に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in the end　　最終的には",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in the future　　将来において",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in the way (of 　～　)　　（　～　の）邪魔になって",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in those days　　当時は",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in time (to 　○○　)　　（　○○　するのに）間に合って",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "in vain　　無駄に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "instead of 　～　　　　～　の代わりに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "introduce A to B　　AをBに紹介する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "invest (A) in B　　（Aを）Bに投資する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It is 　～　 (that) ～ .　　～なのは　～　である",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It is said that ～ .　　～だと言われている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It is true (that) ～ , but 　～　　　確かに～ではあるが，しかし　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It is worthwhile □□ing.　　　□□　するのは価値のあることだ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It looｋs as if ～ .　　～のようである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It looｋs liｋe ～ .　　～のようである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It seems that ～ .　　～のようである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "It taｋes (A) B to 　○○　.　　　○○　することは（Aに）Bを必要とさせる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "(just) in case　　万一の場合に備えて",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ｋeep up with 　～　　　　～　に遅れずついていく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ｋeep □□ing　　　□□　し続ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "learn to 　○○　　　　○○　できるようになる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "let 　～　 　○○　　　　～　に　○○　させてやる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Let me 　○○　.　　今　○○　します　　　○○　させてください",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Let's see.　　えーっと　　確か　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "lie down　　（休むために）横になる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "little by little　　少しずつ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "live to be 　～　 (years old)　　　～　歳まで生きる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "long ago　　ずっと昔に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "long to 　○○　　　　○○　したいと切望する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "looｋ 　～　 up　　　～　を調べる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "looｋ after 　～　　　　～　の面倒を見る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "looｋ for 　～　　　　～　を探す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "looｋ forward to 　～　　　　～　を楽しみにして待つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "looｋ into 　～　　　　～　を調べる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "looｋ liｋe 　～　　　　～　に似ている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Looｋ out!　　気をつけろ！",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "lots of 　～　　　たくさんの　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "love to 　○○　　　　○○　するのが大好きだ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "maｋe a promise　　約束をする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "maｋe a speech　　スピーチをする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "maｋe fun of 　～　　　　～　を笑いものにする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "May/Can I speaｋ to 　～　?　　　～　さんをお願いしたいのですが？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "millions of 　～　　　数百万の　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "need to 　○○　　　　○○　する必要がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "neither A nor B　　AでもBでもない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Never mind.　　気にしないで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "no doubt　　疑いなく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "No ｋidding!　　冗談でしょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "no less than 　～　　　　～　も",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "no longer　　もはや　～　ない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "no more than 　～　　　　～　しか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "none of 　～　　　　～　のどれもない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "not 　～　 any longer　　もはや　～　ない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "not 　～　 at all　　全く　～　ない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "not A but B　　AではなくB",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "not 　～　, either.　　～もまた　～　でない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "not A or B　　AでもBでもない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "not only A but (also) B　　AだけでなくBもまた",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "not too 　～　　　あまり　～　でない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "～　 of one's own　　～自身の　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on board　　搭乗して",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on campus　　キャンパスで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on fire　　火事になって",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on foot　　徒歩で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on sale　　販売中で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on the (tele)phone　　電話で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on the other hand　　他方で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on the way　　途中で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on the whole　　全体的に",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "on time　　時間通りに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "once upon a time　　昔々",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "one 　～　 , the other　　（２つのうちの）一方，（残りの）片方",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "one 　～　 after another　　　～　が次から次へと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "one of 　～　　　　～　の一つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "one of these days　　近いうちに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ought to 　○○　　　　○○　すべきである",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "out of 　～　　　（理由） から",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "out of order　　故障して",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "out of sight　　見えなくなって",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "owe A to B　　AをBのおかげだと思う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "pass away　　亡くなる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "pay (A) for B　　Bに対して（Aを）支払う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "persist in 　～　　　あくまでも　～　を続ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "picｋ 　～　 up　　　～　を車に乗せる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "plan to 　○○　　　　○○　することを計画する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "plenty of 　～　　　たくさんの　～",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "point 　～　 out　　　～　を指摘する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "put 　～　 off　　　～　を延期する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "put 　～　 out　　　～　を消す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "rather than 　～　　　　～　ではなく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Really?　　本当に？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "regard A as B　　AをBと見なす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "rely on 　～　　　　～　に頼る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "right away　　ただちに",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "right now　　ちょうど今",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "run away　　逃げ去る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "say hello (to 　～　)　　（　～　に）挨拶をする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "say to oneself　　心の中でつぶやく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "see 　～　 off　　　～　を見送る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "seem to have ○○　　　○○　したようだ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "seem to 　○○　　　　○○　のようだ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Shall I 　○○　?　　　○○　しましょうか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "slow down　　速度を落とす",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "so that ～　　～する目的で",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "so to speaｋ　　言わば",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "so long as ～　　～である限り",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "stand for 　～　　　（頭文字などが）　～　を表す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "start to 　○○　　　　○○　し始める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "stop to 　○○　　　　○○　するために立ち止まる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "stop □□ing　　　□□　するのをやめる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "such as 　～　　　　～　のような",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "suffer from 　～　　　　～　で苦しむ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "switch 　～　 on　　　～　のスイッチを入れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "taｋe 　～　 off　　　～　を脱ぐ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "taｋe 　～　 with 人　　　～　を持って行く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Taｋe a seat.　　お座りください",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "taｋe care of 　～　　　　～　の世話をする",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "taｋe off　　離陸する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "taｋe part in 　～　　　　～　に参加する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "tell A from B　　AをBと区別する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "tell 　～　 to 　○○　　　　～　に　○○　するように言う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "tend to 　○○　　　　○○　する傾向がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "thanｋs to 　～　　　　～　のおかげで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "that is　　つまり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "that is to say　　つまり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "That's correct.　　その通り",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "That's too bad.　　それはまずいですね",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "the day before yesterday　　一昨日",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "the number of 　～　　　　～　の数",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "the other day　　先日",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "the same A as B　　Bと同じA",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There is no use □□ing.　　　□□　しても仕方がない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "There is no □□ing.　　　□□　することはできない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "This is 　～　（電話）　　（電話で） 私は　～　です",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "this time　　今回は",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "too 　～　 to 　○○　　　あまりに　～　で　○○　できない",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "try □□ing　　試しに　□□　する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "turn 　～　 off　　　～　を消す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "turn 　～　 on　　　～　を点ける",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "turn around　　反対方向に向きを変える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "turn out 　～　　　結局　～　となる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "turn up　　現れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "up to 　～　　　　～　まで",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "used to 　○○　　　かつては　○○　だった",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "wait for 　～　　　　～　を待つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "wait for 　～　 to 　○○　　　　～　が　○○　するのを待つ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "waｋe up　　目ざめる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "want 　～　 to 　○○　　　　～　に　○○　してほしい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What do you say (to 　～　)?　　（　～　は）どうですか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What do you thinｋ of 　～　?　　　～　をどう思いますか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What if ～ ?　　～したらどうなるのですか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "What about 　～　?　　　～　についてはどうですか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Why don't we 　○○　?　　　○○　しようじゃないか",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Why don't you 　○○　?　　　○○　してはいかが？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "worｋ for 　～　　　　～　に勤めている",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "would liｋe to 　○○　　　　○○　したい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "Would you liｋe to 　○○　?　　　○○　するのはいかがですか？",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "write 　～　 down　　　～　を書き留める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "You're right.　　その通りです",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "will you?　　　～　してくれませんか？",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

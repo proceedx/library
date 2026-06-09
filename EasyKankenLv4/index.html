@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyKankenLv4</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #e74c3c;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #e74c3c;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #e74c3c;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #e74c3c;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">漢</span>
+  <h1>EasyKankenLv4</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "じゅれい　ひゃくねん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "かんぱい　おんど",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "かんどう　えいが",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "とうてい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "てつぶん　がんゆうりつ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "しゅほう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "てきど　　かみん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "いせいしゃ　　しんらい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "こうきゅうてき　じつげん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ないぞう　もうどく",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ふんすい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "しんらい　きず",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "かた　がんばん　ちそう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ひぎしゃ　びこう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "くうらん　ひつようじこう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "とろ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "どうろ　ふくいん　げんしょう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "かいひん　せいび",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "ぶんり",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "てんぷ　さいのう　めぐ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "へきが　こだい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "げんかい　がまん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "みんぞくぶよう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "じんちゅう",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "歳暮",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "遅（れた）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "就寝",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "空襲",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "怖（い）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "遺跡",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "菓子",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大歓迎",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "距離",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "特徴",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "起床",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "缶詰",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過渡期",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "根拠",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一般",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "連載",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "響（く）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "玄関",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "渡航",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "疲労",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "隣接",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "矛先",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "抵抗",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "薄（い）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "抱 （く）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "攻 （める）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "告訴",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "乾燥",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "勧（める）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "翼",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "替（える）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "尋常",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "偉人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "日陰",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "澄（む）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "誤 （り）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "触 （る）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "証拠",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "爆発",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "甘言",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "寝坊",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "渡（る）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "希薄",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "抱負",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "詳細",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原因　　　＜- -＞    結果",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "出場　　　＜- -＞    欠場",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "豊富　　　＜- -＞    欠乏",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "発端　　　＜- -＞    結末",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "妥結　　　＜- -＞    決裂",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "寛容　　　＜- -＞    厳格",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "潜在　　　＜- -＞    顕在",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "過失　　　＜- -＞    故意",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "悪運　　　　＜- -＞    幸運",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "軟質　　　＜- -＞    硬質",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "干魃　　　＜- -＞    洪水",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "分解　　　＜- -＞    合成",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前進　　　＜- -＞    後退",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "販売　　　＜- -＞    購入",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "先輩　　　＜- -＞    後輩",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "冷静　　　＜- -＞    興奮",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "謙虚　　　＜- -＞    傲慢",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "正答　　　＜- -＞    誤答",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "歳入　　　＜- -＞    歳出",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "最大　　　＜- -＞    最小",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "債権　　　＜- -＞    債務",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "追加　　　＜- -＞    削除",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "栄転　　　＜- -＞    左遷",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "密集　　　＜- -＞    散在",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "極楽　　　＜- -＞    地獄",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "収入　　　＜- -＞    支出",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "名目　　　＜- -＞    実質",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "乾燥　　　＜- -＞    湿潤",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "理論　　　＜- -＞    実践",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "華美　　　＜- -＞    質素",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "成功　　　＜- -＞    失敗",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "美麗　　　＜- -＞    醜悪",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "軽薄　　　＜- -＞    重厚",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "軽視　　　＜- -＞    重視",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "膨張　　　＜- -＞    収縮",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "強情　　　＜- -＞    従順",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "起床　　　＜- -＞    就寝",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "支配　　　＜- -＞    従属",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "横断　　　＜- -＞    縦断",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "分散　　　＜- -＞    集中",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "起点　　　＜- -＞    終点",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "遺失　　　＜- -＞    拾得",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "序盤　　　＜- -＞    終盤",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "開始　　　＜- -＞    終了",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "客観　　　＜- -＞    主観",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "拡大　　　＜- -＞    縮小",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "通読　　　＜- -＞    熟読",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "入荷　　　＜- -＞    出荷",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "能動　　　＜- -＞    受動",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "攻撃　　　＜- -＞    守備",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "苦　労　　　　-　　　　苦心",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "区　別　　　　-　　　　区分",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "差　別　　　　-　　　　区別",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "美　観　　　　-　　　　景観",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "体　験　　　　-　　　　経験",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "情　勢　　　　-　　　　形勢",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "急　流　　　　-　　　　激流",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "風　景　　　　-　　　　景色",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "決　心　　　　-　　　　決意",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "短　所　　　　-　　　　欠点",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "結　果　　　　-　　　　結末",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "現　物　　　　-　　　　現品",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "見　学　　　　-　　　　見物",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "節　約　　　　-　　　　倹約",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "公　表　　　　-　　　　公開",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "情　景　　　　-　　　　光景",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "試　験　　　　-　　　　考査",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "公　平　　　　-　　　　公正",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "政　務　　　　-　　　　公務",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "効　能　　　　-　　　　効用",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "曲　解　　　　-　　　　誤解",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "死　者　　　　-　　　　故人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "原　料　　　　-　　　　材料",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "去　年　　　　-　　　　昨年",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "自　重　　　　-　　　　自愛",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "辞　典　　　　-　　　　辞書",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "天　然　　　　-　　　　自然",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "質　問　　　　-　　　　質疑",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "失　敗　　　　-　　　　失策",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "実　情　　　　-　　　　実態",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "失　意　　　　-　　　　失望",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "辞　職　　　　-　　　　辞任",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "志　願　　　　-　　　　志望",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "居　所　　　　-　　　　住所",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "修　理　　　　-　　　　修正",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主　要　　　　-　　　　重要",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "上　達　　　　-　　　　熟達",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "立　身　　　　-　　　　出世",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "刊　行　　　　-　　　　出版",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "首　都　　　　-　　　　首府",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "busyu01-1.jpg",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "busyu01-2.jpg",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "busyu01-3.jpg",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "busyu01-4.jpg",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "busyu01-5.jpg",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "busyu01-6.jpg",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "busyu01-7.jpg",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "起承転結（きしょうてんけつ）　　　　文章の構成（こうせい）や物事の順序（じゅんじょ）のこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "同工異曲（どうこういきょく）　　　　見かけは違っているように見えて、中身はほとんど同じであること",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "旧態依然（きゅうたいいぜん）　　　　昔ののままで、少しも進歩しないことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "朝令暮改（ちょうれいぼかい）　　　　命令や法令などがすぐに変わって定まらないこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "本末転倒（ほんまつてんとう）　　　　物事で重要な部分とどうでもいい部分を取りちがえることよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "主客転倒（しゅかくてんとう）　　　　物事の順序（じゅんじょ）　や立場などが逆転すること",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "画竜点睛（がりょうてんせい）　　　　物事の最も大切なところ物事を完成するための最後の仕上げ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一得一失（いっとくいっしつ）　　　　物事は一方で利益があると、他方で損失がある",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大安吉日（たいあんきちじつ）　　　　物事を行うのによいとされる日",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一刻千金（いっこくせんきん）　　　　わずかな時間が千金にも値する時間の貴重なことのたとえよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "反面教師（はんめんきょうし）　　　　悪い手本",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "取捨選択（しゅしゃせんたく）　　　　悪いもの・不必要なものを捨てて、よいもの・必要なものを選びとること",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "全知全能（ぜんちぜんのう）　　　　あらゆることを理解し実行できる能力神の能力",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "古今東西（ここんとうざい）　　　　あらゆる時代、あらゆる場所",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一念発起（いちねんほっき）　　　　ある事をしようと強く決意することよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不言実行（ふげんじっこう）　　　　あれこれ理屈（りくつ）をいわず、黙って実際に行動することよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "黄金時代（おうごんじだい）　　　　いちばん栄えている時期最盛期（さいせいき）",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一世一代（いっせいちだい）　　　　一生のうちで二度とないような重大なこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前代未聞（ぜんだいみもん）　　　　今まで聞いたこともない珍（めずら）しいことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "前人未到（ぜんじんみとう）　　　　今までに誰も到達していないこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大器晩成（たいきばんせい）　　　　大人物となる人間は、ふつうより遅く大成するということよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "残念無念（ざんねんむねん）　　　　思いが残ったり、満足がいかなかったりしてくやしく思うこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "得意満面（とくいまんめん）　　　　思いどおりになって、誇らしげなようすが顔いっぱいに表れること",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "奇想天外（きそうてんがい）　　　　思いもよらないような、珍（めずら）しいこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "広大無辺（こうだいむへん）　　　　限りなく広くて大きいこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "二束三文（にそくさんもん）　　　　数が多くても値段が非常に安いこと二束を二足と間違わないようにねよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "南船北馬（なんせんほくば）　　　　国中をいそがしく飛び回って旅をするたとえ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "完全無欠（かんぜんむけつ）　　　　欠点や不足がまったくないことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "意気消沈（いきしょうちん）　　　　元気をなくし、しょげてしまうことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "言語道断（ごんごどうだん）　　　　言葉で言い表せないほどひどいこととんでもないことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "以心伝心（いしんでんしん）　　　　言葉を使わなくても、おたがいに気持ちが通じ合うことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "徹頭徹尾（てっとうてつび）　　　　最初から最後までよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "三寒四温（さんかんしおん）　　　　寒い日が三日ほど続くと、そのあと四日間ぐらい暖かい日が続くということよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "空理空論（くうりくうろん）　　　　実際の事情（じじょう）からかけ離れていて、役に立たない考え",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "我田引水（がでんいんすい）　　　　自分の都合のよいように考え行動すること",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "岡目八目（おかめはちもく）　　　　自分より、まわりで見ている人の方が情勢を正確に判断できる岡目は傍目とも書く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "臨機応変（りんきおうへん）　　　　その時々の状況の変化に応じて、適切な処置（しょち）をすることよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "千差万別（せんさばんべつ）　　　　たくさんのものが、それぞれさまざまに違うことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "独立独歩（どくりつどっぽ）　　　　他人に頼らず、自分の信ずる道を進むこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "再三再四（さいさんさいし）　　　　たびたび何度も何度もくり返しよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "音信不通（おんしんふつう）　　　　便りや連絡がまったくないこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "八方美人（はっぽうびじん）　　　　だれに対しても愛想（あいそう）よくふるまう人",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "博学多才（はくがくたさい）　　　　知識が豊かで、多くの才能に恵まれていること",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "油断大敵（ゆだんたいてき）　　　　注意を怠（おこた）れば必ず失敗をまねくよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "好機到来（こうきとうらい）　　　　ちょうどよい機会（きかい）がめぐってくること",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大言壮語（たいげんそうご）　　　　出来そうもないことや、実力以上のことを言うこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "電光石火（でんこうせっか）　　　　動作が非常にすばやいたとえよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一望千里（いちぼうせんり）　　　　遠くまでひと目で見わたせる見晴らしのよいことのたとえよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "大胆不敵（だいたんふてき）　　　　度胸（どきょう）があって敵を少しも恐れないこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "枝葉末節（しようまっせつ）　　　　取るに足りないささいなことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "心機一転（しんきいってん）　　　　なにかをきっかけとして、気持ちが良い方向にすっかり変わることよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "有名無実（ゆうめいむじつ）　　　　名前だけ立派で実力がともなわないことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "七転八起（しちてんはっき）　　　　何度失敗しても、また起き上がって努力することよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "不眠不休（ふみんふきゅう）　　　　眠らず休まず事にあたることよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "首尾一貫（しゅびいっかん）　　　　初めから終わりまで、態度（たいど）や方針（ほうしん）が同じで変わらないこと",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "一部始終（いちぶしじゅう）　　　　はじめから終わりまでよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "竜頭蛇尾（りゅうとうだび）　　　　はじめは立派だが、終わりが駄目なもの",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "晴耕雨読（せいこううどく）　　　　晴れた日は畑を耕し、雨の日は家で読書をする意から、自由気ままな生活をすることよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "半信半疑（はんしんはんぎ）　　　　半分は信じているが半分は疑っている状態よく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "空前絶後（くうぜんぜつご）　　　　非常にめずらしいことよく出る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "公証 　- 　口承",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "鉱床　 - 　工商",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "沸く　 　- 　　湧く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "課する　 　- 　　科する",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "傘　 　- 　　笠",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "押さえる　 　- 　　抑える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "送る　 　- 　　贈る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "遅れる　 　- 　　後れる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "伺う　 　- 　　窺う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "痛む　 　- 　　傷む",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "暖かい　 　- 　　温かい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "図る　 　- 　　計る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "測る　 　- 　　量る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "謀る　 　- 　　諮る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "会う　＜-＞逢う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "合う　＜-＞遭う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "空く　 　- 　　開く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "玉　＜-＞球",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "使　 　- 　　遣",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "戦う　 　- 　　闘う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "越える　 　- 　　超える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "初　 　- 　　始",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "聞く　 　- 　　聴く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "効く　 　- 　　利く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "作る　 　- 　　造る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "当たり　　 - 　　辺り",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "洗う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "痛める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "射る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "降りる",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "盛ん",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "裁く",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "従う",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "座る",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "供える",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "縮める",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "尊い",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "激しい",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "干す",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "呼ぶ",
+    "hint": "",
+    "a": ""
+  },
+  {
+    "q": "若い",
+    "hint": "",
+    "a": ""
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>

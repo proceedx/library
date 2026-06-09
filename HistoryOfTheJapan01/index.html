@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旧石器時代</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+  }
+  header {
+    background: #8b6914;
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header .icon { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: bold; }
+  header .count { margin-left: auto; font-size: 14px; opacity: 0.9; }
+  
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.3s;
+  }
+  
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    text-align: center;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .answer-box {
+    background: #f0f9f0;
+    border: 2px solid #8b6914;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #333;
+    width: 100%;
+    margin-top: 12px;
+    display: none;
+  }
+  .answer-box.show { display: block; }
+  
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-show {
+    background: #8b6914;
+    color: white;
+  }
+  .btn-correct {
+    background: #27ae60;
+    color: white;
+    display: none;
+  }
+  .btn-wrong {
+    background: #e74c3c;
+    color: white;
+    display: none;
+  }
+  .btn-show.hidden { display: none; }
+  .btn-correct.show, .btn-wrong.show { display: block; }
+  
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .result-screen.show { display: block; }
+  .result-icon { font-size: 64px; margin-bottom: 16px; }
+  .result-score { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 8px; }
+  .result-sub { font-size: 16px; color: #666; margin-bottom: 32px; }
+  .btn-restart {
+    background: #8b6914;
+    color: white;
+    padding: 16px 40px;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="icon">📜</span>
+  <h1>旧石器時代</h1>
+  <span class="count" id="counter">1 / -</span>
+</header>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main>
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="question-text" id="questionText">読み込み中...</div>
+      <div class="hint-text" id="hintText"></div>
+      <div class="answer-box" id="answerBox"></div>
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn btn-show" id="btnShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-correct" id="btnCorrect" onclick="next(true)">✓ 正解！</button>
+      <button class="btn btn-wrong" id="btnWrong" onclick="next(false)">✗ もう一度</button>
+    </div>
+  </div>
+  
+  <div class="result-screen" id="resultScreen">
+    <div class="result-icon">🎉</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+  </div>
+</main>
+
+<script>
+const ALL_QUESTIONS = [
+  {
+    "q": "1万年以上前",
+    "hint": "旧石器時代",
+    "a": "石器時代始まる　打製石斧を用い、狩猟採集生活を営んだ"
+  },
+  {
+    "q": "1万年前",
+    "hint": "縄文時代",
+    "a": "縄文時代がはじまる　縄文時代前期は縄文時代の発展期と位置づけられる"
+  },
+  {
+    "q": "弥生時代",
+    "hint": "弥生時代",
+    "a": "日本列島が形成される"
+  },
+  {
+    "q": "BC３世紀～AD3世紀",
+    "hint": "弥生時代",
+    "a": "弥生時代がはじまる　水稲耕作による稲作はじまる"
+  },
+  {
+    "q": "BC1世紀",
+    "hint": "弥生時代",
+    "a": "倭人は百余国にわかれ、一部の国は前漢の楽浪郡に朝貢「漢書」地理志"
+  },
+  {
+    "q": "57",
+    "hint": "弥生時代",
+    "a": "倭奴国王、後漢に使者"
+  },
+  {
+    "q": "107",
+    "hint": "弥生時代",
+    "a": "倭国王「帥升」が生口160人献上（後漢書東夷伝）"
+  },
+  {
+    "q": "239",
+    "hint": "弥生時代",
+    "a": "卑弥呼が魏に使者"
+  },
+  {
+    "q": "285",
+    "hint": "弥生時代",
+    "a": "漢字が伝わる"
+  },
+  {
+    "q": "AD4世紀",
+    "hint": "古　墳　時　代",
+    "a": "古墳時代がはじまる(3世紀後半～)"
+  },
+  {
+    "q": "350",
+    "hint": "古　墳　時　代",
+    "a": "大和朝廷が国内統一する　有力氏族が連合して成立した政治権力、政治組織である"
+  },
+  {
+    "q": "391",
+    "hint": "古　墳　時　代",
+    "a": "任那に日本府　　倭国の出先統治機関"
+  },
+  {
+    "q": "478",
+    "hint": "古　墳　時　代",
+    "a": "倭王武、宋に上表文       「宋書」倭国伝"
+  },
+  {
+    "q": "527",
+    "hint": "古　墳　時　代",
+    "a": "筑紫国造磐井の反乱起こる"
+  },
+  {
+    "q": "538",
+    "hint": "古　墳　時　代",
+    "a": "仏教伝来する"
+  },
+  {
+    "q": "539",
+    "hint": "古　墳　時　代",
+    "a": "聖徳太子が摂政になる　冠位十二階や十七条憲法を定めるなど天皇を中心とした中央集権国家体制の確立を図った"
+  },
+  {
+    "q": "562",
+    "hint": "古　墳　時　代",
+    "a": "伽耶(加羅・任那)が新羅に滅ぼされる"
+  },
+  {
+    "q": "587",
+    "hint": "飛　鳥　時　代",
+    "a": "物部氏が滅亡する　物部氏（もののべうじ/し）は、「物部」を氏とする氏族"
+  },
+  {
+    "q": "589",
+    "hint": "飛　鳥　時　代",
+    "a": "隋建国"
+  },
+  {
+    "q": "592",
+    "hint": "飛　鳥　時　代",
+    "a": "蘇我馬子、崇峻天皇を殺害する"
+  },
+  {
+    "q": "592",
+    "hint": "飛　鳥　時　代",
+    "a": "推古天皇が即位する　日本初の女帝である"
+  },
+  {
+    "q": "593",
+    "hint": "飛　鳥　時　代",
+    "a": "聖徳太子、推古天皇の摂政に就任する"
+  },
+  {
+    "q": "594",
+    "hint": "飛　鳥　時　代",
+    "a": "仏教興隆の詔"
+  },
+  {
+    "q": "603",
+    "hint": "飛　鳥　時　代",
+    "a": "冠位１２階制定される　日本で初めての冠位・位階である"
+  },
+  {
+    "q": "604",
+    "hint": "飛　鳥　時　代",
+    "a": "１７条の憲法制定　聖徳太子が作った17条からなる法文"
+  },
+  {
+    "q": "607",
+    "hint": "飛　鳥　時　代",
+    "a": "遣隋使を派遣(小野妹子) 　　 法隆寺建立"
+  },
+  {
+    "q": "618",
+    "hint": "飛　鳥　時　代",
+    "a": "唐建国"
+  },
+  {
+    "q": "622",
+    "hint": "飛　鳥　時　代",
+    "a": "聖徳太子が死去"
+  },
+  {
+    "q": "630",
+    "hint": "飛　鳥　時　代",
+    "a": "遣唐使を派遣　日本が唐に派遣した使節である"
+  },
+  {
+    "q": "645",
+    "hint": "飛　鳥　時　代",
+    "a": "大化の改新　645（大化1）年に始められた政治改革のこと"
+  },
+  {
+    "q": "646",
+    "hint": "飛　鳥　時　代",
+    "a": "改新の詔（中大兄皇子・藤原鎌足）"
+  },
+  {
+    "q": "660",
+    "hint": "飛　鳥　時　代",
+    "a": "百済　滅亡する"
+  },
+  {
+    "q": "663",
+    "hint": "飛　鳥　時　代",
+    "a": "白村江の戦い（中大兄皇子）"
+  },
+  {
+    "q": "667",
+    "hint": "飛　鳥　時　代",
+    "a": "大津京遷都（中大兄皇子）"
+  },
+  {
+    "q": "668",
+    "hint": "飛　鳥　時　代",
+    "a": "天智天皇即位 ← 中大兄皇子"
+  },
+  {
+    "q": "670",
+    "hint": "飛　鳥　時　代",
+    "a": "近江令の制定、庚午年籍"
+  },
+  {
+    "q": "672",
+    "hint": "飛　鳥　時　代",
+    "a": "壬申の乱(大海人皇子 と大友皇子)"
+  },
+  {
+    "q": "673",
+    "hint": "飛　鳥　時　代",
+    "a": "天武天皇即位 ← 大海人皇子"
+  },
+  {
+    "q": "683",
+    "hint": "飛　鳥　時　代",
+    "a": "富文銭の鋳造（天武天皇）"
+  },
+  {
+    "q": "684",
+    "hint": "飛　鳥　時　代",
+    "a": "八色の姓の制定（天武天皇）"
+  },
+  {
+    "q": "689",
+    "hint": "飛　鳥　時　代",
+    "a": "飛鳥浄御原令　（あすかきよみはらりょう）飛鳥時代後期に制定された体系的な法典"
+  },
+  {
+    "q": "694",
+    "hint": "飛　鳥　時　代",
+    "a": "藤原京遷都（持統天皇）"
+  },
+  {
+    "q": "701",
+    "hint": "飛　鳥　時　代",
+    "a": "大宝律令制定（文武天皇）"
+  },
+  {
+    "q": "702",
+    "hint": "飛　鳥　時　代",
+    "a": "山上憶良入唐"
+  },
+  {
+    "q": "708",
+    "hint": "飛　鳥　時　代",
+    "a": "和同開珎の鋳造（元明天皇）"
+  },
+  {
+    "q": "710",
+    "hint": "奈　良　時　代",
+    "a": "平城京に遷都　　平城京（へいじょうきょう）は、奈良時代の日本の首都"
+  },
+  {
+    "q": "712",
+    "hint": "奈　良　時　代",
+    "a": "古事記ができる　日本最古の歴史書である"
+  },
+  {
+    "q": "713",
+    "hint": "奈　良　時　代",
+    "a": "風土記編纂を命じる（元明天皇）"
+  },
+  {
+    "q": "718",
+    "hint": "奈　良　時　代",
+    "a": "養老律令編纂される"
+  },
+  {
+    "q": "720",
+    "hint": "奈　良　時　代",
+    "a": "日本書紀編纂（元正天皇）される　日本に伝存する最古の正史"
+  },
+  {
+    "q": "723",
+    "hint": "奈　良　時　代",
+    "a": "三世一身の法制定（元正天皇）墾田の奨励のため開墾者から三世代（または本人一代）までの墾田私有を認めた法令である"
+  },
+  {
+    "q": "729",
+    "hint": "奈　良　時　代",
+    "a": "長屋王の変　（藤原兄弟、長屋王を殺す）"
+  },
+  {
+    "q": "741",
+    "hint": "奈　良　時　代",
+    "a": "国分寺・国分尼寺建立の詔（聖武天皇）"
+  },
+  {
+    "q": "743",
+    "hint": "奈　良　時　代",
+    "a": "墾田永年私財法の制定（聖武天皇） 墾田（自分で新しく開墾した耕地）の永年私財化を認める法令である"
+  },
+  {
+    "q": "743",
+    "hint": "奈　良　時　代",
+    "a": "大仏造立の詔（聖武天皇）"
+  },
+  {
+    "q": "752",
+    "hint": "奈　良　時　代",
+    "a": "東大寺大仏の開眼供養"
+  },
+  {
+    "q": "754",
+    "hint": "奈　良　時　代",
+    "a": "鑑真来日、律宗を伝える 日本における律宗の開祖"
+  },
+  {
+    "q": "756",
+    "hint": "奈　良　時　代",
+    "a": "聖武上皇死去、遺品を東大寺正倉院に納める"
+  },
+  {
+    "q": "764",
+    "hint": "奈　良　時　代",
+    "a": "藤原仲麻呂の乱 （恵美押勝の乱）"
+  },
+  {
+    "q": "8世紀",
+    "hint": "奈　良　時　代",
+    "a": "このころ万葉集編纂（大伴家持）される　7世紀後半から8世紀後半ころにかけて編まれた日本に現存する最古の和歌集である"
+  },
+  {
+    "q": "784",
+    "hint": "奈　良　時　代",
+    "a": "長岡京遷都　（桓武天皇）"
+  },
+  {
+    "q": "794",
+    "hint": "平　安　時　代",
+    "a": "平安京に遷都する　平安城ともいい、現在の京都市中心部に位置した"
+  },
+  {
+    "q": "797",
+    "hint": "平　安　時　代",
+    "a": "坂上田村麻呂、征夷大将軍に就任する"
+  },
+  {
+    "q": "802",
+    "hint": "平　安　時　代",
+    "a": "胆沢城築城"
+  },
+  {
+    "q": "802",
+    "hint": "平　安　時　代",
+    "a": "アテルイ降伏　平安時代初期の蝦夷の軍事指導者"
+  },
+  {
+    "q": "804",
+    "hint": "平　安　時　代",
+    "a": "最澄・空海が唐に渡る"
+  },
+  {
+    "q": "805",
+    "hint": "平　安　時　代",
+    "a": "最澄帰国（天台宗をはじめる）する　　比叡山・延暦寺"
+  },
+  {
+    "q": "806",
+    "hint": "平　安　時　代",
+    "a": "空海帰国（真言宗をはじめる）する　     高野山・金剛峰寺→東寺（教王護国寺）"
+  },
+  {
+    "q": "810",
+    "hint": "平　安　時　代",
+    "a": "（藤原）薬子の変 （平城天皇と嵯峨天皇の争い）"
+  },
+  {
+    "q": "842",
+    "hint": "平　安　時　代",
+    "a": "承和の変おこる　平安時代初期に起きた廃太子を伴う政変"
+  },
+  {
+    "q": "858",
+    "hint": "平　安　時　代",
+    "a": "藤原良房、摂政就任"
+  },
+  {
+    "q": "866",
+    "hint": "平　安　時　代",
+    "a": "応天門の変　（応天門炎上謎の変）平安時代前期の貞観8年に起こった政治事件"
+  },
+  {
+    "q": "884",
+    "hint": "平　安　時　代",
+    "a": "藤原基経、関白就任"
+  },
+  {
+    "q": "887",
+    "hint": "平　安　時　代",
+    "a": "阿衡事件　平安時代前期に藤原基経と宇多天皇の間で起こった政治紛争である"
+  },
+  {
+    "q": "894",
+    "hint": "平　安　時　代",
+    "a": "遣唐使の廃止"
+  },
+  {
+    "q": "901",
+    "hint": "平　安　時　代",
+    "a": "菅原道真、大宰府に左遷 される"
+  },
+  {
+    "q": "905",
+    "hint": "平　安　時　代",
+    "a": "古今和歌集ができる　平安時代前期の勅撰和歌集　全二十巻"
+  },
+  {
+    "q": "935",
+    "hint": "平　安　時　代",
+    "a": "平将門の乱（承平・天慶の乱）平将門が朝廷に反旗を翻し、関東一円を手中に収め、自らを「新皇」と名乗った出来事"
+  },
+  {
+    "q": "939",
+    "hint": "平　安　時　代",
+    "a": "藤原純友の乱（承平・天慶の乱）"
+  },
+  {
+    "q": "960",
+    "hint": "平　安　時　代",
+    "a": "宋建国"
+  },
+  {
+    "q": "969",
+    "hint": "平　安　時　代",
+    "a": "安和の変おこる　（安和2年）に起きた藤原氏による他氏排斥事件"
+  },
+  {
+    "q": "988",
+    "hint": "平　安　時　代",
+    "a": "尾張国の国司の藤原元命が郡司・百姓らに訴えられる　 尾張国郡司百姓等下文"
+  },
+  {
+    "q": "1000",
+    "hint": "平　安　時　代",
+    "a": "このころ枕草子(清少納言)、源氏物語(紫式部)ができる"
+  },
+  {
+    "q": "1010",
+    "hint": "平　安　時　代",
+    "a": "源氏物語ができる　平安時代中期に成立した日本の長編物語、小説である"
+  },
+  {
+    "q": "1016",
+    "hint": "平　安　時　代",
+    "a": "藤原道長が摂政になる"
+  },
+  {
+    "q": "1017",
+    "hint": "平　安　時　代",
+    "a": "藤原頼通、摂政就任"
+  },
+  {
+    "q": "1027",
+    "hint": "平　安　時　代",
+    "a": "平忠常の乱　（国司に逆らった末、平氏弱体化する）"
+  },
+  {
+    "q": "1051",
+    "hint": "平　安　時　代",
+    "a": "前九年の役"
+  },
+  {
+    "q": "1053",
+    "hint": "平　安　時　代",
+    "a": "平等院鳳凰堂できる"
+  },
+  {
+    "q": "1069",
+    "hint": "平　安　時　代",
+    "a": "延久の荘園整理令(後三条天皇)"
+  },
+  {
+    "q": "1083",
+    "hint": "平　安　時　代",
+    "a": "後三年の役　平安時代後期の陸奥・出羽（東北地方）を舞台とした戦役であ"
+  },
+  {
+    "q": "1086",
+    "hint": "平　安　時　代",
+    "a": "白河上皇の院政開始"
+  },
+  {
+    "q": "1124",
+    "hint": "平　安　時　代",
+    "a": "藤原清衡、中尊寺金色堂建立        →清衡・基衡・秀衡・泰衡"
+  },
+  {
+    "q": "1156",
+    "hint": "平　安　時　代",
+    "a": "保元の乱（平清盛　源義朝）"
+  },
+  {
+    "q": "1159",
+    "hint": "平　安　時　代",
+    "a": "平治の乱（源義朝負ける）"
+  },
+  {
+    "q": "1167",
+    "hint": "平　安　時　代",
+    "a": "平清盛、太政大臣に就任　　大輪田泊修築（日宋貿易）"
+  },
+  {
+    "q": "1179",
+    "hint": "平　安　時　代",
+    "a": "後白河法皇幽閉"
+  },
+  {
+    "q": "1180",
+    "hint": "平　安　時　代",
+    "a": "源頼朝の挙兵（治承・貞永の乱）"
+  },
+  {
+    "q": "1180",
+    "hint": "平　安　時　代",
+    "a": "石橋山の戦い（1180年）に源頼朝と大庭景親ら平氏方との間で行われた戦いである"
+  },
+  {
+    "q": "1180",
+    "hint": "平　安　時　代",
+    "a": "富士川の戦い"
+  },
+  {
+    "q": "1181",
+    "hint": "平　安　時　代",
+    "a": "平清盛死去"
+  },
+  {
+    "q": "1183",
+    "hint": "平　安　時　代",
+    "a": "倶利伽羅峠の戦い"
+  },
+  {
+    "q": "1184",
+    "hint": "平　安　時　代",
+    "a": "一ノ谷の戦い"
+  }
+];
+
+let questions = [];
+let current = 0;
+let correct = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function start() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0;
+  correct = 0;
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('resultScreen').classList.remove('show');
+  showQuestion();
+}
+
+function showQuestion() {
+  if (current >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[current];
+  document.getElementById('questionText').textContent = q.q || '（問題なし）';
+  document.getElementById('hintText').textContent = q.hint ? `【${q.hint}】` : '';
+  document.getElementById('answerBox').textContent = q.a || '（答えなし）';
+  document.getElementById('answerBox').classList.remove('show');
+  document.getElementById('btnShow').classList.remove('hidden');
+  document.getElementById('btnCorrect').classList.remove('show');
+  document.getElementById('btnWrong').classList.remove('show');
+  
+  document.getElementById('counter').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(current / questions.length) * 100}%`;
+}
+
+function showAnswer() {
+  document.getElementById('answerBox').classList.add('show');
+  document.getElementById('btnShow').classList.add('hidden');
+  document.getElementById('btnCorrect').classList.add('show');
+  document.getElementById('btnWrong').classList.add('show');
+}
+
+function next(isCorrect) {
+  if (isCorrect) correct++;
+  current++;
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quizArea').style.display = 'none';
+  document.getElementById('resultScreen').classList.add('show');
+  const pct = Math.round((correct / questions.length) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 60 ? '😊' : '📚';
+  document.getElementById('resultScreen').querySelector('.result-icon').textContent = emoji;
+  document.getElementById('resultScore').textContent = `${correct} / ${questions.length} 正解 (${pct}%)`;
+  document.getElementById('resultSub').textContent = 
+    pct >= 80 ? 'すばらしい！全問制覇まであと少し！' :
+    pct >= 60 ? 'よくできました！あと一息！' : 'もう一度チャレンジしてみよう！';
+}
+
+function restart() {
+  start();
+}
+
+// 起動
+if (ALL_QUESTIONS.length === 0) {
+  document.querySelector('.card').innerHTML = '<div class="no-data">データがありません</div>';
+} else {
+  start();
+}
+</script>
+</body>
+</html>
