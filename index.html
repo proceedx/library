@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学習アプリ ライブラリ</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+  background: #f0f4f8;
+  min-height: 100vh;
+}
+header {
+  background: linear-gradient(135deg, #2c3e50, #3498db);
+  color: white;
+  padding: 30px 20px;
+  text-align: center;
+}
+header h1 { font-size: 28px; margin-bottom: 8px; }
+header p { font-size: 16px; opacity: 0.8; }
+.search-box {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 0 16px;
+}
+.search-box input {
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 50px;
+  font-size: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  outline: none;
+}
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 900px;
+  margin: 0 auto 20px;
+  padding: 0 16px;
+  justify-content: center;
+}
+.tab {
+  padding: 8px 16px;
+  border-radius: 50px;
+  border: 2px solid #3498db;
+  background: white;
+  color: #3498db;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.tab.active {
+  background: #3498db;
+  color: white;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+.app-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.app-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+.app-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+  display: block;
+}
+.app-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.4;
+}
+.app-count {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+}
+.no-result {
+  text-align: center;
+  padding: 60px;
+  color: #999;
+  font-size: 16px;
+  grid-column: 1/-1;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 学習アプリ ライブラリ</h1>
+  <p>196個の学習アプリ</p>
+</header>
+
+<div class="search-box">
+  <input type="text" id="searchInput" placeholder="🔍 アプリを検索..." oninput="filterApps()">
+</div>
+
+<div class="category-tabs" id="tabs"></div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const BASE = './';
+
+const APPS = [
+  // Easy系
+  {id:'01_EasyMath', name:'算数・数学', icon:'📐', cat:'算数・数学'},
+  {id:'02_EasyKatakana', name:'カタカナ', icon:'カ', cat:'国語'},
+  {id:'03_EasyHiragana', name:'ひらがな', icon:'あ', cat:'国語'},
+  {id:'04_EasyAlphabet', name:'アルファベット', icon:'A', cat:'英語'},
+  {id:'05_EasyState', name:'都道府県', icon:'🗾', cat:'社会'},
+  {id:'06_EasyMapOfJapan', name:'日本地図', icon:'🗾', cat:'社会'},
+  {id:'07_EasyScience4', name:'理科4年', icon:'🔬', cat:'理科'},
+  {id:'08_EasyScience5', name:'理科5年', icon:'🔬', cat:'理科'},
+  {id:'09_EasyScience6', name:'理科6年', icon:'🔬', cat:'理科'},
+  {id:'09_EasyScience6-machigai', name:'理科6年（間違い）', icon:'🔬', cat:'理科'},
+  {id:'10_EasyScience4to6', name:'理科4〜6年', icon:'🔬', cat:'理科'},
+  {id:'150417a02-clock', name:'時計', icon:'🕐', cat:'算数・数学'},
+  {id:'150418a02-kazu', name:'数', icon:'🔢', cat:'算数・数学'},
+  {id:'150419a02-math-unit', name:'算数単位', icon:'📐', cat:'算数・数学'},
+  {id:'150428a02-roma-zi', name:'ローマ字', icon:'R', cat:'国語'},
+  {id:'150429a02-syo3-rika', name:'小3理科', icon:'🔬', cat:'理科'},
+  {id:'150430a02-cyugaku-kokugo-bunpo', name:'中学国語文法', icon:'📝', cat:'国語'},
+  {id:'150430a02-sekai-rekishi', name:'世界歴史', icon:'🌍', cat:'歴史'},
+  {id:'150430a02-sekai-rekisi', name:'世界歴史2', icon:'🌍', cat:'歴史'},
+  {id:'150501a02-hiragana', name:'ひらがな', icon:'あ', cat:'国語'},
+  {id:'150505a02-clock-yomi', name:'時計の読み方', icon:'🕐', cat:'算数・数学'},
+  {id:'150505a02-syo3-rika2', name:'小3理科2', icon:'🔬', cat:'理科'},
+  {id:'150507a02-genso-kigou', name:'元素記号', icon:'⚗️', cat:'理科'},
+  {id:'150509a02-sekai-hitobito', name:'世界の人々', icon:'🌍', cat:'社会'},
+  {id:'150510a02-cyu3-eitango', name:'中3英単語', icon:'📖', cat:'英語'},
+  {id:'150510a02-koukounyushi-kokugo-tuigigo', name:'高校入試国語対義語', icon:'📝', cat:'国語'},
+  {id:'150510a02-syougaku-kanzi', name:'小学漢字', icon:'漢', cat:'国語'},
+  {id:'150511a02-kou1-eitango', name:'高1英単語', icon:'📖', cat:'英語'},
+  {id:'150511A02-kou2-eitango', name:'高2英単語', icon:'📖', cat:'英語'},
+  {id:'150511a02-kou3-eitango', name:'高3英単語', icon:'📖', cat:'英語'},
+  {id:'150512a02-cyu1-eitango', name:'中1英単語', icon:'📖', cat:'英語'},
+  {id:'150512a02-koukounyushi-kobun-tango', name:'高校入試古文単語', icon:'📜', cat:'国語'},
+  {id:'150512a02cyu2-eitango', name:'中2英単語', icon:'📖', cat:'英語'},
+  {id:'150514a02-koukounyushi--ruigigo', name:'高校入試類義語', icon:'📝', cat:'国語'},
+  {id:'150514a02-koukounyushi--tsuigigo', name:'高校入試対義語', icon:'📝', cat:'国語'},
+  {id:'150514a02-nihon-kenpo', name:'日本国憲法', icon:'📜', cat:'社会'},
+  {id:'150516a02-syougaku-zengakunen-rika', name:'小学全学年理科', icon:'🔬', cat:'理科'},
+  {id:'150519a02-koukounyushi-nihon-rekishi-nenpyo-01', name:'日本歴史年表1', icon:'⛩️', cat:'歴史'},
+  {id:'150521a02-koukounyushi-nihon-rekishi-nenpyo-02', name:'日本歴史年表2', icon:'⛩️', cat:'歴史'},
+  {id:'150522a02-koukounyushi-nihon-rekishi-nenpyo-03', name:'日本歴史年表3', icon:'⛩️', cat:'歴史'},
+  {id:'150522a02-koukounyushi-nihon-rekishi-nenpyo-full', name:'日本歴史年表全', icon:'⛩️', cat:'歴史'},
+  {id:'150523a02-koukounyushi-sekai-rekishi-nenpyo-01', name:'世界歴史年表1', icon:'🌍', cat:'歴史'},
+  {id:'150523a02-koukounyushi-sekai-rekishi-nenpyo-02', name:'世界歴史年表2', icon:'🌍', cat:'歴史'},
+  {id:'150523a02-koukounyushi-sekai-rekishi-nenpyo-03', name:'世界歴史年表3', icon:'🌍', cat:'歴史'},
+  {id:'150523a02-koukounyushi-sekai-rekishi-nenpyo-full', name:'世界歴史年表全', icon:'🌍', cat:'歴史'},
+  {id:'150524a02-sekai-bizyutukaDB', name:'世界の美術家', icon:'🎨', cat:'芸術'},
+  {id:'150524a02-sekai-bungakkushaDB', name:'世界の文学者', icon:'📚', cat:'文学'},
+  {id:'150524a02-sekai-kagakushaDB', name:'世界の科学者', icon:'🔬', cat:'理科'},
+  {id:'150524b02-sekai-kagakushaDB', name:'世界の科学者2', icon:'🔬', cat:'理科'},
+  {id:'150525a02-sekai-tetsugakushaDB', name:'世界の哲学者', icon:'🤔', cat:'文学'},
+  {id:'150526a02-cyuugaku -narau-kanzi', name:'中学漢字', icon:'漢', cat:'国語'},
+  {id:'150526a02-gaikoku-izin-meigen', name:'外国偉人名言', icon:'💬', cat:'文学'},
+  {id:'150526a02-sekai-isan', name:'世界遺産', icon:'🏛️', cat:'社会'},
+  {id:'150527a02-america-gassyukoku', name:'アメリカ合衆国', icon:'🗽', cat:'社会'},
+  {id:'150527a02-koukounyushi-ei-zyukugo', name:'高校入試英熟語', icon:'📖', cat:'英語'},
+  {id:'150528a02-koukou-sugaku-koshiki', name:'高校数学公式', icon:'📐', cat:'算数・数学'},
+  {id:'150528a02-koukou-suugaku-koshiki', name:'高校数学公式2', icon:'📐', cat:'算数・数学'},
+  {id:'150528a02-syogaku-shakai', name:'小学社会', icon:'🏫', cat:'社会'},
+  {id:'150528a02-syogaku-todouguken', name:'小学都道府県', icon:'🗾', cat:'社会'},
+  {id:'150531a02-syogaku-katakana', name:'小学カタカナ', icon:'カ', cat:'国語'},
+  {id:'150601a02-nihon-izin-kuizu', name:'日本の偉人', icon:'👑', cat:'歴史'},
+  {id:'150601a02-sekai-izin-kuizu', name:'世界の偉人', icon:'👑', cat:'歴史'},
+  {id:'150601a02-syo-arufabet', name:'小学アルファベット', icon:'A', cat:'英語'},
+  {id:'150601a02-syo-sansuu-koshiki', name:'小学算数公式', icon:'📐', cat:'算数・数学'},
+  {id:'150601a02-syo4-rika', name:'小4理科', icon:'🔬', cat:'理科'},
+  {id:'150601a02-syo5-rika', name:'小5理科', icon:'🔬', cat:'理科'},
+  {id:'150601a02syo-nihon-hakuchizu', name:'日本白地図', icon:'🗾', cat:'社会'},
+  {id:'150601a02syo5-shakai', name:'小5社会', icon:'🏫', cat:'社会'},
+  {id:'150608c03-syo6-rika', name:'小6理科', icon:'🔬', cat:'理科'},
+  {id:'150610a03-sekai-rekisi-fullset', name:'世界歴史フルセット', icon:'🌍', cat:'歴史'},
+  {id:'150611a03-rekidai-amerika-daitoryo', name:'歴代アメリカ大統領', icon:'🗽', cat:'社会'},
+  {id:'20150531a02-syo-chizu-kigou', name:'地図記号', icon:'🗺️', cat:'社会'},
+  {id:'chizukigo', name:'地図記号2', icon:'🗺️', cat:'社会'},
+  {id:'chizukigo01', name:'地図記号3', icon:'🗺️', cat:'社会'},
+  {id:'EasyAboutUSA', name:'アメリカについて', icon:'🗽', cat:'社会'},
+  {id:'EasyAncientWritingImportantWords', name:'古文重要語', icon:'📜', cat:'国語'},
+  {id:'EasyAncientWritingImportantWordsSample', name:'古文重要語サンプル', icon:'📜', cat:'国語'},
+  {id:'EasyAncientWritingImportantWordsTTS', name:'古文重要語TTS', icon:'📜', cat:'国語'},
+  {id:'EasyAnimalCriesCollection', name:'動物の鳴き声', icon:'🐾', cat:'理科'},
+  {id:'EasyBunpouTTS', name:'文法TTS', icon:'📝', cat:'国語'},
+  {id:'EasyBunpouTTS (1)', name:'文法TTS2', icon:'📝', cat:'国語'},
+  {id:'EasyChemicalSymbol', name:'化学記号', icon:'⚗️', cat:'理科'},
+  {id:'EasyChemicalSymbolTTS', name:'化学記号TTS', icon:'⚗️', cat:'理科'},
+  {id:'EasyCivicsTerminologyTTS', name:'公民用語TTS', icon:'🏛️', cat:'社会'},
+  {id:'EasyCivicsTerminologyTTS (1)', name:'公民用語TTS2', icon:'🏛️', cat:'社会'},
+  {id:'EasyConstitutionofJapan', name:'日本国憲法', icon:'📜', cat:'社会'},
+  {id:'EasyConstitutionofJapanTTS', name:'日本国憲法TTS', icon:'📜', cat:'社会'},
+  {id:'EasyDaigakuNihonrekisiNen01', name:'大学入試日本歴史1', icon:'⛩️', cat:'歴史'},
+  {id:'EasyDaigakuNihonrekisiNen02', name:'大学入試日本歴史2', icon:'⛩️', cat:'歴史'},
+  {id:'EasyDaigakuNihonrekisiNen03', name:'大学入試日本歴史3', icon:'⛩️', cat:'歴史'},
+  {id:'EasyDaigakuNihonrekisiNenFull', name:'大学入試日本歴史全', icon:'⛩️', cat:'歴史'},
+  {id:'EasyDaigakuSekairekisiNen01', name:'大学入試世界歴史1', icon:'🌍', cat:'歴史'},
+  {id:'EasyDaigakuSekairekisiNen02', name:'大学入試世界歴史2', icon:'🌍', cat:'歴史'},
+  {id:'EasyDaigakuSekairekisiNen03', name:'大学入試世界歴史3', icon:'🌍', cat:'歴史'},
+  {id:'EasyEnglishProverb', name:'英語ことわざ', icon:'💬', cat:'英語'},
+  {id:'EasyEnglishWordHS1', name:'高1英単語', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordHS1TTS', name:'高1英単語TTS', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordHS2', name:'高2英単語', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordHS2TTS', name:'高2英単語TTS', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordHS3', name:'高3英単語', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordHS3TTS', name:'高3英単語TTS', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordJHS1', name:'中1英単語', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordJHS1TTS', name:'中1英単語TTS', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordJHS2', name:'中2英単語', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordJHS2TTS', name:'中2英単語TTS', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordJHS3', name:'中3英単語', icon:'📖', cat:'英語'},
+  {id:'EasyEnglishWordJHS3TTS', name:'中3英単語TTS', icon:'📖', cat:'英語'},
+  {id:'EasyEuropeanCastles', name:'ヨーロッパのお城', icon:'🏰', cat:'社会'},
+  {id:'EasyGreatsOfJapan', name:'日本の偉人', icon:'👑', cat:'歴史'},
+  {id:'EasyGreatsOfWorld', name:'世界の偉人', icon:'👑', cat:'歴史'},
+  {id:'EasyHiragana', name:'ひらがな', icon:'あ', cat:'国語'},
+  {id:'EasyJapaneseCastles', name:'日本のお城', icon:'🏯', cat:'歴史'},
+  {id:'EasyJapaneseGeographersTTS', name:'日本の地理学者TTS', icon:'🌐', cat:'社会'},
+  {id:'EasyJapaneseHistoryPerson', name:'日本歴史人物', icon:'⛩️', cat:'歴史'},
+  {id:'EasyJapaneseMasterpiecesAndPainters', name:'日本の名作と画家', icon:'🎨', cat:'芸術'},
+  {id:'EasyJapanesePrimeMinister', name:'歴代総理大臣', icon:'🏯', cat:'歴史'},
+  {id:'EasyJapaneseWorldHeritage', name:'日本の世界遺産', icon:'🏛️', cat:'社会'},
+  {id:'EasyJH1Eibunpo', name:'中1英文法', icon:'📝', cat:'英語'},
+  {id:'EasyJH2Eibunpo', name:'中2英文法', icon:'📝', cat:'英語'},
+  {id:'EasyJH3Eibunpo', name:'中3英文法', icon:'📝', cat:'英語'},
+  {id:'EasyJHEibunpoFull', name:'中学英文法全', icon:'📝', cat:'英語'},
+  {id:'EasyJSKanji', name:'小学漢字', icon:'漢', cat:'国語'},
+  {id:'EasyKanjiESS', name:'漢字ESS', icon:'漢', cat:'国語'},
+  {id:'EasyKanjiESSTTS', name:'漢字ESSTTS', icon:'漢', cat:'国語'},
+  {id:'EasyKankenjunLv1', name:'漢検準1級', icon:'漢', cat:'国語'},
+  {id:'EasyKankenJunLv2', name:'漢検準2級', icon:'漢', cat:'国語'},
+  {id:'EasyKankenLv1', name:'漢検1級', icon:'漢', cat:'国語'},
+  {id:'EasyKankenLv2', name:'漢検2級', icon:'漢', cat:'国語'},
+  {id:'EasyKankenLv3', name:'漢検3級', icon:'漢', cat:'国語'},
+  {id:'EasyKankenLv4', name:'漢検4級', icon:'漢', cat:'国語'},
+  {id:'EasyKatakana', name:'カタカナ', icon:'カ', cat:'国語'},
+  {id:'EasyKatakana (2)', name:'カタカナ2', icon:'カ', cat:'国語'},
+  {id:'EasyKazu', name:'数', icon:'🔢', cat:'算数・数学'},
+  {id:'EasyKokugoAntonyms', name:'国語対義語', icon:'📝', cat:'国語'},
+  {id:'EasyKokugoAntonymsTTS', name:'国語対義語TTS', icon:'📝', cat:'国語'},
+  {id:'EasyKokugoSynonyms', name:'国語類義語', icon:'📝', cat:'国語'},
+  {id:'EasyKokugoSynonymsTTS', name:'国語類義語TTS', icon:'📝', cat:'国語'},
+  {id:'EasyKoukouEijukugoFull', name:'高校英熟語全', icon:'📖', cat:'英語'},
+  {id:'EasyKoukouNihonrekisiNen01', name:'高校日本歴史1', icon:'⛩️', cat:'歴史'},
+  {id:'EasyKoukouNihonrekisiNen02', name:'高校日本歴史2', icon:'⛩️', cat:'歴史'},
+  {id:'EasyKoukouNihonrekisiNen03', name:'高校日本歴史3', icon:'⛩️', cat:'歴史'},
+  {id:'EasyKoukouNihonrekisiNenFull', name:'高校日本歴史全', icon:'⛩️', cat:'歴史'},
+  {id:'EasyKoukouSekairekisiNen01', name:'高校世界歴史1', icon:'🌍', cat:'歴史'},
+  {id:'EasyKoukouSekairekisiNen02', name:'高校世界歴史2', icon:'🌍', cat:'歴史'},
+  {id:'EasyKoukouSekairekisiNen03', name:'高校世界歴史3', icon:'🌍', cat:'歴史'},
+  {id:'EasyKoukouSekairekisiNenFull', name:'高校世界歴史全', icon:'🌍', cat:'歴史'},
+  {id:'EasyMathematicalFormulas', name:'数学公式', icon:'📐', cat:'算数・数学'},
+  {id:'EasyMathematicalFormulas-sugaku-koshiki', name:'数学公式2', icon:'📐', cat:'算数・数学'},
+  {id:'EasyMultiplicationTableTTS', name:'九九TTS', icon:'🔢', cat:'算数・数学'},
+  {id:'EasyMusicalSymbol', name:'音楽記号', icon:'🎵', cat:'芸術'},
+  {id:'EasyNihonjinNoMeigen', name:'日本人の名言', icon:'💬', cat:'文学'},
+  {id:'EasyPoemCardGameTTS', name:'百人一首TTS', icon:'📜', cat:'国語'},
+  {id:'EasyPresidentOfUSA', name:'アメリカ大統領', icon:'🗽', cat:'社会'},
+  {id:'EasyProverbTTS', name:'ことわざTTS', icon:'💬', cat:'国語'},
+  {id:'EasyQuotationsOfGreatForeign', name:'外国偉人名言', icon:'💬', cat:'文学'},
+  {id:'EasyRomajiTTS', name:'ローマ字TTS', icon:'R', cat:'国語'},
+  {id:'EasyS3RikaTTS (1)', name:'小3理科TTS', icon:'🔬', cat:'理科'},
+  {id:'EasyScienceTerminologyTTS', name:'理科用語TTS', icon:'🔬', cat:'理科'},
+  {id:'EasySyoRika', name:'小学理科', icon:'🔬', cat:'理科'},
+  {id:'EasySyoTodoufuken', name:'小学都道府県', icon:'🗾', cat:'社会'},
+  {id:'EasyTheSolarSystemUniverse', name:'太陽系・宇宙', icon:'🌌', cat:'理科'},
+  {id:'EasyTokei', name:'時計', icon:'🕐', cat:'算数・数学'},
+  {id:'EasyUnitsOfMath', name:'算数の単位', icon:'📐', cat:'算数・数学'},
+  {id:'EasyWorldArtists', name:'世界の芸術家', icon:'🎨', cat:'芸術'},
+  {id:'EasyWorldCountries', name:'世界の国々', icon:'🌍', cat:'社会'},
+  {id:'EasyWorldCountriesTTS', name:'世界の国々TTS', icon:'🌍', cat:'社会'},
+  {id:'EasyWorldHeritage', name:'世界遺産', icon:'🏛️', cat:'社会'},
+  {id:'EasyWorldHistoryPerson', name:'世界歴史人物', icon:'🌍', cat:'歴史'},
+  {id:'EasyWorldLiterature', name:'世界文学', icon:'📚', cat:'文学'},
+  {id:'EasyWorldMap', name:'世界地図', icon:'🌐', cat:'社会'},
+  {id:'EasyWorldMusician', name:'世界の音楽家', icon:'🎵', cat:'芸術'},
+  {id:'EasyWorldPhilosopher', name:'世界の哲学者', icon:'🤔', cat:'文学'},
+  {id:'EasyWorldScientists', name:'世界の科学者', icon:'🔬', cat:'理科'},
+  {id:'easyjheibunpofull_pro', name:'中学英文法 全学年', icon:'📝', cat:'英語'},
+  {id:'HistoryOfTheJapan01', name:'日本の歴史1', icon:'⛩️', cat:'歴史'},
+  {id:'HistoryOfTheJapan02', name:'日本の歴史2', icon:'⛩️', cat:'歴史'},
+  {id:'HistoryOfTheJapan03', name:'日本の歴史3', icon:'⛩️', cat:'歴史'},
+  {id:'HistoryOfTheJapan04', name:'日本の歴史4', icon:'⛩️', cat:'歴史'},
+  {id:'HistoryOfTheJapan05', name:'日本の歴史5', icon:'⛩️', cat:'歴史'},
+  {id:'HistoryOfTheJapan06', name:'日本の歴史6', icon:'⛩️', cat:'歴史'},
+  {id:'HistoryOfTheWorld01', name:'世界の歴史1', icon:'🌍', cat:'歴史'},
+  {id:'HistoryOfTheWorld01 (5)', name:'世界の歴史1-5', icon:'🌍', cat:'歴史'},
+  {id:'HistoryOfTheWorld02', name:'世界の歴史2', icon:'🌍', cat:'歴史'},
+  {id:'HistoryOfTheWorld03', name:'世界の歴史3', icon:'🌍', cat:'歴史'},
+  {id:'HistoryOfTheWorld04', name:'世界の歴史4', icon:'🌍', cat:'歴史'},
+  {id:'HistoryOfTheWorld05', name:'世界の歴史5', icon:'🌍', cat:'歴史'},
+  {id:'HistoryOfTheWorld06', name:'世界の歴史6', icon:'🌍', cat:'歴史'},
+  {id:'HistoryOfTheWorld07', name:'世界の歴史7', icon:'🌍', cat:'歴史'},
+  {id:'HistoryOfTheWorld08', name:'世界の歴史8', icon:'🌍', cat:'歴史'},
+  {id:'yojijukugo', name:'四字熟語', icon:'📖', cat:'国語'},
+  {id:'yojijukugo01', name:'四字熟語1', icon:'📖', cat:'国語'},
+  {id:'yojijukugo02', name:'四字熟語2', icon:'📖', cat:'国語'},
+  {id:'yojijukugo03', name:'四字熟語3', icon:'📖', cat:'国語'},
+  {id:'yojijukugo04', name:'四字熟語4', icon:'📖', cat:'国語'},
+  {id:'yojijukugo05', name:'四字熟語5', icon:'📖', cat:'国語'},
+  {id:'yojijukugo06', name:'四字熟語6', icon:'📖', cat:'国語'},
+  {id:'Yojijukugo07', name:'四字熟語7', icon:'📖', cat:'国語'},
+];
+
+const CATS = ['すべて','国語','英語','算数・数学','理科','社会','歴史','芸術','文学'];
+let currentCat = 'すべて';
+
+function init() {
+  const tabs = document.getElementById('tabs');
+  CATS.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (c === 'すべて' ? ' active' : '');
+    btn.textContent = c;
+    btn.onclick = () => {
+      currentCat = c;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      filterApps();
+    };
+    tabs.appendChild(btn);
+  });
+  filterApps();
+}
+
+function filterApps() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const filtered = APPS.filter(a => {
+    const matchCat = currentCat === 'すべて' || a.cat === currentCat;
+    const matchQ = !q || a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="no-result">見つかりませんでした</div>';
+    return;
+  }
+  filtered.forEach(a => {
+    const card = document.createElement('a');
+    card.className = 'app-card';
+    card.href = BASE + a.id + '/';
+    card.target = '_blank';
+    card.innerHTML = `
+      <span class="app-icon">${a.icon}</span>
+      <div class="app-name">${a.name}</div>
+      <div class="app-count">${a.cat}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+init();
+</script>
+</body>
+</html>

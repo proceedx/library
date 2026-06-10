@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中学英文法 全学年</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:#f0f4f8;min-height:100vh}
+header{background:linear-gradient(135deg,#1a5276,#2980b9);color:white;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+header h1{font-size:18px;font-weight:bold;margin-bottom:4px}
+header p{font-size:13px;opacity:0.8}
+.prog{height:4px;background:rgba(255,255,255,0.3)}
+.prog-fill{height:100%;background:white;transition:width 0.3s}
+main{padding:16px;max-width:600px;margin:0 auto}
+.unit-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.unit-btn{padding:6px 12px;border-radius:20px;border:2px solid #2980b9;background:white;color:#2980b9;font-size:12px;font-weight:bold;cursor:pointer}
+.unit-btn.active{background:#2980b9;color:white}
+.card{background:white;border-radius:16px;padding:28px 20px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,0.1);text-align:center;min-height:160px;display:flex;flex-direction:column;justify-content:center}
+.unit-label{font-size:11px;color:#2980b9;font-weight:bold;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+.q-text{font-size:20px;font-weight:bold;color:#333;line-height:1.6}
+.a-box{background:#eaf4fb;border:2px solid #2980b9;border-radius:12px;padding:16px;font-size:20px;font-weight:bold;color:#1a5276;margin-top:12px;display:none;line-height:1.6}
+.a-box.show{display:block}
+.btn-group{display:flex;gap:10px;margin-bottom:16px}
+.btn{flex:1;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer}
+.btn-show{background:#2980b9;color:white}
+.btn-show.hidden{display:none}
+.btn-ok{background:#27ae60;color:white;display:none}
+.btn-ng{background:#e74c3c;color:white;display:none}
+.btn-ok.show,.btn-ng.show{display:block}
+.result{display:none;text-align:center;padding:40px 20px}
+.result.show{display:block}
+.res-icon{font-size:64px;margin-bottom:16px}
+.res-score{font-size:28px;font-weight:bold;color:#333;margin-bottom:8px}
+.res-sub{font-size:16px;color:#666;margin-bottom:32px}
+.btn-restart{background:#2980b9;color:white;padding:16px 40px;border:none;border-radius:12px;font-size:18px;font-weight:bold;cursor:pointer}
+.counter{font-size:13px;opacity:0.9;margin-top:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>中学英文法 全学年</h1>
+  <p class="counter" id="cnt">読み込み中...</p>
+</header>
+<div class="prog"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+<main>
+  <div id="qa">
+    <div class="unit-bar" id="unitBar"></div>
+    <div class="card">
+      <div class="unit-label" id="unitLabel"></div>
+      <div class="q-text" id="qText">読み込み中...</div>
+      <div class="a-box" id="aBox"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-show" id="bShow" onclick="showAnswer()">答えを見る</button>
+      <button class="btn btn-ok" id="bOk" onclick="next(true)">正解！</button>
+      <button class="btn btn-ng" id="bNg" onclick="next(false)">もう一度</button>
+    </div>
+  </div>
+  <div class="result" id="result">
+    <div class="res-icon">🎉</div>
+    <div class="res-score" id="score"></div>
+    <div class="res-sub" id="sub"></div>
+    <button class="btn-restart" onclick="start()">もう一度</button>
+  </div>
+</main>
+<script>
+const ALL=[{"unit": "１　　be動詞", "q": "原形がbeである動詞を", "a": "be動詞という"}, {"unit": "１　　be動詞", "q": "原形の意味とは", "a": "英語の動詞のもとの形"}, {"unit": "１　　be動詞", "q": "主語が単数形で時制が現在形のとき", "a": "is, am"}, {"unit": "１　　be動詞", "q": "主語が複数形で時制が現在形のとき", "a": "are"}, {"unit": "１　　be動詞", "q": "主語が単数形で時制が過去形のとき", "a": "was"}, {"unit": "１　　be動詞", "q": "主語が複数形で時制が過去形のとき", "a": "were"}, {"unit": "１　　be動詞", "q": "（１）There is, there are", "a": "～がある"}, {"unit": "１　　be動詞", "q": "（２）Here is", "a": "ここに～がある"}, {"unit": "１　　be動詞", "q": "「彼女は日曜日忙しい」", "a": "She is busy on Sunday."}, {"unit": "１　　be動詞", "q": "There are two libraries in our town.", "a": "Our town has two libraries."}, {"unit": "１　　be動詞", "q": "He is a good tennis player.", "a": "He plays tennis well."}, {"unit": "１　　be動詞", "q": "主語が一人や一つの単数を表している場合は　　基本的に", "a": "is を使う"}, {"unit": "2.　　一般動詞", "q": "be動詞以外のすべての動詞を", "a": "一般動詞という"}, {"unit": "2.　　一般動詞", "q": "基本的には、一般動詞（do動詞）の過去形は、その単語の後ろに", "a": "ed を付ける"}, {"unit": "2.　　一般動詞", "q": "否定文", "a": "You don't speak English.（あなたは英語を話しません）"}, {"unit": "2.　　一般動詞", "q": "疑問文", "a": "Do you speak French?（あなたは　フランス語を話しますか）"}, {"unit": "2.　　一般動詞", "q": "例えばhave", "a": "I have a notebook. （私は　ノートを持っています）"}, {"unit": "2.　　一般動詞", "q": "例としてはrun", "a": "I 　run. （私は走る）"}, {"unit": "3.　　否定文・疑問文", "q": "否定文は", "a": "be動詞+notの形になる"}, {"unit": "3.　　否定文・疑問文", "q": "be動詞を使う文章の否定文（～ではない）は、動詞の次に", "a": "not を置けばよい"}, {"unit": "3.　　否定文・疑問文", "q": "次の文は主語が１人だから", "a": "太郎　はお母さんのお手伝いをしません　　Taro　 doesn't help her mother."}, {"unit": "3.　　否定文・疑問文", "q": "疑問文は", "a": "文頭にbe動詞を出す"}, {"unit": "3.　　否定文・疑問文", "q": "be動詞を使う文章の疑問文は、動詞を主語のすぐ前に置いて、文の最後に", "a": "？をつけると完成"}, {"unit": "3.　　否定文・疑問文", "q": "あなたは　医者ですか", "a": "Are you a docter?"}, {"unit": "3.　　否定文・疑問文", "q": "この文の主語は「犬」　　 a dog となっているので、主語が単数になるからbe動詞は", "a": "is になる"}, {"unit": "3.　　否定文・疑問文", "q": "猫が２匹以上、複数いたら", "a": "There are two dogs under the tree"}, {"unit": "3.　　否定文・疑問文", "q": "過去形の時は、それぞれ is", "a": "was 　are → were"}, {"unit": "3.　　否定文・疑問文", "q": "一般動詞を使う文章の疑問文（～ですか）は、その一般動詞のすぐ前に", "a": "do を書く"}, {"unit": "3.　　否定文・疑問文", "q": "これを疑問文にすると", "a": "Does 　Taro　drive this car?"}, {"unit": "3.　　否定文・疑問文", "q": "do動詞に s を付ける必要のある場合は、それが疑問文になると do に s を付けて", "a": "does になる"}, {"unit": "3.　　否定文・疑問文", "q": "do動詞だけを使う過去疑問文は主語が何であっても、全て", "a": "did を使う"}, {"unit": "4.　　疑問詞", "q": "疑問詞は、", "a": "what, which, who, whose, where, when, why, howの　８個　ある"}, {"unit": "4.　　疑問詞", "q": "英語の疑問文で疑問詞が使われる場合は、", "a": "基本的には疑問詞がその英文の一番前にくる"}, {"unit": "4.　　疑問詞", "q": "whatは「何」だけでなく、", "a": "「何を（目的語）」、「何が（主語）」、「何の」の３種類がある"}, {"unit": "4.　　疑問詞", "q": "答えは、（１）Because ～（なぜなら", "a": "からです）　　（２）To ～（　　→　　するためです）"}, {"unit": "5.　　命令文", "q": "命令とは、", "a": "通常、目の前にいる人に言うことから、命令文には主語がない"}, {"unit": "5.　　命令文", "q": "命令文とは、", "a": "動詞の原形で始まる文章で、「命令」や「依頼」を表す"}, {"unit": "5.　　命令文", "q": "否定の命令文", "a": "「～するな、～してはいけません」"}, {"unit": "5.　　命令文", "q": "命令文,＋and", "a": "「～しなさい、そうすれば（よいことが起こります）」"}, {"unit": "5.　　命令文", "q": "命令文,＋or", "a": "「～しなさい、そうしないと（よくないことが起こります）」"}, {"unit": "5.　　命令文", "q": "命令文,＋and(or)～「", "a": "しなさい、そうすれば（そうしないと）～」は、If～「もし～したら（しなかったら）」"}, {"unit": "6.　　３人称・単数・現在（３単現）", "q": "主語が３人称・単数で、現在のことを述べるとき、", "a": "一般動詞は原形ではなくs(es)をつけた形にする"}, {"unit": "6.　　３人称・単数・現在（３単現）", "q": "話している本人を", "a": "１人称といい、それを聞いている相手を　→　２人称という"}, {"unit": "6.　　３人称・単数・現在（３単現）", "q": "主語が１人称でも２人称でもないときが", "a": "３人称"}, {"unit": "6.　　３人称・単数・現在（３単現）", "q": "go", "a": "goes　　pass→passes　　watch→watches　　wash→washes　　box→boxes　　try→tries　　fly→flies"}, {"unit": "6.　　３人称・単数・現在（３単現）", "q": "carry", "a": "carries　　play→plays　　pay→pays　　enjoy→enjoys"}, {"unit": "6.　　３人称・単数・現在（３単現）", "q": "（１）普通は、sだけをつける　　例：play", "a": "plays"}, {"unit": "6.　　３人称・単数・現在（３単現）", "q": "（２）動詞の語尾がs,sh,ch,x,oのとき、esをつける　　例：wash", "a": "washes"}, {"unit": "6.　　３人称・単数・現在（３単現）", "q": "（３）動詞の語尾が子音＋yのときはyをiにかえてesをつける　　例：study", "a": "studies"}, {"unit": "6.　　３人称・単数・現在（３単現）", "q": "文章の表す内容が現在のことで、主語が I 、you 以外の単数の時、一般動詞には", "a": "s を付ける"}, {"unit": "7.　　進行形", "q": "進行中の動作や状態を表す用法を", "a": "進行形という"}, {"unit": "7.　　進行形", "q": "「～している」と今進行中の動作を表す", "a": "現在進行形と、"}, {"unit": "7.　　進行形", "q": "「～していた」と過去進行中であった動作を表す", "a": "過去進行形とがある"}, {"unit": "7.　　進行形", "q": "play", "a": "playing 　read→reading 　sing→singing"}, {"unit": "7.　　進行形", "q": "close", "a": "closing　 take→taking 　have→having"}, {"unit": "7.　　進行形", "q": "sit", "a": "sitting 　swim→swimming 　run→running"}, {"unit": "7.　　進行形", "q": "進行形の疑問文(～しているのですか）は", "a": "be動詞を主語の前に書く"}, {"unit": "7.　　進行形", "q": "進行形の否定文（～してはいません）は、", "a": "be動詞の部分に not を付ける"}, {"unit": "8.　　過去形", "q": "過去のできごとを表現したいとき、", "a": "英語では動詞の過去形を用いる"}, {"unit": "8.　　過去形", "q": "規則動詞", "a": "動詞の原形にedをつけると過去形にる例：play→played"}, {"unit": "8.　　過去形", "q": "不規則動詞", "a": "動詞の原形とは別の形を過去形として使う例：go→went"}, {"unit": "8.　　過去形", "q": "（２）動詞の語尾がeのときは、dをつける　　例：like", "a": "liked"}, {"unit": "8.　　過去形", "q": "（３）動詞の語尾が子音＋yのときは、yをiにかえてedをつける　　例：study", "a": "studied"}, {"unit": "8.　　過去形", "q": "（４）動詞の語尾が短母音＋子音のときは、子音を重ねてedをつける　　例：stop", "a": "stopped"}, {"unit": "9.　名詞の複数形", "q": "１　普通の単語", "a": "sをつける\t例）book 　→　books"}, {"unit": "9.　名詞の複数形", "q": "２　s,sh,ch,x,oで終わる語は", "a": "esをつける\t例）bus 　 → buses"}, {"unit": "9.　名詞の複数形", "q": "３ 　子音字＋y　で終わる語は", "a": "yをiに変えてesをつける　　子音字というのは母音　以外のアルファベットのこ"}, {"unit": "9.　名詞の複数形", "q": "例）city", "a": "cities"}, {"unit": "9.　名詞の複数形", "q": "４ 不規則に変化する語\t例）man", "a": "men　　　woman →　women　　　child 　→ children"}, {"unit": "9.　名詞の複数形", "q": "cat", "a": "cats"}, {"unit": "9.　名詞の複数形", "q": "notebook", "a": "notebooks"}, {"unit": "9.　名詞の複数形", "q": "desk", "a": "desks"}, {"unit": "9.　名詞の複数形", "q": "orange", "a": "oranges"}, {"unit": "9.　名詞の複数形", "q": "friend", "a": "friends"}, {"unit": "9.　名詞の複数形", "q": "chair", "a": "chairs"}, {"unit": "10.　代名詞", "q": "主格", "a": "主語になり、文の最初に置き、「～は」「～が」"}, {"unit": "10.　代名詞", "q": "所有格", "a": "直後の名詞にかかり、「～の」"}, {"unit": "10.　代名詞", "q": "目的格", "a": "動詞の目的語になって「～を」「～に」と訳す場合と、"}, {"unit": "10.　代名詞", "q": "「～のもの」と訳すのが", "a": "所有代名詞"}, {"unit": "10.　代名詞", "q": "「～自身」と訳すのが", "a": "再帰代名詞"}, {"unit": "10.　代名詞", "q": "itの所有格its「その」", "a": "普通、「その」と訳す場合のほとんどはtheである"}, {"unit": "11.　形容詞", "q": "This is ～", "a": "これは～です"}, {"unit": "11.　形容詞", "q": "This　○○ is ～", "a": "この○○は～　です"}, {"unit": "13.　　CAN", "q": "I swim in the sea.　　　　　　私は海で泳ぎます", "a": "現在形"}, {"unit": "13.　　CAN", "q": "I can swim in the sea.　 　　私は海で泳げます", "a": "主語の後ろに　　can　が入り、"}, {"unit": "13.　　CAN", "q": "否定文の作り方", "a": "be動詞　の後ろにnotを入れる"}, {"unit": "13.　　CAN", "q": "疑問文の作り方", "a": "be動詞　を文頭に出す"}, {"unit": "13.　　CAN", "q": "答え方", "a": "be動詞　を使って答える"}, {"unit": "13.　　CAN", "q": "答え方", "a": "Can　を使って答える"}, {"unit": "13.　　CAN", "q": "肯定文", "a": "You can swim well.　　　　　あなたは上手に泳げます"}, {"unit": "13.　　CAN", "q": "否定文", "a": "You can't swim well.　　　　あなたは上手に泳げません"}, {"unit": "13.　　CAN", "q": "疑問文", "a": "Can you swim well ? 　　　　あなたは上手に泳げますか"}, {"unit": "13.　　CAN", "q": "答え方", "a": "Yes, I can./No, I can't.　　はい泳げます/いいえ泳げません"}, {"unit": "1.　未来", "q": "未来を表す助動詞にはwill以外に", "a": "shallがある"}, {"unit": "2.　動名詞", "q": "動名詞とは一般動詞（do動詞）に", "a": "ing を付けた形の動詞のこと"}, {"unit": "3.　不定詞1", "q": "不定詞とは、動詞の意味をもちながら、名詞や形容詞、副詞の働きをする言葉で不定詞の形は", "a": "to+動詞の原形 である"}, {"unit": "4.　助動詞", "q": "助動詞を使う文章の否定文は、その助動詞の後に", "a": "not を付けます"}, {"unit": "4.　助動詞", "q": "can 　の過去形は", "a": "could"}, {"unit": "4.　助動詞", "q": "主語が I , you 以外の単数の時に　will を使う必要のない時は", "a": "has toになる"}, {"unit": "5.　比較", "q": "音節とは、", "a": "日本語で「くるま」は「く・る・ま」と一字一字を分けた音のこと"}, {"unit": "5.　比較", "q": "clever", "a": "cleverer → cleverest"}, {"unit": "5.　比較", "q": "（clever", "a": "clev・er と、分けることができます）"}, {"unit": "5.　比較", "q": "useful", "a": "more useful → most useful"}, {"unit": "5.　比較", "q": "interesting", "a": "more interesting → most interesting"}, {"unit": "5.　比較", "q": "beautiful", "a": "more beautiful → most beautiful"}, {"unit": "5.　比較", "q": "old", "a": "older → oldest 　　　　slow → slower → slowest"}, {"unit": "5.　比較", "q": "short", "a": "shorter → shortest"}, {"unit": "5.　比較", "q": "large", "a": "larger → largest 　　　　late → later → latest"}, {"unit": "5.　比較", "q": "wide", "a": "wider → widest"}, {"unit": "5.　比較", "q": "happy", "a": "happier → happiest"}, {"unit": "5.　比較", "q": "pretty", "a": "prettier →　prettiest"}, {"unit": "5.　比較", "q": "early", "a": "eralier →eraliest"}, {"unit": "5.　比較", "q": "big", "a": "bigger →　biggest"}, {"unit": "5.　比較", "q": "sad", "a": "sadder → saddest"}, {"unit": "5.　比較", "q": "good（よい）", "a": "better(より良い） → best(最も良い）"}, {"unit": "5.　比較", "q": "well（上手に）", "a": "better（より上手に）→ best（最も上手に）"}, {"unit": "5.　比較", "q": "many（たくさん[数]）", "a": "more → most"}, {"unit": "5.　比較", "q": "much (たくさん[量］）", "a": "more → most"}, {"unit": "8.　There is～", "q": "注意：not any ～　＝　no ～", "a": "一つも～ない"}, {"unit": "1.　現在完了", "q": "否定文は", "a": "主語＋have(has)＋not＋過去分詞＋～の語順になる"}, {"unit": "1.　現在完了", "q": "（１）ある行為や状態が終わったことが今・現在に影響を与えているとき", "a": "「～したところだ」「～してしまった」（完了・結果"}, {"unit": "1.　現在完了", "q": "（２）過去に始めた行為、始まった状態が今・現在まで続いているとき", "a": "「ずっと～している」（継続）"}, {"unit": "1.　現在完了", "q": "（３）ある行為をしたということが今・現在の自分の経験になっているとき", "a": "「～したことがある」（経験）、"}, {"unit": "1.　現在完了", "q": "現在完了の否定文は", "a": "have(has) の後ろに not を付ける"}, {"unit": "1.　現在完了", "q": "完了とは、", "a": "過去のある時点に始まった動作などが、すでに完了したことをあらわすもので　　「～したところだ」「～して"}, {"unit": "3.　分詞", "q": "分詞とは", "a": "動詞がある形に変化したものを言う"}, {"unit": "3.　分詞", "q": "現在分詞とは動詞に ing が付いたもので、進行形の時に使う", "a": "studying , running sleeping など"}, {"unit": "3.　分詞", "q": "形容詞とは", "a": "日本語で「楽しい」「おもしろい」「大きい」など、言い切りの形（終止形）で最後に「い」が付く言葉"}, {"unit": "5.　関係代名詞", "q": "先行詞", "a": "friend　　→　　　人"}, {"unit": "5.　関係代名詞", "q": "関係代名詞", "a": "He　→　　彼は　→　　主格　→　　who"}, {"unit": "5.　関係代名詞", "q": "２　　先行詞", "a": "woman　　→　　　人"}, {"unit": "5.　関係代名詞", "q": "関係代名詞", "a": "her　→　　彼女に　→　　目的格　→　　whom"}, {"unit": "5.　関係代名詞", "q": "先行詞", "a": "The boy　　→　　　人"}, {"unit": "5.　関係代名詞", "q": "関係代名詞", "a": "He　　→　　　彼は　　→　　　主格　　→　　　who"}, {"unit": "5.　関係代名詞", "q": "先行詞", "a": "The man　　→　　　人"}, {"unit": "5.　関係代名詞", "q": "関係代名詞", "a": "He　　→　　　彼は　　→　　　主格　　→　　　who"}, {"unit": "5.　関係代名詞", "q": "the　がつく時のは", "a": "序数（the first, the second）の時"}, {"unit": "5.　関係代名詞", "q": "英語を話せる", "a": "友達"}, {"unit": "5.　関係代名詞", "q": "主語", "a": "私は"}, {"unit": "5.　関係代名詞", "q": "動詞", "a": "います　→　　持っています"}, {"unit": "5.　関係代名詞", "q": "テニスをしている", "a": "あの少年"}, {"unit": "5.　関係代名詞", "q": "主語", "a": "私は"}, {"unit": "5.　関係代名詞", "q": "動詞", "a": "知っています　→　　know"}, {"unit": "6.　代名詞2", "q": "代名詞に self を付けると", "a": "「～自身で」という意味になる"}, {"unit": "6.　代名詞2", "q": "Is Masahiko a student?（雅彦は学生ですか）", "a": "Yes, she is.（はい、そうです）"}, {"unit": "6.　代名詞2", "q": "Is this a book?", "a": "No, it isn't."}, {"unit": "6.　代名詞2", "q": "（５）It is ～ for", "a": "to ～の構文で、形式主語として"}, {"unit": "8.　副詞", "q": "美しい花　　　　　かわいい犬　　　　　速い車", "a": "これらが　　形容詞　である"}, {"unit": "8.　副詞", "q": "動詞は　｢走る　　　食べる　　　寝る　　　勉強する　など", "a": "動きを表す言葉である"}, {"unit": "8.　副詞", "q": "副詞　は", "a": "副詞　を修飾する"}, {"unit": "8.　副詞", "q": "とても", "a": "美しい　のように｢美しい　は形容詞だから　　とても　は形容詞を修飾している副詞"}, {"unit": "8.　副詞", "q": "少し", "a": "小さい"}, {"unit": "8.　副詞", "q": "とても", "a": "上手に"}, {"unit": "8.　副詞", "q": "とてもよく", "a": "知っている"}, {"unit": "8.　副詞", "q": "be動詞の文", "a": "be動詞の後ろに入れる"}, {"unit": "8.　副詞", "q": "一般動詞の文", "a": "一般動詞の前に入れる"}, {"unit": "9.　前置詞", "q": "見渡すことのできる広さ", "a": "狭い場所"}, {"unit": "9.　前置詞", "q": "見渡しきれないくらいの大きさ", "a": "広い場所"}, {"unit": "9.　前置詞", "q": "ポイント　--＞　　　under", "a": "（接触しないで）～の下に"}, {"unit": "9.　前置詞", "q": "over", "a": "（接触しないで）～の上に"}, {"unit": "9.　前置詞", "q": "ポイント　--＞　　　by", "a": "（目の前にあるくらいの距離感で）～のそばに"}, {"unit": "9.　前置詞", "q": "near", "a": "（目の前というほどではないけども）～の近くに"}, {"unit": "9.　前置詞", "q": "ポイント　--＞　　between A and B", "a": "A　と　B　の間（2つの間）"}, {"unit": "9.　前置詞", "q": "among", "a": "（3つ以上）の間"}, {"unit": "9.　前置詞", "q": "ポイント　--＞　　　around", "a": "～の周りを（に）"}, {"unit": "10.　感嘆文", "q": "例１　　　　　　これは / なんて / きれいな / 花 / なんでしょう\n\n\n　　　　 ↑　　　　　　　　 　　↑　　　　 ↑\n　　　 主語　　　　　　　　　形容詞　 　名詞 \n\n名詞があるから　　What　ではじめる", "a": "What a beautiful flower this is !"}];
+const UNITS=["1.　be動詞", "１　　be動詞", "2.　一般動詞", "2.　　一般動詞", "3.　否定文・疑問文", "3.　　否定文・疑問文", "4.　疑問詞", "4.　　疑問詞", "5.　命令文", "5.　　命令文", "6.　３人称・単数・現在（３単現）", "6.　　３人称・単数・現在（３単現）", "7.　進行形", "7.　　進行形", "8.　過去形", "8.　　過去形", "9.　名詞の複数形", "10.　代名詞", "11.　形容詞", "12.　文型", "13.　CAN", "13.　　CAN", "1.　未来", "2.　動名詞", "3.　不定詞1", "4.　助動詞", "5.　比較", "6.　接続詞", "7.　受動態（受け身）", "8.　There is～", "1.　現在完了", "2.　不定詞2", "3.　分詞", "4.　間接疑問", "5.　関係代名詞", "6.　代名詞2", "7.　形容詞", "8.　副詞", "9.　前置詞", "10.　感嘆文", "11.　付加疑問"];
+let filtered=[],cur=0,ok=0,currentUnit='all';
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+function buildUnitBar(){
+  const bar=document.getElementById('unitBar');
+  // 全体ボタン
+  const all=document.createElement('button');
+  all.className='unit-btn active';
+  all.textContent='全単元';
+  all.onclick=()=>setUnit('all',all);
+  bar.appendChild(all);
+  // 単元ボタン
+  UNITS.forEach(u=>{
+    const btn=document.createElement('button');
+    btn.className='unit-btn';
+    btn.textContent=u.replace(/^[0-9０-９\s　]+/,'').trim().slice(0,10);
+    btn.title=u;
+    btn.onclick=()=>setUnit(u,btn);
+    bar.appendChild(btn);
+  });
+}
+
+function setUnit(unit,btn){
+  currentUnit=unit;
+  document.querySelectorAll('.unit-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  start();
+}
+
+function start(){
+  filtered=shuffle(currentUnit==='all'?ALL:ALL.filter(d=>d.unit===currentUnit));
+  cur=0;ok=0;
+  document.getElementById('qa').style.display='block';
+  document.getElementById('result').classList.remove('show');
+  show();
+}
+
+function show(){
+  if(cur>=filtered.length){done();return}
+  const d=filtered[cur];
+  document.getElementById('unitLabel').textContent=d.unit;
+  document.getElementById('qText').textContent=d.q;
+  document.getElementById('aBox').textContent=d.a;
+  document.getElementById('aBox').classList.remove('show');
+  document.getElementById('bShow').classList.remove('hidden');
+  document.getElementById('bOk').classList.remove('show');
+  document.getElementById('bNg').classList.remove('show');
+  document.getElementById('cnt').textContent=(cur+1)+'/'+filtered.length+' 問';
+  document.getElementById('pf').style.width=(cur/filtered.length*100)+'%';
+}
+
+function showAnswer(){
+  document.getElementById('aBox').classList.add('show');
+  document.getElementById('bShow').classList.add('hidden');
+  document.getElementById('bOk').classList.add('show');
+  document.getElementById('bNg').classList.add('show');
+}
+
+function next(v){if(v)ok++;cur++;show()}
+
+function done(){
+  document.getElementById('qa').style.display='none';
+  document.getElementById('result').classList.add('show');
+  const p=Math.round(ok/filtered.length*100);
+  document.getElementById('score').textContent=ok+'/'+filtered.length+' 正解 ('+p+'%)';
+  document.getElementById('sub').textContent=p>=80?'すばらしい！':p>=60?'よくできました！':'繰り返し練習しよう！';
+}
+
+buildUnitBar();
+start();
+</script>
+</body>
+</html>
