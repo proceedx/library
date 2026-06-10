@@ -1139,7 +1139,7 @@ function shuffle(arr) {
 }
 
 function start() {
-  questions = shuffle(ALL_QUESTIONS);
+  questions = shuffle(ALL_QUESTIONS.filter(q => q.q && q.q.trim() && q.a && q.a.trim()));
   current = 0;
   correct = 0;
   document.getElementById('quizArea').style.display = 'block';
