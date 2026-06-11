@@ -3,670 +3,552 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>名作文学館 - 7,593作品</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<title>学習アプリ ライブラリ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #faf6ef;
-    --paper: #fffef9;
-    --ink: #1c1208;
-    --ink-mid: #4a3820;
-    --ink-light: #7a6448;
-    --accent: #7a1515;
-    --accent2: #1a4f7a;
-    --accent-hover: #5c0f0f;
-    --border: #d8c9a8;
-    --border-light: #ede0c8;
-    --tag-fl-bg: #e8f0fb; --tag-fl-fg: #1a4080;
-    --tag-fs-bg: #e8f5e9; --tag-fs-fg: #1a5a28;
-    --tag-jk-bg: #fdf0e0; --tag-jk-fg: #7a3a0a;
-    --tag-jm-bg: #fde8e8; --tag-jm-fg: #7a1515;
-    --tag-js-bg: #f0e8fd; --tag-js-fg: #3a157a;
-    --font-size: 15px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: var(--font-size);
-    min-height: 100vh;
-    line-height: 1.7;
-  }
-  header {
-    background: var(--ink);
-    color: var(--bg);
-    padding: 1.8rem 1.5rem 1.4rem;
-    text-align: center;
-    position: relative;
-  }
-  header::after {
-    content: '';
-    display: block;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent) 0%, #c8a060 50%, var(--accent) 100%);
-  }
-  header h1 {
-    font-family: 'Noto Serif JP', serif;
-    font-size: clamp(1.5rem, 5vw, 2.5rem);
-    letter-spacing: 0.25em;
-    font-weight: 600;
-    margin-bottom: 0.3rem;
-  }
-  header p { font-size: 0.85rem; color: #c0a880; letter-spacing: 0.1em; }
-  .font-ctrl {
-    position: absolute;
-    top: 1rem;
-    right: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-  .font-ctrl span { font-size: 0.72rem; color: #a08060; letter-spacing: 0.05em; }
-  .font-btn {
-    padding: 0.25rem 0.6rem;
-    border: 1px solid #5a4a32;
-    border-radius: 4px;
-    background: transparent;
-    color: #c8b090;
-    cursor: pointer;
-    font-family: 'Noto Serif JP', serif;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .font-btn:hover { background: #3a2a18; color: #f0d8b0; }
-  .font-btn.active-size { background: #5a2020; color: #f0d0a0; border-color: #8a4040; }
-  .font-btn.s { font-size: 11px; }
-  .font-btn.m { font-size: 14px; }
-  .font-btn.l { font-size: 18px; }
-  .container { max-width: 1040px; margin: 0 auto; padding: 1.5rem 1rem; }
-  .search-area {
-    background: var(--paper);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.2rem 1.4rem;
-    margin-bottom: 1.2rem;
-    box-shadow: 0 2px 10px rgba(80,50,20,0.08);
-  }
-  .search-row { display: flex; gap: 0.8rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
-  .search-input {
-    flex: 1; min-width: 180px;
-    padding: 0.55rem 1rem;
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 0.92rem;
-    background: var(--bg); color: var(--ink);
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .search-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(26,79,122,0.12); }
-  .search-input::placeholder { color: #b8a07a; }
-  .category-row { display: flex; gap: 0.45rem; flex-wrap: wrap; }
-  .cat-btn {
-    padding: 0.35rem 0.85rem;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    background: var(--bg); color: var(--ink-mid);
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 0.8rem; cursor: pointer;
-    transition: all 0.18s; white-space: nowrap;
-  }
-  .cat-btn:hover { background: var(--border-light); }
-  .cat-btn.active { background: var(--accent); color: #fffef9; border-color: var(--accent); }
-  .result-count { font-size: 0.82rem; color: var(--ink-light); margin-bottom: 0.8rem; padding-left: 0.2rem; }
-  .table-wrap {
-    background: var(--paper);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(80,50,20,0.07);
-  }
-  table { width: 100%; border-collapse: collapse; font-size: var(--font-size); }
-  thead { background: var(--ink); color: #ede0c8; }
-  thead th { padding: 0.65rem 1rem; text-align: left; font-weight: 500; letter-spacing: 0.06em; font-size: 0.82rem; }
-  tbody tr { border-bottom: 1px solid var(--border-light); transition: background 0.12s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: #f5ede0; }
-  tbody td { padding: 0.6rem 1rem; vertical-align: middle; }
-  .title-link {
-    color: var(--ink); text-decoration: none;
-    font-family: 'Noto Serif JP', serif; font-weight: 400;
-    display: flex; align-items: center; gap: 0.5rem;
-    transition: color 0.15s;
-  }
-  .title-link:hover { color: var(--accent); }
-  .title-link:hover .read-badge { opacity: 1; }
-  .read-badge {
-    display: inline-block;
-    padding: 0.15rem 0.55rem;
-    background: var(--accent); color: #fffef9;
-    border-radius: 10px; font-size: 0.7rem;
-    font-family: 'Noto Sans JP', sans-serif;
-    white-space: nowrap; opacity: 0;
-    transition: opacity 0.15s; flex-shrink: 0;
-  }
-  .td-author { color: var(--ink-light); font-size: 0.9em; }
-  .cat-tag {
-    display: inline-block; padding: 0.18rem 0.55rem;
-    border-radius: 10px; font-size: 0.85em; font-weight: 500; white-space: nowrap;
-  }
-  .tag-外国文学 { background: var(--tag-fl-bg); color: var(--tag-fl-fg); }
-  .tag-外国思想社会科学 { background: var(--tag-fs-bg); color: var(--tag-fs-fg); }
-  .tag-日本古典 { background: var(--tag-jk-bg); color: var(--tag-jk-fg); }
-  .tag-日本近代文学 { background: var(--tag-jm-bg); color: var(--tag-jm-fg); }
-  .tag-日本近代思想評論 { background: var(--tag-js-bg); color: var(--tag-js-fg); }
-  .pagination {
-    display: flex; justify-content: center; align-items: center;
-    gap: 0.4rem; margin-top: 1.3rem; flex-wrap: wrap;
-  }
-  .page-btn {
-    padding: 0.38rem 0.75rem;
-    border: 1px solid var(--border); border-radius: 4px;
-    background: var(--paper); color: var(--ink);
-    cursor: pointer; font-size: 0.83rem;
-    font-family: 'Noto Sans JP', sans-serif; transition: all 0.15s;
-  }
-  .page-btn:hover { background: var(--border-light); }
-  .page-btn.active { background: var(--accent); color: #fffef9; border-color: var(--accent); }
-  .page-btn:disabled { opacity: 0.35; cursor: default; }
-  .page-info { font-size: 0.82rem; color: var(--ink-light); padding: 0 0.2rem; }
-  #loading {
-    text-align: center; padding: 4rem 2rem;
-    color: var(--ink-light);
-    font-family: 'Noto Serif JP', serif;
-    font-size: 1rem; letter-spacing: 0.1em;
-  }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:#f8f9ff;min-height:100vh}
 
-  /* ===== モーダル ===== */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(20,12,4,0.7);
-    z-index: 100; align-items: center; justify-content: center; padding: 1rem;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--paper); border-radius: 12px;
-    width: 100%; max-width: 620px; max-height: 90vh;
-    display: flex; flex-direction: column;
-    box-shadow: 0 20px 60px rgba(20,12,4,0.4);
-    border: 1px solid var(--border); overflow: hidden;
-  }
-  .modal-header {
-    background: var(--ink); color: #ede0c8;
-    padding: 1.1rem 1.4rem;
-    display: flex; align-items: flex-start; gap: 1rem;
-  }
-  .modal-header-text { flex: 1; }
-  .modal-title {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 1.1rem; font-weight: 600;
-    line-height: 1.4; margin-bottom: 0.2rem;
-  }
-  .modal-author { font-size: 0.82rem; color: #a08060; letter-spacing: 0.05em; }
-  .modal-close {
-    background: transparent; border: 1px solid #5a4a32;
-    color: #a08060; width: 32px; height: 32px;
-    border-radius: 50%; cursor: pointer; font-size: 1.1rem;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; transition: all 0.15s;
-  }
-  .modal-close:hover { background: #3a2a18; color: #f0d8b0; }
-  .modal-body { padding: 1.4rem; overflow-y: auto; flex: 1; }
-  .modal-info {
-    background: var(--bg); border: 1px solid var(--border-light);
-    border-radius: 8px; padding: 1rem 1.2rem; margin-bottom: 1.2rem;
-    font-size: 0.88rem; color: var(--ink-mid); line-height: 1.9;
-  }
+/* ヘッダー */
+header{
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+  color:white;padding:32px 20px 24px;text-align:center;position:relative;overflow:hidden;
+}
+header::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(ellipse at center,rgba(52,152,219,0.15) 0%,transparent 70%);
+  animation:pulse 4s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.header-icon{font-size:48px;margin-bottom:8px;display:block;filter:drop-shadow(0 0 20px rgba(52,152,219,0.8))}
+header h1{font-size:26px;font-weight:900;margin-bottom:4px;letter-spacing:2px;position:relative}
+header p{font-size:13px;opacity:0.6;position:relative;letter-spacing:1px}
+.stats{display:flex;justify-content:center;gap:16px;margin-top:20px;flex-wrap:wrap;position:relative}
+.stat{
+  background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.15);border-radius:16px;
+  padding:12px 20px;text-align:center;min-width:80px;
+}
+.stat-num{font-size:24px;font-weight:900;background:linear-gradient(135deg,#74b9ff,#a29bfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:10px;opacity:0.6;margin-top:2px;letter-spacing:1px}
+.total-progress{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin:16px 20px 0;position:relative}
+.total-progress-fill{height:100%;background:linear-gradient(90deg,#00b894,#00cec9);border-radius:2px;transition:width 0.8s ease}
 
-  /* ===== 音声パネル ===== */
-  .voice-panel {
-    background: #1c1208;
-    border-radius: 10px;
-    padding: 1.1rem 1.2rem;
-    margin-bottom: 1rem;
-    border: 1px solid #3a2a18;
-  }
-  .voice-panel-title {
-    font-size: 0.75rem;
-    color: #a08060;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-  .voice-text-area {
-    width: 100%;
-    min-height: 90px;
-    padding: 0.7rem 0.9rem;
-    background: #2a1e10;
-    border: 1px solid #4a3820;
-    border-radius: 6px;
-    color: #e8d8b8;
-    font-family: 'Noto Serif JP', serif;
-    font-size: 0.9rem;
-    line-height: 1.8;
-    resize: vertical;
-    outline: none;
-    margin-bottom: 0.8rem;
-    transition: border-color 0.2s;
-  }
-  .voice-text-area:focus { border-color: #8a6a40; }
-  .voice-controls {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .btn-play {
-    display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.6rem 1.2rem;
-    background: var(--accent); color: #fffef9;
-    border: none; border-radius: 6px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 0.88rem; cursor: pointer;
-    transition: background 0.15s; white-space: nowrap;
-  }
-  .btn-play:hover { background: var(--accent-hover); }
-  .btn-play:disabled { opacity: 0.5; cursor: default; }
-  .btn-stop {
-    display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.6rem 1rem;
-    background: transparent; color: #c8a070;
-    border: 1px solid #5a4a32; border-radius: 6px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 0.88rem; cursor: pointer;
-    transition: all 0.15s; white-space: nowrap;
-  }
-  .btn-stop:hover { background: #2a1e10; color: #e8c890; }
-  .voice-speed {
-    display: flex; align-items: center; gap: 0.4rem;
-    margin-left: auto;
-  }
-  .voice-speed label { font-size: 0.75rem; color: #a08060; white-space: nowrap; }
-  .speed-select {
-    padding: 0.3rem 0.5rem;
-    background: #2a1e10; color: #c8a870;
-    border: 1px solid #4a3820; border-radius: 4px;
-    font-size: 0.8rem; cursor: pointer; outline: none;
-  }
-  .voice-status {
-    margin-top: 0.6rem;
-    font-size: 0.75rem;
-    color: #8a6a40;
-    min-height: 1.2em;
-    letter-spacing: 0.03em;
-  }
-  .voice-status.playing { color: #c8a060; }
-  .voice-status.error { color: #c04040; }
+/* 検索 */
+.search-wrap{max-width:640px;margin:24px auto 0;padding:0 16px}
+.search-box{
+  position:relative;
+  background:white;border-radius:50px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.12);
+  border:2px solid transparent;
+  transition:border-color 0.3s;
+}
+.search-box:focus-within{border-color:#74b9ff}
+.search-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:18px;opacity:0.4}
+.search-box input{
+  width:100%;padding:16px 20px 16px 48px;border:none;border-radius:50px;
+  font-size:15px;background:transparent;outline:none;font-family:'Noto Sans JP',sans-serif;
+}
 
-  /* ===== リンクボタン ===== */
-  .btn-read {
-    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
-    width: 100%; padding: 0.8rem 1.5rem;
-    background: var(--accent2); color: #fffef9;
-    border: none; border-radius: 8px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 0.92rem; letter-spacing: 0.05em;
-    cursor: pointer; text-decoration: none;
-    transition: background 0.18s; margin-bottom: 0.6rem;
-  }
-  .btn-read:hover { background: #143d5f; }
-  .btn-search-aozora {
-    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
-    width: 100%; padding: 0.65rem 1.5rem;
-    background: transparent; color: var(--accent2);
-    border: 1px solid var(--accent2); border-radius: 8px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 0.85rem; cursor: pointer; text-decoration: none;
-    transition: all 0.18s;
-  }
-  .btn-search-aozora:hover { background: rgba(26,79,122,0.06); }
-  .modal-note {
-    margin-top: 0.9rem; font-size: 0.75rem;
-    color: var(--ink-light); text-align: center; line-height: 1.7;
-  }
-  footer {
-    text-align: center; padding: 2rem;
-    color: var(--ink-light); font-size: 0.78rem;
-    border-top: 1px solid var(--border-light);
-    margin-top: 2rem; letter-spacing: 0.08em;
-  }
-  @media (max-width: 640px) {
-    thead th:nth-child(3) { display: none; }
-    tbody td:nth-child(3) { display: none; }
-    .font-ctrl span { display: none; }
-    .voice-speed { margin-left: 0; }
-  }
+/* フィルターエリア */
+.filters{max-width:960px;margin:20px auto 0;padding:0 16px}
+.filter-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.filter-label{
+  font-size:11px;font-weight:700;color:#888;letter-spacing:1px;
+  min-width:60px;text-transform:uppercase;
+}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{
+  padding:6px 14px;border-radius:50px;border:none;
+  background:#eee;color:#666;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all 0.2s;font-family:'Noto Sans JP',sans-serif;
+}
+.tab:hover{background:#ddd}
+.tab.active{background:linear-gradient(135deg,#0984e3,#74b9ff);color:white;box-shadow:0 4px 12px rgba(9,132,227,0.3)}
+.grade-tab{background:#eee;color:#666}
+.grade-tab.active-小学{background:linear-gradient(135deg,#00b894,#55efc4);color:white;box-shadow:0 4px 12px rgba(0,184,148,0.3)}
+.grade-tab.active-中学{background:linear-gradient(135deg,#0984e3,#74b9ff);color:white;box-shadow:0 4px 12px rgba(9,132,227,0.3)}
+.grade-tab.active-高校{background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:white;box-shadow:0 4px 12px rgba(108,92,231,0.3)}
+.grade-tab.active-その他{background:linear-gradient(135deg,#636e72,#b2bec3);color:white}
+.grade-tab.active-すべて{background:linear-gradient(135deg,#2d3436,#636e72);color:white}
+.prog-tab{background:#eee;color:#666}
+.prog-tab.active{background:linear-gradient(135deg,#00b894,#00cec9);color:white;box-shadow:0 4px 12px rgba(0,184,148,0.3)}
+
+/* 結果情報 */
+.result-info{
+  max-width:960px;margin:12px auto 0;padding:0 16px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+}
+.result-count{font-size:13px;color:#888}
+.reset-btn{
+  padding:6px 14px;background:linear-gradient(135deg,#d63031,#e17055);
+  color:white;border:none;border-radius:50px;font-size:11px;font-weight:700;
+  cursor:pointer;font-family:'Noto Sans JP',sans-serif;
+  box-shadow:0 4px 12px rgba(214,48,49,0.3);
+}
+
+/* グリッド */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:14px;max-width:960px;margin:16px auto 60px;padding:0 16px;
+}
+
+/* カード */
+.app-card{
+  background:white;border-radius:20px;padding:18px 14px 14px;
+  text-align:center;position:relative;overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,0.06);
+  transition:transform 0.25s,box-shadow 0.25s;
+  border:1px solid rgba(0,0,0,0.04);
+}
+.app-card:hover{transform:translateY(-6px);box-shadow:0 12px 40px rgba(0,0,0,0.12)}
+.app-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
+}
+.app-card.done{opacity:0.55}
+.card-serial{
+  position:absolute;top:8px;right:10px;
+  font-size:9px;font-weight:700;color:#ccc;letter-spacing:0.5px;
+}
+.card-done-mark{
+  position:absolute;top:8px;left:10px;
+  font-size:16px;filter:drop-shadow(0 2px 4px rgba(0,200,100,0.4));
+}
+.card-icon{font-size:36px;margin:4px 0 10px;display:block;line-height:1}
+.card-name{font-size:12px;font-weight:700;color:#2d3436;line-height:1.5;margin-bottom:8px;min-height:36px;display:flex;align-items:center;justify-content:center}
+.card-badges{display:flex;justify-content:center;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.badge{font-size:9px;padding:2px 7px;border-radius:50px;font-weight:700;letter-spacing:0.3px}
+.badge-cat{background:#f0f3ff;color:#6c5ce7}
+.badge-grade{font-size:9px;padding:2px 7px;border-radius:50px;font-weight:700}
+.badge-count{background:#fff8e1;color:#f39c12}
+.card-progress-bar{height:3px;background:#f0f0f0;border-radius:2px;margin-bottom:10px;overflow:hidden}
+.card-progress-fill{height:100%;background:linear-gradient(90deg,#00b894,#00cec9);border-radius:2px;transition:width 0.5s}
+.card-btns{display:flex;gap:6px}
+.btn-open{
+  flex:2;padding:8px 4px;
+  background:linear-gradient(135deg,#0984e3,#74b9ff);
+  color:white;border-radius:10px;font-size:11px;font-weight:700;
+  text-decoration:none;text-align:center;
+  box-shadow:0 4px 12px rgba(9,132,227,0.25);
+  transition:opacity 0.2s;
+}
+.btn-open:hover{opacity:0.85}
+.btn-done{
+  flex:1;padding:8px 4px;border:none;border-radius:10px;
+  font-size:11px;font-weight:700;cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;transition:opacity 0.2s;
+}
+.btn-done:hover{opacity:0.85}
+.btn-done-off{background:linear-gradient(135deg,#00b894,#00cec9);color:white;box-shadow:0 4px 12px rgba(0,184,148,0.25)}
+.btn-done-on{background:#b2bec3;color:white}
+
+/* カテゴリ別ボーダー */
+.bc-国語::before{background:linear-gradient(90deg,#e74c3c,#ff7675)}
+.bc-英語::before{background:linear-gradient(90deg,#0984e3,#74b9ff)}
+.bc-算数・数学::before{background:linear-gradient(90deg,#f39c12,#fdcb6e)}
+.bc-理科::before{background:linear-gradient(90deg,#8e44ad,#a29bfe)}
+.bc-社会::before{background:linear-gradient(90deg,#00b894,#55efc4)}
+.bc-歴史::before{background:linear-gradient(90deg,#8b6914,#e6a817)}
+.bc-芸術::before{background:linear-gradient(90deg,#e05c7a,#fd79a8)}
+.bc-文学::before{background:linear-gradient(90deg,#2d3436,#636e72)}
+
+.no-result{text-align:center;padding:80px;color:#bbb;font-size:15px;grid-column:1/-1}
+.no-result-icon{font-size:48px;display:block;margin-bottom:12px}
+.library-link{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:10px 20px;background:linear-gradient(135deg,#fdcb6e,#e17055);color:white;border-radius:50px;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:1px;box-shadow:0 4px 16px rgba(225,112,85,0.4);transition:transform 0.2s;position:relative;}
+.library-link:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(225,112,85,0.5)}
 </style>
 </head>
 <body>
-<div style="position:fixed;bottom:20px;right:20px;z-index:9999">
-  <a href="https://proceedx.github.io/library/" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:linear-gradient(135deg,#1a1a2e,#0f3460);color:white;border-radius:50px;text-decoration:none;font-size:13px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,0.3);">📚 学習アプリへ →</a>
-</div>
 
 <header>
-  <h1>📚 名作文学館</h1>
-  <p>7,593作品 収録 ／ カテゴリー・著者・作品名で検索</p>
-  <div class="font-ctrl">
-    <span>文字</span>
-    <button class="font-btn s" id="fsSmall" onclick="setFont(13)" title="小">小</button>
-    <button class="font-btn m active-size" id="fsMid" onclick="setFont(16)" title="中">中</button>
-    <button class="font-btn l" id="fsLarge" onclick="setFont(20)" title="大">大</button>
+  <span class="header-icon">📚</span>
+  <h1>学習アプリ ライブラリ</h1>
+  <a href="https://proceedx.github.io/meisakubunko/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;margin:12px auto 0;padding:10px 22px;background:linear-gradient(135deg,#fdcb6e,#e17055);color:white;border-radius:50px;text-decoration:none;font-size:13px;font-weight:700;box-shadow:0 4px 16px rgba(225,112,85,0.4);">📖 名作文学館はこちら →</a>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num" id="totalApps">197</div>
+      <div class="stat-label">アプリ数</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="totalQ">-</div>
+      <div class="stat-label">総問題数</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="doneApps">0</div>
+      <div class="stat-label">学習済み</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="showCount">-</div>
+      <div class="stat-label">表示中</div>
+    </div>
+  </div>
+  <div class="total-progress">
+    <div class="total-progress-fill" id="totalProgress" style="width:0%"></div>
   </div>
 </header>
 
-<div class="container">
-  <div class="search-area">
-    <div class="search-row">
-      <input class="search-input" id="titleSearch" type="text" placeholder="📖 作品名で検索..." oninput="doSearch()">
-      <input class="search-input" id="authorSearch" type="text" placeholder="✍️ 著者名で検索..." oninput="doSearch()">
-    </div>
-    <div class="category-row">
-      <button class="cat-btn active" onclick="setCategory('')" id="cat-all">すべて</button>
-      <button class="cat-btn" onclick="setCategory('外国文学')" id="cat-外国文学">外国文学</button>
-      <button class="cat-btn" onclick="setCategory('外国思想・社会科学')" id="cat-外国思想・社会科学">外国思想・社会科学</button>
-      <button class="cat-btn" onclick="setCategory('日本古典')" id="cat-日本古典">日本古典</button>
-      <button class="cat-btn" onclick="setCategory('日本近代文学')" id="cat-日本近代文学">日本近代文学</button>
-      <button class="cat-btn" onclick="setCategory('日本近代思想・評論')" id="cat-日本近代思想・評論">日本近代思想・評論</button>
-    </div>
-  </div>
-
-  <div id="loading">データを読み込み中…</div>
-  <div id="main" style="display:none">
-    <div class="result-count" id="resultCount"></div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:48%">作品名</th>
-            <th style="width:28%">著者</th>
-            <th style="width:24%">カテゴリー</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div class="pagination" id="pagination"></div>
+<div class="search-wrap">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="アプリ名・カテゴリ・番号で検索..." oninput="filterApps()">
   </div>
 </div>
 
-<footer>名作文学館 ／ 収録作品数 7,593 ／ 本文は青空文庫にリンクしています</footer>
-
-<!-- 作品詳細モーダル -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-header-text">
-        <div class="modal-title" id="modalTitle"></div>
-        <div class="modal-author" id="modalAuthor"></div>
-      </div>
-      <button class="modal-close" onclick="closeModalBtn()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-info" id="modalInfo"></div>
-
-      <!-- 音声読み上げパネル -->
-      <div class="voice-panel">
-        <div class="voice-panel-title">🔊 音声読み上げ</div>
-        <textarea class="voice-text-area" id="voiceText"
-          placeholder="読み上げたいテキストをここに入力してください&#10;（作品名・著者名が自動で入ります）"></textarea>
-        <div class="voice-controls">
-          <button class="btn-play" id="btnPlay" onclick="startSpeech()">▶ 読み上げる</button>
-          <button class="btn-stop" id="btnStop" onclick="stopSpeech()">■ 停止</button>
-          <div class="voice-speed">
-            <label>速さ</label>
-            <select class="speed-select" id="speedSelect">
-              <option value="0.6">遅い</option>
-              <option value="0.8">やや遅い</option>
-              <option value="1.0" selected>普通</option>
-              <option value="1.3">やや速い</option>
-              <option value="1.6">速い</option>
-              <option value="2.0">とても速い</option>
-            </select>
-          </div>
-        </div>
-        <div class="voice-status" id="voiceStatus">テキストを入力して「読み上げる」を押してください</div>
-      </div>
-
-      <a class="btn-read" id="btnRead" href="#" target="_blank" rel="noopener">
-        📖 青空文庫で本文を読む
-      </a>
-      <a class="btn-search-aozora" id="btnSearch" href="#" target="_blank" rel="noopener">
-        🔍 青空文庫で著者の作品を探す
-      </a>
-      <p class="modal-note">
-        ※ 本文は青空文庫（aozora.gr.jp）にリンクしています<br>
-        ※ 音声読み上げはブラウザの機能を使用しています
-      </p>
-    </div>
+<div class="filters">
+  <div class="filter-row">
+    <span class="filter-label">カテゴリ</span>
+    <div class="tabs" id="catTabs"></div>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">学年</span>
+    <div class="tabs" id="gradeTabs"></div>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">進捗</span>
+    <div class="tabs" id="progressTabs"></div>
   </div>
 </div>
+
+<div class="result-info">
+  <span class="result-count" id="resultInfo">-</span>
+  <button class="reset-btn" onclick="resetProgress()">🔄 進捗リセット</button>
+</div>
+
+<div class="grid" id="grid"></div>
 
 <script>
-let allWorks = [];
-let filtered = [];
-let currentPage = 1;
-const PER_PAGE = 50;
-let currentCategory = '';
-let fontSize = 15;
-let currentUtterance = null;
+const APPS = [
+  {no:1,id:'01_EasyMath',name:'算数・数学',icon:'📐',cat:'算数・数学',grade:'小学',count:34},
+  {no:2,id:'02_EasyKatakana',name:'カタカナ',icon:'カ',cat:'国語',grade:'小学',count:46},
+  {no:3,id:'03_EasyHiragana',name:'ひらがな',icon:'あ',cat:'国語',grade:'小学',count:46},
+  {no:4,id:'04_EasyAlphabet',name:'アルファベット',icon:'A',cat:'英語',grade:'小学',count:52},
+  {no:5,id:'05_EasyState',name:'都道府県',icon:'🗾',cat:'社会',grade:'小学',count:52},
+  {no:6,id:'06_EasyMapOfJapan',name:'日本地図',icon:'🗾',cat:'社会',grade:'小学',count:47},
+  {no:7,id:'07_EasyScience4',name:'理科4年',icon:'🔬',cat:'理科',grade:'小学',count:262},
+  {no:8,id:'08_EasyScience5',name:'理科5年',icon:'🔬',cat:'理科',grade:'小学',count:197},
+  {no:9,id:'09_EasyScience6',name:'理科6年',icon:'🔬',cat:'理科',grade:'小学',count:301},
+  {no:10,id:'09_EasyScience6-machigai',name:'理科6年(間違い)',icon:'🔬',cat:'理科',grade:'小学',count:301},
+  {no:11,id:'10_EasyScience4to6',name:'理科4〜6年',icon:'🔬',cat:'理科',grade:'小学',count:862},
+  {no:12,id:'150417a02-clock',name:'時計',icon:'🕐',cat:'算数・数学',grade:'小学',count:46},
+  {no:13,id:'150418a02-kazu',name:'数',icon:'🔢',cat:'算数・数学',grade:'小学',count:30},
+  {no:14,id:'150419a02-math-unit',name:'算数単位',icon:'📐',cat:'算数・数学',grade:'小学',count:5},
+  {no:15,id:'150428a02-roma-zi',name:'ローマ字',icon:'R',cat:'国語',grade:'小学',count:107},
+  {no:16,id:'150429a02-syo3-rika',name:'小3理科',icon:'🔬',cat:'理科',grade:'小学',count:102},
+  {no:17,id:'150430a02-cyugaku-kokugo-bunpo',name:'中学国語文法',icon:'📝',cat:'国語',grade:'中学',count:94},
+  {no:18,id:'150430a02-sekai-rekishi',name:'世界歴史',icon:'🌍',cat:'歴史',grade:'中学',count:500},
+  {no:19,id:'150430a02-sekai-rekisi',name:'世界歴史2',icon:'🌍',cat:'歴史',grade:'中学',count:500},
+  {no:20,id:'150501a02-hiragana',name:'ひらがな2',icon:'あ',cat:'国語',grade:'小学',count:46},
+  {no:21,id:'150505a02-clock-yomi',name:'時計の読み方',icon:'🕐',cat:'算数・数学',grade:'小学',count:28},
+  {no:22,id:'150505a02-syo3-rika2',name:'小3理科2',icon:'🔬',cat:'理科',grade:'小学',count:102},
+  {no:23,id:'150507a02-genso-kigou',name:'元素記号',icon:'⚗️',cat:'理科',grade:'中学',count:118},
+  {no:24,id:'150509a02-sekai-hitobito',name:'世界の人々',icon:'🌍',cat:'社会',grade:'中学',count:196},
+  {no:25,id:'150510a02-cyu3-eitango',name:'中3英単語',icon:'📖',cat:'英語',grade:'中学',count:400},
+  {no:26,id:'150510a02-koukounyushi-kokugo-tuigigo',name:'高校入試国語対義語',icon:'📝',cat:'国語',grade:'高校',count:250},
+  {no:27,id:'150510a02-syougaku-kanzi',name:'小学漢字',icon:'漢',cat:'国語',grade:'小学',count:1006},
+  {no:28,id:'150511A02-kou2-eitango',name:'高2英単語',icon:'📖',cat:'英語',grade:'高校',count:499},
+  {no:29,id:'150511a02-kou1-eitango',name:'高1英単語',icon:'📖',cat:'英語',grade:'高校',count:455},
+  {no:30,id:'150511a02-kou3-eitango',name:'高3英単語',icon:'📖',cat:'英語',grade:'高校',count:410},
+  {no:31,id:'150512a02-cyu1-eitango',name:'中1英単語',icon:'📖',cat:'英語',grade:'中学',count:398},
+  {no:32,id:'150512a02-koukounyushi-kobun-tango',name:'高校入試古文単語',icon:'📜',cat:'国語',grade:'高校',count:215},
+  {no:33,id:'150512a02cyu2-eitango',name:'中2英単語',icon:'📖',cat:'英語',grade:'中学',count:400},
+  {no:34,id:'150514a02-koukounyushi--ruigigo',name:'高校入試類義語',icon:'📝',cat:'国語',grade:'高校',count:164},
+  {no:35,id:'150514a02-koukounyushi--tsuigigo',name:'高校入試対義語',icon:'📝',cat:'国語',grade:'高校',count:250},
+  {no:36,id:'150514a02-nihon-kenpo',name:'日本国憲法',icon:'📜',cat:'社会',grade:'中学',count:154},
+  {no:37,id:'150516a02-syougaku-zengakunen-rika',name:'小学全学年理科',icon:'🔬',cat:'理科',grade:'小学',count:862},
+  {no:38,id:'150519a02-koukounyushi-nihon-rekishi-nenpyo-01',name:'日本歴史年表1',icon:'⛩️',cat:'歴史',grade:'高校',count:0},
+  {no:39,id:'150521a02-koukounyushi-nihon-rekishi-nenpyo-02',name:'日本歴史年表2',icon:'⛩️',cat:'歴史',grade:'高校',count:0},
+  {no:40,id:'150522a02-koukounyushi-nihon-rekishi-nenpyo-03',name:'日本歴史年表3',icon:'⛩️',cat:'歴史',grade:'高校',count:0},
+  {no:41,id:'150522a02-koukounyushi-nihon-rekishi-nenpyo-full',name:'日本歴史年表全',icon:'⛩️',cat:'歴史',grade:'高校',count:0},
+  {no:42,id:'150523a02-koukounyushi-sekai-rekishi-nenpyo-01',name:'世界歴史年表1',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:43,id:'150523a02-koukounyushi-sekai-rekishi-nenpyo-02',name:'世界歴史年表2',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:44,id:'150523a02-koukounyushi-sekai-rekishi-nenpyo-03',name:'世界歴史年表3',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:45,id:'150523a02-koukounyushi-sekai-rekishi-nenpyo-full',name:'世界歴史年表全',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:46,id:'150524a02-sekai-bizyutukaDB',name:'世界の美術家',icon:'🎨',cat:'芸術',grade:'その他',count:186},
+  {no:47,id:'150524a02-sekai-bungakkushaDB',name:'世界の文学者',icon:'📚',cat:'文学',grade:'その他',count:275},
+  {no:48,id:'150524a02-sekai-kagakushaDB',name:'世界の科学者',icon:'🔬',cat:'理科',grade:'その他',count:155},
+  {no:49,id:'150524b02-sekai-kagakushaDB',name:'世界の科学者2',icon:'🔬',cat:'理科',grade:'その他',count:155},
+  {no:50,id:'150525a02-sekai-tetsugakushaDB',name:'世界の哲学者',icon:'🤔',cat:'文学',grade:'その他',count:190},
+  {no:51,id:'150526a02-cyuugaku -narau-kanzi',name:'中学漢字',icon:'漢',cat:'国語',grade:'中学',count:1130},
+  {no:52,id:'150526a02-gaikoku-izin-meigen',name:'外国偉人名言',icon:'💬',cat:'文学',grade:'その他',count:118},
+  {no:53,id:'150526a02-sekai-isan',name:'世界遺産',icon:'🏛️',cat:'社会',grade:'その他',count:49},
+  {no:54,id:'150527a02-america-gassyukoku',name:'アメリカ合衆国',icon:'🗽',cat:'社会',grade:'その他',count:50},
+  {no:55,id:'150527a02-koukounyushi-ei-zyukugo',name:'高校入試英熟語',icon:'📖',cat:'英語',grade:'高校',count:422},
+  {no:56,id:'150528a02-koukou-sugaku-koshiki',name:'高校数学公式',icon:'📐',cat:'算数・数学',grade:'高校',count:34},
+  {no:57,id:'150528a02-koukou-suugaku-koshiki',name:'高校数学公式2',icon:'📐',cat:'算数・数学',grade:'高校',count:34},
+  {no:58,id:'150528a02-syogaku-shakai',name:'小学社会',icon:'🏫',cat:'社会',grade:'小学',count:53},
+  {no:59,id:'150528a02-syogaku-todouguken',name:'小学都道府県',icon:'🗾',cat:'社会',grade:'小学',count:53},
+  {no:60,id:'150531a02-syogaku-katakana',name:'小学カタカナ',icon:'カ',cat:'国語',grade:'小学',count:46},
+  {no:61,id:'150601a02-nihon-izin-kuizu',name:'日本の偉人',icon:'👑',cat:'歴史',grade:'その他',count:148},
+  {no:62,id:'150601a02-sekai-izin-kuizu',name:'世界の偉人',icon:'👑',cat:'歴史',grade:'その他',count:217},
+  {no:63,id:'150601a02-syo-arufabet',name:'小学アルファベット',icon:'A',cat:'英語',grade:'小学',count:52},
+  {no:64,id:'150601a02-syo-sansuu-koshiki',name:'小学算数公式',icon:'📐',cat:'算数・数学',grade:'小学',count:34},
+  {no:65,id:'150601a02-syo4-rika',name:'小4理科',icon:'🔬',cat:'理科',grade:'小学',count:262},
+  {no:66,id:'150601a02-syo5-rika',name:'小5理科',icon:'🔬',cat:'理科',grade:'小学',count:197},
+  {no:67,id:'150601a02syo-nihon-hakuchizu',name:'日本白地図',icon:'🗾',cat:'社会',grade:'小学',count:47},
+  {no:68,id:'150601a02syo5-shakai',name:'小5社会',icon:'🏫',cat:'社会',grade:'小学',count:197},
+  {no:69,id:'150608c03-syo6-rika',name:'小6理科',icon:'🔬',cat:'理科',grade:'小学',count:301},
+  {no:70,id:'150610a03-sekai-rekisi-fullset',name:'世界歴史フルセット',icon:'🌍',cat:'歴史',grade:'中学',count:499},
+  {no:71,id:'150611a03-rekidai-amerika-daitoryo',name:'歴代米大統領',icon:'🗽',cat:'社会',grade:'その他',count:44},
+  {no:72,id:'EasyAboutUSA',name:'アメリカについて',icon:'🗽',cat:'社会',grade:'その他',count:50},
+  {no:73,id:'EasyAncientWritingImportantWords',name:'古文重要語',icon:'📜',cat:'国語',grade:'高校',count:215},
+  {no:74,id:'EasyAncientWritingImportantWordsSample',name:'古文重要語サンプル',icon:'📜',cat:'国語',grade:'高校',count:215},
+  {no:75,id:'EasyAncientWritingImportantWordsTTS',name:'古文重要語TTS',icon:'📜',cat:'国語',grade:'高校',count:215},
+  {no:76,id:'EasyAnimalCriesCollection',name:'動物の鳴き声',icon:'🐾',cat:'理科',grade:'小学',count:0},
+  {no:77,id:'EasyBunpouTTS',name:'文法TTS',icon:'📝',cat:'国語',grade:'中学',count:94},
+  {no:78,id:'EasyBunpouTTS (1)',name:'文法TTS2',icon:'📝',cat:'国語',grade:'中学',count:94},
+  {no:79,id:'EasyChemicalSymbol',name:'化学記号',icon:'⚗️',cat:'理科',grade:'中学',count:118},
+  {no:80,id:'EasyChemicalSymbolTTS',name:'化学記号TTS',icon:'⚗️',cat:'理科',grade:'中学',count:118},
+  {no:81,id:'EasyCivicsTerminologyTTS',name:'公民用語TTS',icon:'🏛️',cat:'社会',grade:'中学',count:169},
+  {no:82,id:'EasyCivicsTerminologyTTS (1)',name:'公民用語TTS2',icon:'🏛️',cat:'社会',grade:'中学',count:169},
+  {no:83,id:'EasyConstitutionofJapan',name:'日本国憲法',icon:'📜',cat:'社会',grade:'中学',count:154},
+  {no:84,id:'EasyConstitutionofJapanTTS',name:'日本国憲法TTS',icon:'📜',cat:'社会',grade:'中学',count:154},
+  {no:85,id:'EasyDaigakuNihonrekisiNen01',name:'大学入試日本歴史1',icon:'⛩️',cat:'歴史',grade:'高校',count:187},
+  {no:86,id:'EasyDaigakuNihonrekisiNen02',name:'大学入試日本歴史2',icon:'⛩️',cat:'歴史',grade:'高校',count:220},
+  {no:87,id:'EasyDaigakuNihonrekisiNen03',name:'大学入試日本歴史3',icon:'⛩️',cat:'歴史',grade:'高校',count:112},
+  {no:88,id:'EasyDaigakuNihonrekisiNenFull',name:'大学入試日本歴史全',icon:'⛩️',cat:'歴史',grade:'高校',count:539},
+  {no:89,id:'EasyDaigakuSekairekisiNen01',name:'大学入試世界歴史1',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:90,id:'EasyDaigakuSekairekisiNen02',name:'大学入試世界歴史2',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:91,id:'EasyDaigakuSekairekisiNen03',name:'大学入試世界歴史3',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:92,id:'EasyEnglishProverb',name:'英語ことわざ',icon:'💬',cat:'英語',grade:'高校',count:150},
+  {no:93,id:'EasyEnglishWordHS1',name:'高1英単語',icon:'📖',cat:'英語',grade:'高校',count:455},
+  {no:94,id:'EasyEnglishWordHS1TTS',name:'高1英単語TTS',icon:'📖',cat:'英語',grade:'高校',count:455},
+  {no:95,id:'EasyEnglishWordHS2',name:'高2英単語',icon:'📖',cat:'英語',grade:'高校',count:499},
+  {no:96,id:'EasyEnglishWordHS2TTS',name:'高2英単語TTS',icon:'📖',cat:'英語',grade:'高校',count:499},
+  {no:97,id:'EasyEnglishWordHS3',name:'高3英単語',icon:'📖',cat:'英語',grade:'高校',count:410},
+  {no:98,id:'EasyEnglishWordHS3TTS',name:'高3英単語TTS',icon:'📖',cat:'英語',grade:'高校',count:410},
+  {no:99,id:'EasyEnglishWordJHS1',name:'中1英単語',icon:'📖',cat:'英語',grade:'中学',count:398},
+  {no:100,id:'EasyEnglishWordJHS1TTS',name:'中1英単語TTS',icon:'📖',cat:'英語',grade:'中学',count:398},
+  {no:101,id:'EasyEnglishWordJHS2',name:'中2英単語',icon:'📖',cat:'英語',grade:'中学',count:400},
+  {no:102,id:'EasyEnglishWordJHS2TTS',name:'中2英単語TTS',icon:'📖',cat:'英語',grade:'中学',count:400},
+  {no:103,id:'EasyEnglishWordJHS3',name:'中3英単語',icon:'📖',cat:'英語',grade:'中学',count:400},
+  {no:104,id:'EasyEnglishWordJHS3TTS',name:'中3英単語TTS',icon:'📖',cat:'英語',grade:'中学',count:400},
+  {no:105,id:'EasyEuropeanCastles',name:'ヨーロッパのお城',icon:'🏰',cat:'社会',grade:'その他',count:88},
+  {no:106,id:'EasyGreatsOfJapan',name:'日本の偉人',icon:'👑',cat:'歴史',grade:'その他',count:148},
+  {no:107,id:'EasyGreatsOfWorld',name:'世界の偉人',icon:'👑',cat:'歴史',grade:'その他',count:217},
+  {no:108,id:'EasyHiragana',name:'ひらがな',icon:'あ',cat:'国語',grade:'小学',count:46},
+  {no:109,id:'EasyJH1Eibunpo',name:'中1英文法',icon:'📝',cat:'英語',grade:'中学',count:561},
+  {no:110,id:'EasyJH2Eibunpo',name:'中2英文法',icon:'📝',cat:'英語',grade:'中学',count:537},
+  {no:111,id:'EasyJH3Eibunpo',name:'中3英文法',icon:'📝',cat:'英語',grade:'中学',count:759},
+  {no:112,id:'EasyJHEibunpoFull',name:'中学英文法全',icon:'📝',cat:'英語',grade:'中学',count:1857},
+  {no:113,id:'EasyJSKanji',name:'小学漢字',icon:'漢',cat:'国語',grade:'小学',count:1130},
+  {no:114,id:'EasyJapaneseCastles',name:'日本のお城',icon:'🏯',cat:'歴史',grade:'その他',count:83},
+  {no:115,id:'EasyJapaneseGeographersTTS',name:'日本の地理学者TTS',icon:'🌐',cat:'社会',grade:'その他',count:354},
+  {no:116,id:'EasyJapaneseHistoryPerson',name:'日本歴史人物',icon:'⛩️',cat:'歴史',grade:'中学',count:148},
+  {no:117,id:'EasyJapaneseMasterpiecesAndPainters',name:'名作と画家',icon:'🎨',cat:'芸術',grade:'その他',count:50},
+  {no:118,id:'EasyJapanesePrimeMinister',name:'歴代総理大臣',icon:'🏯',cat:'歴史',grade:'その他',count:96},
+  {no:119,id:'EasyJapaneseWorldHeritage',name:'日本の世界遺産',icon:'🏛️',cat:'社会',grade:'その他',count:18},
+  {no:120,id:'EasyKanjiESS',name:'漢字ESS',icon:'漢',cat:'国語',grade:'その他',count:1006},
+  {no:121,id:'EasyKanjiESSTTS',name:'漢字ESSTTS',icon:'漢',cat:'国語',grade:'その他',count:1006},
+  {no:122,id:'EasyKankenJunLv2',name:'漢検準2級',icon:'漢',cat:'国語',grade:'高校',count:384},
+  {no:123,id:'EasyKankenLv1',name:'漢検1級',icon:'漢',cat:'国語',grade:'その他',count:543},
+  {no:124,id:'EasyKankenLv2',name:'漢検2級',icon:'漢',cat:'国語',grade:'その他',count:287},
+  {no:125,id:'EasyKankenLv3',name:'漢検3級',icon:'漢',cat:'国語',grade:'中学',count:320},
+  {no:126,id:'EasyKankenLv4',name:'漢検4級',icon:'漢',cat:'国語',grade:'中学',count:267},
+  {no:127,id:'EasyKankenjunLv1',name:'漢検準1級',icon:'漢',cat:'国語',grade:'その他',count:289},
+  {no:128,id:'EasyKatakana',name:'カタカナ',icon:'カ',cat:'国語',grade:'小学',count:46},
+  {no:129,id:'EasyKatakana (2)',name:'カタカナ2',icon:'カ',cat:'国語',grade:'小学',count:46},
+  {no:130,id:'EasyKazu',name:'数',icon:'🔢',cat:'算数・数学',grade:'小学',count:30},
+  {no:131,id:'EasyKokugoAntonyms',name:'国語対義語',icon:'📝',cat:'国語',grade:'中学',count:250},
+  {no:132,id:'EasyKokugoAntonymsTTS',name:'国語対義語TTS',icon:'📝',cat:'国語',grade:'中学',count:250},
+  {no:133,id:'EasyKokugoSynonyms',name:'国語類義語',icon:'📝',cat:'国語',grade:'中学',count:164},
+  {no:134,id:'EasyKokugoSynonymsTTS',name:'国語類義語TTS',icon:'📝',cat:'国語',grade:'中学',count:164},
+  {no:135,id:'EasyKoukouEijukugoFull',name:'高校英熟語全',icon:'📖',cat:'英語',grade:'高校',count:422},
+  {no:136,id:'EasyKoukouNihonrekisiNen01',name:'高校日本歴史1',icon:'⛩️',cat:'歴史',grade:'高校',count:0},
+  {no:137,id:'EasyKoukouNihonrekisiNen02',name:'高校日本歴史2',icon:'⛩️',cat:'歴史',grade:'高校',count:0},
+  {no:138,id:'EasyKoukouNihonrekisiNen03',name:'高校日本歴史3',icon:'⛩️',cat:'歴史',grade:'高校',count:0},
+  {no:139,id:'EasyKoukouNihonrekisiNenFull',name:'高校日本歴史全',icon:'⛩️',cat:'歴史',grade:'高校',count:0},
+  {no:140,id:'EasyKoukouSekairekisiNen01',name:'高校世界歴史1',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:141,id:'EasyKoukouSekairekisiNen02',name:'高校世界歴史2',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:142,id:'EasyKoukouSekairekisiNen03',name:'高校世界歴史3',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:143,id:'EasyKoukouSekairekisiNenFull',name:'高校世界歴史全',icon:'🌍',cat:'歴史',grade:'高校',count:0},
+  {no:144,id:'EasyMathematicalFormulas',name:'数学公式',icon:'📐',cat:'算数・数学',grade:'高校',count:34},
+  {no:145,id:'EasyMathematicalFormulas-sugaku-koshiki',name:'数学公式2',icon:'📐',cat:'算数・数学',grade:'高校',count:34},
+  {no:146,id:'EasyMultiplicationTableTTS',name:'九九TTS',icon:'🔢',cat:'算数・数学',grade:'小学',count:0},
+  {no:147,id:'EasyMusicalSymbol',name:'音楽記号',icon:'🎵',cat:'芸術',grade:'その他',count:81},
+  {no:148,id:'EasyNihonjinNoMeigen',name:'日本人の名言',icon:'💬',cat:'文学',grade:'その他',count:199},
+  {no:149,id:'EasyPoemCardGameTTS',name:'百人一首TTS',icon:'📜',cat:'国語',grade:'中学',count:100},
+  {no:150,id:'EasyPresidentOfUSA',name:'米大統領',icon:'🗽',cat:'社会',grade:'その他',count:44},
+  {no:151,id:'EasyProverbTTS',name:'ことわざTTS',icon:'💬',cat:'国語',grade:'小学',count:176},
+  {no:152,id:'EasyQuotationsOfGreatForeign',name:'外国偉人名言',icon:'💬',cat:'文学',grade:'その他',count:118},
+  {no:153,id:'EasyRomajiTTS',name:'ローマ字TTS',icon:'R',cat:'国語',grade:'小学',count:107},
+  {no:154,id:'EasyS3RikaTTS (1)',name:'小3理科TTS',icon:'🔬',cat:'理科',grade:'小学',count:102},
+  {no:155,id:'EasyScienceTerminologyTTS',name:'理科用語TTS',icon:'🔬',cat:'理科',grade:'中学',count:364},
+  {no:156,id:'EasySyoRika',name:'小学理科',icon:'🔬',cat:'理科',grade:'小学',count:862},
+  {no:157,id:'EasySyoTodoufuken',name:'小学都道府県',icon:'🗾',cat:'社会',grade:'小学',count:53},
+  {no:158,id:'EasyTheSolarSystemUniverse',name:'太陽系・宇宙',icon:'🌌',cat:'理科',grade:'小学',count:14},
+  {no:159,id:'EasyTokei',name:'時計',icon:'🕐',cat:'算数・数学',grade:'小学',count:28},
+  {no:160,id:'EasyUnitsOfMath',name:'算数の単位',icon:'📐',cat:'算数・数学',grade:'小学',count:5},
+  {no:161,id:'EasyWorldArtists',name:'世界の芸術家',icon:'🎨',cat:'芸術',grade:'その他',count:186},
+  {no:162,id:'EasyWorldCountries',name:'世界の国々',icon:'🌍',cat:'社会',grade:'その他',count:196},
+  {no:163,id:'EasyWorldCountriesTTS',name:'世界の国々TTS',icon:'🌍',cat:'社会',grade:'その他',count:196},
+  {no:164,id:'EasyWorldHeritage',name:'世界遺産',icon:'🏛️',cat:'社会',grade:'その他',count:49},
+  {no:165,id:'EasyWorldHistoryPerson',name:'世界歴史人物',icon:'🌍',cat:'歴史',grade:'その他',count:219},
+  {no:166,id:'EasyWorldLiterature',name:'世界文学',icon:'📚',cat:'文学',grade:'その他',count:275},
+  {no:167,id:'EasyWorldMap',name:'世界地図',icon:'🌐',cat:'社会',grade:'中学',count:196},
+  {no:168,id:'EasyWorldMusician',name:'世界の音楽家',icon:'🎵',cat:'芸術',grade:'その他',count:35},
+  {no:169,id:'EasyWorldPhilosopher',name:'世界の哲学者',icon:'🤔',cat:'文学',grade:'その他',count:190},
+  {no:170,id:'EasyWorldScientists',name:'世界の科学者',icon:'🔬',cat:'理科',grade:'その他',count:155},
+  {no:171,id:'easyjheibunpofull_pro',name:'中学英文法全学年',icon:'📝',cat:'英語',grade:'中学',count:166},
+  {no:172,id:'HistoryOfTheJapan01',name:'日本の歴史1',icon:'⛩️',cat:'歴史',grade:'中学',count:103},
+  {no:173,id:'HistoryOfTheJapan02',name:'日本の歴史2',icon:'⛩️',cat:'歴史',grade:'中学',count:71},
+  {no:174,id:'HistoryOfTheJapan03',name:'日本の歴史3',icon:'⛩️',cat:'歴史',grade:'中学',count:79},
+  {no:175,id:'HistoryOfTheJapan04',name:'日本の歴史4',icon:'⛩️',cat:'歴史',grade:'中学',count:180},
+  {no:176,id:'HistoryOfTheJapan05',name:'日本の歴史5',icon:'⛩️',cat:'歴史',grade:'中学',count:433},
+  {no:177,id:'HistoryOfTheJapan06',name:'日本の歴史6',icon:'⛩️',cat:'歴史',grade:'中学',count:433},
+  {no:178,id:'HistoryOfTheWorld01',name:'世界の歴史1',icon:'🌍',cat:'歴史',grade:'中学',count:120},
+  {no:179,id:'HistoryOfTheWorld01 (5)',name:'世界の歴史1-5',icon:'🌍',cat:'歴史',grade:'中学',count:499},
+  {no:180,id:'HistoryOfTheWorld02',name:'世界の歴史2',icon:'🌍',cat:'歴史',grade:'中学',count:79},
+  {no:181,id:'HistoryOfTheWorld03',name:'世界の歴史3',icon:'🌍',cat:'歴史',grade:'中学',count:183},
+  {no:182,id:'HistoryOfTheWorld04',name:'世界の歴史4',icon:'🌍',cat:'歴史',grade:'中学',count:117},
+  {no:183,id:'HistoryOfTheWorld05',name:'世界の歴史5',icon:'🌍',cat:'歴史',grade:'中学',count:499},
+  {no:184,id:'HistoryOfTheWorld06',name:'世界の歴史6',icon:'🌍',cat:'歴史',grade:'中学',count:499},
+  {no:185,id:'HistoryOfTheWorld07',name:'世界の歴史7',icon:'🌍',cat:'歴史',grade:'中学',count:499},
+  {no:186,id:'HistoryOfTheWorld08',name:'世界の歴史8',icon:'🌍',cat:'歴史',grade:'中学',count:499},
+  {no:187,id:'yojijukugo',name:'四字熟語',icon:'📖',cat:'国語',grade:'その他',count:20},
+  {no:188,id:'yojijukugo01',name:'四字熟語1',icon:'📖',cat:'国語',grade:'その他',count:484},
+  {no:189,id:'yojijukugo02',name:'四字熟語2',icon:'📖',cat:'国語',grade:'その他',count:404},
+  {no:190,id:'yojijukugo03',name:'四字熟語3',icon:'📖',cat:'国語',grade:'その他',count:655},
+  {no:191,id:'yojijukugo04',name:'四字熟語4',icon:'📖',cat:'国語',grade:'その他',count:370},
+  {no:192,id:'yojijukugo05',name:'四字熟語5',icon:'📖',cat:'国語',grade:'その他',count:776},
+  {no:193,id:'yojijukugo06',name:'四字熟語6',icon:'📖',cat:'国語',grade:'その他',count:2689},
+  {no:194,id:'Yojijukugo07',name:'四字熟語7',icon:'📖',cat:'国語',grade:'その他',count:2689},
+  {no:195,id:'20150531a02-syo-chizu-kigou',name:'地図記号',icon:'🗺️',cat:'社会',grade:'小学',count:0},
+  {no:196,id:'chizukigo',name:'地図記号2',icon:'🗺️',cat:'社会',grade:'小学',count:0},
+  {no:197,id:'chizukigo01',name:'地図記号3',icon:'🗺️',cat:'社会',grade:'小学',count:0},
+];
 
-// ===== 文字サイズ（小13px・中16px・大20px）=====
-function setFont(size) {
-  document.documentElement.style.setProperty('--font-size', size + 'px');
-  document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active-size'));
-  if (size===13) document.getElementById('fsSmall').classList.add('active-size');
-  else if (size===16) document.getElementById('fsMid').classList.add('active-size');
-  else document.getElementById('fsLarge').classList.add('active-size');
+const CATS=['すべて','国語','英語','算数・数学','理科','社会','歴史','芸術','文学'];
+const GRADES=['すべて','小学','中学','高校','その他'];
+const GRADE_COLORS={'小学':'#00b894','中学':'#0984e3','高校':'#6c5ce7','その他':'#636e72'};
+const CAT_ICONS={'国語':'📖','英語':'🇬🇧','算数・数学':'📐','理科':'🔬','社会':'🏫','歴史':'📜','芸術':'🎨','文学':'📚','すべて':'✨'};
+const PROGRESS_KEY='library_progress_v2';
+let currentCat='すべて',currentGrade='すべて',currentProgress='すべて';
+
+function getProgress(){try{return JSON.parse(localStorage.getItem(PROGRESS_KEY))||{};}catch{return {}}}
+function saveProgress(p){try{localStorage.setItem(PROGRESS_KEY,JSON.stringify(p));}catch{}}
+function markDone(appId){const p=getProgress();p[appId]=!p[appId];if(!p[appId])delete p[appId];saveProgress(p);updateStats();filterApps();}
+function resetProgress(){if(!confirm('進捗をリセットしますか？'))return;localStorage.removeItem(PROGRESS_KEY);updateStats();filterApps();}
+
+function updateStats(){
+  const p=getProgress();
+  const done=APPS.filter(a=>p[a.id]).length;
+  document.getElementById('doneApps').textContent=done;
+  document.getElementById('totalProgress').style.width=(done/APPS.length*100)+'%';
+  const total=APPS.reduce((s,a)=>s+a.count,0);
+  document.getElementById('totalQ').textContent=total.toLocaleString();
 }
 
-// ===== 音声読み上げ =====
-function startSpeech() {
-  if (!window.speechSynthesis) {
-    setVoiceStatus('お使いのブラウザは音声読み上げに対応していません', 'error');
+function makeTabs(containerId,items,getCls,getActiveCls,onClick){
+  const div=document.getElementById(containerId);
+  items.forEach((item,i)=>{
+    const btn=document.createElement('button');
+    btn.className=getCls(item,i);
+    btn.textContent=(CAT_ICONS[item]?CAT_ICONS[item]+' ':'')+item;
+    btn.dataset.val=item;
+    btn.onclick=()=>{
+      div.querySelectorAll('button').forEach(b=>{b.className=getCls(b.dataset.val)});
+      btn.className=getActiveCls(item);
+      onClick(item);
+    };
+    div.appendChild(btn);
+  });
+}
+
+function init(){
+  updateStats();
+  // カテゴリタブ
+  const catDiv=document.getElementById('catTabs');
+  CATS.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='tab'+(c==='すべて'?' active':'');
+    btn.textContent=(CAT_ICONS[c]?CAT_ICONS[c]+' ':'')+c;
+    btn.onclick=()=>{
+      catDiv.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCat=c;filterApps();
+    };
+    catDiv.appendChild(btn);
+  });
+
+  // 学年タブ
+  const gradeDiv=document.getElementById('gradeTabs');
+  GRADES.forEach(g=>{
+    const btn=document.createElement('button');
+    btn.className='tab grade-tab'+(g==='すべて'?' active-すべて':'');
+    btn.textContent=g;
+    btn.onclick=()=>{
+      gradeDiv.querySelectorAll('button').forEach(b=>{b.className='tab grade-tab'});
+      btn.className=`tab grade-tab active-${g}`;
+      currentGrade=g;filterApps();
+    };
+    gradeDiv.appendChild(btn);
+  });
+
+  const pfDiv=document.getElementById('progressTabs');
+  [['すべて','✨ すべて'],['未学習','📘 未学習'],['学習済み','✅ 学習済み']].forEach(([val,label],i)=>{
+    const btn=document.createElement('button');
+    btn.className='tab prog-tab'+(i===0?' active':'');
+    btn.textContent=label;
+    btn.onclick=()=>{
+      pfDiv.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentProgress=val;filterApps();
+    };
+    pfDiv.appendChild(btn);
+  });
+
+  filterApps();
+}
+
+function filterApps(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const p=getProgress();
+  const filtered=APPS.filter(a=>{
+    const matchCat=currentCat==='すべて'||a.cat===currentCat;
+    const matchGrade=currentGrade==='すべて'||a.grade===currentGrade;
+    const matchQ=!q||a.name.toLowerCase().includes(q)||String(a.no).includes(q)||a.cat.includes(q)||a.grade.includes(q);
+    const isDone=!!p[a.id];
+    const matchProg=currentProgress==='すべて'||(currentProgress==='学習済み'&&isDone)||(currentProgress==='未学習'&&!isDone);
+    return matchCat&&matchGrade&&matchQ&&matchProg;
+  });
+
+  document.getElementById('showCount').textContent=filtered.length;
+  document.getElementById('resultInfo').textContent=`${filtered.length}件表示中`;
+
+  const grid=document.getElementById('grid');
+  grid.innerHTML='';
+  if(filtered.length===0){
+    grid.innerHTML='<div class="no-result"><span class="no-result-icon">🔍</span>見つかりませんでした</div>';
     return;
   }
-  stopSpeech();
 
-  const text = document.getElementById('voiceText').value.trim();
-  if (!text) {
-    setVoiceStatus('テキストを入力してください', 'error');
-    return;
-  }
-
-  const speed = parseFloat(document.getElementById('speedSelect').value);
-  currentUtterance = new SpeechSynthesisUtterance(text);
-  currentUtterance.lang = 'ja-JP';
-  currentUtterance.rate = speed;
-  currentUtterance.pitch = 1.0;
-
-  // 日本語音声を優先して選択
-  const voices = window.speechSynthesis.getVoices();
-  const jaVoice = voices.find(v => v.lang.startsWith('ja'));
-  if (jaVoice) currentUtterance.voice = jaVoice;
-
-  currentUtterance.onstart = () => {
-    setVoiceStatus('🔊 読み上げ中…', 'playing');
-    document.getElementById('btnPlay').disabled = true;
-  };
-  currentUtterance.onend = () => {
-    setVoiceStatus('読み上げが完了しました');
-    document.getElementById('btnPlay').disabled = false;
-    currentUtterance = null;
-  };
-  currentUtterance.onerror = (e) => {
-    setVoiceStatus('エラーが発生しました: ' + e.error, 'error');
-    document.getElementById('btnPlay').disabled = false;
-    currentUtterance = null;
-  };
-
-  window.speechSynthesis.speak(currentUtterance);
-}
-
-function stopSpeech() {
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
-  }
-  document.getElementById('btnPlay').disabled = false;
-  setVoiceStatus('停止しました');
-  currentUtterance = null;
-}
-
-function setVoiceStatus(msg, type) {
-  const el = document.getElementById('voiceStatus');
-  el.textContent = msg;
-  el.className = 'voice-status' + (type ? ' ' + type : '');
-}
-
-// ===== タグクラス =====
-function tagClass(cat) {
-  return 'tag-' + cat.replace(/[・]/g, '').replace(/　/g, '');
-}
-
-// ===== テーブル描画 =====
-function renderTable() {
-  const tbody = document.getElementById('tbody');
-  const start = (currentPage - 1) * PER_PAGE;
-  const end = start + PER_PAGE;
-  const page = filtered.slice(start, end);
-
-  tbody.innerHTML = page.map(w => `
-    <tr>
-      <td>
-        <a class="title-link" href="#" onclick="openModal(event, ${JSON.stringify(w).replace(/"/g,'&quot;')})">
-          ${escHtml(w.t)}
-          <span class="read-badge">読む</span>
-        </a>
-      </td>
-      <td class="td-author">${escHtml(w.a)}</td>
-      <td><span class="cat-tag ${tagClass(w.c)}">${escHtml(w.c)}</span></td>
-    </tr>
-  `).join('');
-
-  document.getElementById('resultCount').textContent =
-    `${filtered.length.toLocaleString()} 件 （${start+1}〜${Math.min(end, filtered.length)} 件表示）`;
-
-  renderPagination();
-}
-
-// ===== ページネーション =====
-function renderPagination() {
-  const total = Math.ceil(filtered.length / PER_PAGE);
-  const pg = document.getElementById('pagination');
-  if (total <= 1) { pg.innerHTML = ''; return; }
-
-  let html = '';
-  html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>◀ 前へ</button>`;
-
-  const range = new Set([1]);
-  for (let i = Math.max(2, currentPage-2); i <= Math.min(total-1, currentPage+2); i++) range.add(i);
-  range.add(total);
-
-  let prev = 0;
-  for (const p of [...range].sort((a,b)=>a-b)) {
-    if (p - prev > 1) html += `<span class="page-info">…</span>`;
-    html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
-    prev = p;
-  }
-  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>次へ ▶</button>`;
-  html += `<span class="page-info">${currentPage} / ${total} ページ</span>`;
-  pg.innerHTML = html;
-}
-
-function goPage(p) {
-  const total = Math.ceil(filtered.length / PER_PAGE);
-  if (p < 1 || p > total) return;
-  currentPage = p;
-  renderTable();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// ===== 検索 =====
-function doSearch() {
-  const title = document.getElementById('titleSearch').value.trim();
-  const author = document.getElementById('authorSearch').value.trim();
-  filtered = allWorks.filter(w => {
-    const matchCat = currentCategory === '' || w.c === currentCategory;
-    const matchTitle = title === '' || w.t.includes(title);
-    const matchAuthor = author === '' || w.a.includes(author);
-    return matchCat && matchTitle && matchAuthor;
+  filtered.forEach(a=>{
+    const isDone=!!p[a.id];
+    const gradeColor=GRADE_COLORS[a.grade]||'#999';
+    const serial=String(a.no).padStart(3,'0');
+    const card=document.createElement('div');
+    card.className=`app-card bc-${a.cat}${isDone?' done':''}`;
+    card.innerHTML=`
+      <span class="card-serial">[${serial}]</span>
+      ${isDone?'<span class="card-done-mark">✅</span>':''}
+      <span class="card-icon">${a.icon}</span>
+      <div class="card-name">${a.name}</div>
+      <div class="card-badges">
+        <span class="badge badge-cat">${a.cat}</span>
+        <span class="badge badge-grade" style="background:${gradeColor}22;color:${gradeColor}">${a.grade}</span>
+        ${a.count>0?`<span class="badge badge-count">${a.count}問</span>`:''}
+      </div>
+      <div class="card-progress-bar"><div class="card-progress-fill" style="width:${isDone?100:0}%"></div></div>
+      <div class="card-btns">
+        <a class="btn-open" href="./${a.id}/" target="_blank">開く</a>
+        <button class="btn-done ${isDone?'btn-done-on':'btn-done-off'}" onclick="event.stopPropagation();markDone('${a.id}')">${isDone?'済✓':'完了'}</button>
+      </div>`;
+    grid.appendChild(card);
   });
-  currentPage = 1;
-  renderTable();
 }
 
-// ===== カテゴリー =====
-function setCategory(cat) {
-  currentCategory = cat;
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  const id = cat === '' ? 'cat-all' : 'cat-' + cat;
-  const btn = document.getElementById(id);
-  if (btn) btn.classList.add('active');
-  doSearch();
-}
-
-// ===== モーダル =====
-function openModal(event, work) {
-  event.preventDefault();
-  stopSpeech();
-
-  document.getElementById('modalTitle').textContent = work.t;
-  document.getElementById('modalAuthor').textContent = '著者：' + work.a;
-  document.getElementById('modalInfo').innerHTML =
-    `<strong>作品名：</strong>${work.t}<br>` +
-    `<strong>著者名：</strong>${work.a}<br>` +
-    `<strong>カテゴリー：</strong>${work.c}`;
-
-  // 音声テキストに作品名・著者名をセット
-  document.getElementById('voiceText').value =
-    `「${work.t}」\n著者：${work.a}\n\n（ここに読み上げたい文章を貼り付けてください）`;
-  setVoiceStatus('テキストを編集して「読み上げる」を押してください');
-  document.getElementById('btnPlay').disabled = false;
-
-  // 青空文庫リンク
-  document.getElementById('btnRead').href =
-    'https://www.google.com/search?q=' + encodeURIComponent('site:aozora.gr.jp ' + work.t + ' ' + work.a);
-  document.getElementById('btnSearch').href =
-    'https://www.aozora.gr.jp/index_pages/person_search.html#q=' + encodeURIComponent(work.a);
-
-  document.getElementById('modalOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModalBtn() {
-  stopSpeech();
-  document.getElementById('modalOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-function closeModal(event) {
-  if (event.target === document.getElementById('modalOverlay')) closeModalBtn();
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalBtn(); });
-
-// ===== HTMLエスケープ =====
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// ===== データ読み込み =====
-fetch('works.json')
-  .then(r => r.json())
-  .then(data => {
-    allWorks = data;
-    filtered = allWorks;
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('main').style.display = 'block';
-    renderTable();
-    // 音声リスト初期化（ブラウザによっては遅延が必要）
-    window.speechSynthesis.getVoices();
-  })
-  .catch(() => {
-    document.getElementById('loading').textContent = 'データの読み込みに失敗しました。';
-  });
+init();
 </script>
 </body>
 </html>
