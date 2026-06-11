@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名作文学館 - 7,593作品</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf6ef;
+    --paper: #fffef9;
+    --ink: #1c1208;
+    --ink-mid: #4a3820;
+    --ink-light: #7a6448;
+    --accent: #7a1515;
+    --accent2: #1a4f7a;
+    --accent-hover: #5c0f0f;
+    --border: #d8c9a8;
+    --border-light: #ede0c8;
+    --tag-fl-bg: #e8f0fb; --tag-fl-fg: #1a4080;
+    --tag-fs-bg: #e8f5e9; --tag-fs-fg: #1a5a28;
+    --tag-jk-bg: #fdf0e0; --tag-jk-fg: #7a3a0a;
+    --tag-jm-bg: #fde8e8; --tag-jm-fg: #7a1515;
+    --tag-js-bg: #f0e8fd; --tag-js-fg: #3a157a;
+    --font-size: 15px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: var(--font-size);
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+  header {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 1.8rem 1.5rem 1.4rem;
+    text-align: center;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    display: block;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent) 0%, #c8a060 50%, var(--accent) 100%);
+  }
+  header h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    letter-spacing: 0.25em;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+  header p { font-size: 0.85rem; color: #c0a880; letter-spacing: 0.1em; }
+  .font-ctrl {
+    position: absolute;
+    top: 1rem;
+    right: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .font-ctrl span { font-size: 0.72rem; color: #a08060; letter-spacing: 0.05em; }
+  .font-btn {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid #5a4a32;
+    border-radius: 4px;
+    background: transparent;
+    color: #c8b090;
+    cursor: pointer;
+    font-family: 'Noto Serif JP', serif;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .font-btn:hover { background: #3a2a18; color: #f0d8b0; }
+  .font-btn.active-size { background: #5a2020; color: #f0d0a0; border-color: #8a4040; }
+  .font-btn.s { font-size: 11px; }
+  .font-btn.m { font-size: 14px; }
+  .font-btn.l { font-size: 18px; }
+  .container { max-width: 1040px; margin: 0 auto; padding: 1.5rem 1rem; }
+  .search-area {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 1.2rem;
+    box-shadow: 0 2px 10px rgba(80,50,20,0.08);
+  }
+  .search-row { display: flex; gap: 0.8rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+  .search-input {
+    flex: 1; min-width: 180px;
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.92rem;
+    background: var(--bg); color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(26,79,122,0.12); }
+  .search-input::placeholder { color: #b8a07a; }
+  .category-row { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+  .cat-btn {
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg); color: var(--ink-mid);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.8rem; cursor: pointer;
+    transition: all 0.18s; white-space: nowrap;
+  }
+  .cat-btn:hover { background: var(--border-light); }
+  .cat-btn.active { background: var(--accent); color: #fffef9; border-color: var(--accent); }
+  .result-count { font-size: 0.82rem; color: var(--ink-light); margin-bottom: 0.8rem; padding-left: 0.2rem; }
+  .table-wrap {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(80,50,20,0.07);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: var(--font-size); }
+  thead { background: var(--ink); color: #ede0c8; }
+  thead th { padding: 0.65rem 1rem; text-align: left; font-weight: 500; letter-spacing: 0.06em; font-size: 0.82rem; }
+  tbody tr { border-bottom: 1px solid var(--border-light); transition: background 0.12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f5ede0; }
+  tbody td { padding: 0.6rem 1rem; vertical-align: middle; }
+  .title-link {
+    color: var(--ink); text-decoration: none;
+    font-family: 'Noto Serif JP', serif; font-weight: 400;
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: color 0.15s;
+  }
+  .title-link:hover { color: var(--accent); }
+  .title-link:hover .read-badge { opacity: 1; }
+  .read-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    background: var(--accent); color: #fffef9;
+    border-radius: 10px; font-size: 0.7rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    white-space: nowrap; opacity: 0;
+    transition: opacity 0.15s; flex-shrink: 0;
+  }
+  .td-author { color: var(--ink-light); font-size: 0.9em; }
+  .cat-tag {
+    display: inline-block; padding: 0.18rem 0.55rem;
+    border-radius: 10px; font-size: 0.85em; font-weight: 500; white-space: nowrap;
+  }
+  .tag-外国文学 { background: var(--tag-fl-bg); color: var(--tag-fl-fg); }
+  .tag-外国思想社会科学 { background: var(--tag-fs-bg); color: var(--tag-fs-fg); }
+  .tag-日本古典 { background: var(--tag-jk-bg); color: var(--tag-jk-fg); }
+  .tag-日本近代文学 { background: var(--tag-jm-bg); color: var(--tag-jm-fg); }
+  .tag-日本近代思想評論 { background: var(--tag-js-bg); color: var(--tag-js-fg); }
+  .pagination {
+    display: flex; justify-content: center; align-items: center;
+    gap: 0.4rem; margin-top: 1.3rem; flex-wrap: wrap;
+  }
+  .page-btn {
+    padding: 0.38rem 0.75rem;
+    border: 1px solid var(--border); border-radius: 4px;
+    background: var(--paper); color: var(--ink);
+    cursor: pointer; font-size: 0.83rem;
+    font-family: 'Noto Sans JP', sans-serif; transition: all 0.15s;
+  }
+  .page-btn:hover { background: var(--border-light); }
+  .page-btn.active { background: var(--accent); color: #fffef9; border-color: var(--accent); }
+  .page-btn:disabled { opacity: 0.35; cursor: default; }
+  .page-info { font-size: 0.82rem; color: var(--ink-light); padding: 0 0.2rem; }
+  #loading {
+    text-align: center; padding: 4rem 2rem;
+    color: var(--ink-light);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1rem; letter-spacing: 0.1em;
+  }
+
+  /* ===== モーダル ===== */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(20,12,4,0.7);
+    z-index: 100; align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--paper); border-radius: 12px;
+    width: 100%; max-width: 620px; max-height: 90vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(20,12,4,0.4);
+    border: 1px solid var(--border); overflow: hidden;
+  }
+  .modal-header {
+    background: var(--ink); color: #ede0c8;
+    padding: 1.1rem 1.4rem;
+    display: flex; align-items: flex-start; gap: 1rem;
+  }
+  .modal-header-text { flex: 1; }
+  .modal-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.1rem; font-weight: 600;
+    line-height: 1.4; margin-bottom: 0.2rem;
+  }
+  .modal-author { font-size: 0.82rem; color: #a08060; letter-spacing: 0.05em; }
+  .modal-close {
+    background: transparent; border: 1px solid #5a4a32;
+    color: #a08060; width: 32px; height: 32px;
+    border-radius: 50%; cursor: pointer; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .modal-close:hover { background: #3a2a18; color: #f0d8b0; }
+  .modal-body { padding: 1.4rem; overflow-y: auto; flex: 1; }
+  .modal-info {
+    background: var(--bg); border: 1px solid var(--border-light);
+    border-radius: 8px; padding: 1rem 1.2rem; margin-bottom: 1.2rem;
+    font-size: 0.88rem; color: var(--ink-mid); line-height: 1.9;
+  }
+
+  /* ===== 音声パネル ===== */
+  .voice-panel {
+    background: #1c1208;
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1rem;
+    border: 1px solid #3a2a18;
+  }
+  .voice-panel-title {
+    font-size: 0.75rem;
+    color: #a08060;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .voice-text-area {
+    width: 100%;
+    min-height: 90px;
+    padding: 0.7rem 0.9rem;
+    background: #2a1e10;
+    border: 1px solid #4a3820;
+    border-radius: 6px;
+    color: #e8d8b8;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.9rem;
+    line-height: 1.8;
+    resize: vertical;
+    outline: none;
+    margin-bottom: 0.8rem;
+    transition: border-color 0.2s;
+  }
+  .voice-text-area:focus { border-color: #8a6a40; }
+  .voice-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .btn-play {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background: var(--accent); color: #fffef9;
+    border: none; border-radius: 6px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.88rem; cursor: pointer;
+    transition: background 0.15s; white-space: nowrap;
+  }
+  .btn-play:hover { background: var(--accent-hover); }
+  .btn-play:disabled { opacity: 0.5; cursor: default; }
+  .btn-stop {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: transparent; color: #c8a070;
+    border: 1px solid #5a4a32; border-radius: 6px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.88rem; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-stop:hover { background: #2a1e10; color: #e8c890; }
+  .voice-speed {
+    display: flex; align-items: center; gap: 0.4rem;
+    margin-left: auto;
+  }
+  .voice-speed label { font-size: 0.75rem; color: #a08060; white-space: nowrap; }
+  .speed-select {
+    padding: 0.3rem 0.5rem;
+    background: #2a1e10; color: #c8a870;
+    border: 1px solid #4a3820; border-radius: 4px;
+    font-size: 0.8rem; cursor: pointer; outline: none;
+  }
+  .voice-status {
+    margin-top: 0.6rem;
+    font-size: 0.75rem;
+    color: #8a6a40;
+    min-height: 1.2em;
+    letter-spacing: 0.03em;
+  }
+  .voice-status.playing { color: #c8a060; }
+  .voice-status.error { color: #c04040; }
+
+  /* ===== リンクボタン ===== */
+  .btn-read {
+    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+    width: 100%; padding: 0.8rem 1.5rem;
+    background: var(--accent2); color: #fffef9;
+    border: none; border-radius: 8px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.92rem; letter-spacing: 0.05em;
+    cursor: pointer; text-decoration: none;
+    transition: background 0.18s; margin-bottom: 0.6rem;
+  }
+  .btn-read:hover { background: #143d5f; }
+  .btn-search-aozora {
+    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+    width: 100%; padding: 0.65rem 1.5rem;
+    background: transparent; color: var(--accent2);
+    border: 1px solid var(--accent2); border-radius: 8px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.85rem; cursor: pointer; text-decoration: none;
+    transition: all 0.18s;
+  }
+  .btn-search-aozora:hover { background: rgba(26,79,122,0.06); }
+  .modal-note {
+    margin-top: 0.9rem; font-size: 0.75rem;
+    color: var(--ink-light); text-align: center; line-height: 1.7;
+  }
+  footer {
+    text-align: center; padding: 2rem;
+    color: var(--ink-light); font-size: 0.78rem;
+    border-top: 1px solid var(--border-light);
+    margin-top: 2rem; letter-spacing: 0.08em;
+  }
+  @media (max-width: 640px) {
+    thead th:nth-child(3) { display: none; }
+    tbody td:nth-child(3) { display: none; }
+    .font-ctrl span { display: none; }
+    .voice-speed { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div style="position:fixed;bottom:20px;right:20px;z-index:9999">
+  <a href="https://proceedx.github.io/library/" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:linear-gradient(135deg,#1a1a2e,#0f3460);color:white;border-radius:50px;text-decoration:none;font-size:13px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,0.3);">📚 学習アプリへ →</a>
+</div>
+
+<header>
+  <h1>📚 名作文学館</h1>
+  <p>7,593作品 収録 ／ カテゴリー・著者・作品名で検索</p>
+  <div class="font-ctrl">
+    <span>文字</span>
+    <button class="font-btn s" id="fsSmall" onclick="setFont(13)" title="小">小</button>
+    <button class="font-btn m active-size" id="fsMid" onclick="setFont(16)" title="中">中</button>
+    <button class="font-btn l" id="fsLarge" onclick="setFont(20)" title="大">大</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="search-area">
+    <div class="search-row">
+      <input class="search-input" id="titleSearch" type="text" placeholder="📖 作品名で検索..." oninput="doSearch()">
+      <input class="search-input" id="authorSearch" type="text" placeholder="✍️ 著者名で検索..." oninput="doSearch()">
+    </div>
+    <div class="category-row">
+      <button class="cat-btn active" onclick="setCategory('')" id="cat-all">すべて</button>
+      <button class="cat-btn" onclick="setCategory('外国文学')" id="cat-外国文学">外国文学</button>
+      <button class="cat-btn" onclick="setCategory('外国思想・社会科学')" id="cat-外国思想・社会科学">外国思想・社会科学</button>
+      <button class="cat-btn" onclick="setCategory('日本古典')" id="cat-日本古典">日本古典</button>
+      <button class="cat-btn" onclick="setCategory('日本近代文学')" id="cat-日本近代文学">日本近代文学</button>
+      <button class="cat-btn" onclick="setCategory('日本近代思想・評論')" id="cat-日本近代思想・評論">日本近代思想・評論</button>
+    </div>
+  </div>
+
+  <div id="loading">データを読み込み中…</div>
+  <div id="main" style="display:none">
+    <div class="result-count" id="resultCount"></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:48%">作品名</th>
+            <th style="width:28%">著者</th>
+            <th style="width:24%">カテゴリー</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<footer>名作文学館 ／ 収録作品数 7,593 ／ 本文は青空文庫にリンクしています</footer>
+
+<!-- 作品詳細モーダル -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-author" id="modalAuthor"></div>
+      </div>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-info" id="modalInfo"></div>
+
+      <!-- 音声読み上げパネル -->
+      <div class="voice-panel">
+        <div class="voice-panel-title">🔊 音声読み上げ</div>
+        <textarea class="voice-text-area" id="voiceText"
+          placeholder="読み上げたいテキストをここに入力してください&#10;（作品名・著者名が自動で入ります）"></textarea>
+        <div class="voice-controls">
+          <button class="btn-play" id="btnPlay" onclick="startSpeech()">▶ 読み上げる</button>
+          <button class="btn-stop" id="btnStop" onclick="stopSpeech()">■ 停止</button>
+          <div class="voice-speed">
+            <label>速さ</label>
+            <select class="speed-select" id="speedSelect">
+              <option value="0.6">遅い</option>
+              <option value="0.8">やや遅い</option>
+              <option value="1.0" selected>普通</option>
+              <option value="1.3">やや速い</option>
+              <option value="1.6">速い</option>
+              <option value="2.0">とても速い</option>
+            </select>
+          </div>
+        </div>
+        <div class="voice-status" id="voiceStatus">テキストを入力して「読み上げる」を押してください</div>
+      </div>
+
+      <a class="btn-read" id="btnRead" href="#" target="_blank" rel="noopener">
+        📖 青空文庫で本文を読む
+      </a>
+      <a class="btn-search-aozora" id="btnSearch" href="#" target="_blank" rel="noopener">
+        🔍 青空文庫で著者の作品を探す
+      </a>
+      <p class="modal-note">
+        ※ 本文は青空文庫（aozora.gr.jp）にリンクしています<br>
+        ※ 音声読み上げはブラウザの機能を使用しています
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+let allWorks = [];
+let filtered = [];
+let currentPage = 1;
+const PER_PAGE = 50;
+let currentCategory = '';
+let fontSize = 15;
+let currentUtterance = null;
+
+// ===== 文字サイズ（小13px・中16px・大20px）=====
+function setFont(size) {
+  document.documentElement.style.setProperty('--font-size', size + 'px');
+  document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active-size'));
+  if (size===13) document.getElementById('fsSmall').classList.add('active-size');
+  else if (size===16) document.getElementById('fsMid').classList.add('active-size');
+  else document.getElementById('fsLarge').classList.add('active-size');
+}
+
+// ===== 音声読み上げ =====
+function startSpeech() {
+  if (!window.speechSynthesis) {
+    setVoiceStatus('お使いのブラウザは音声読み上げに対応していません', 'error');
+    return;
+  }
+  stopSpeech();
+
+  const text = document.getElementById('voiceText').value.trim();
+  if (!text) {
+    setVoiceStatus('テキストを入力してください', 'error');
+    return;
+  }
+
+  const speed = parseFloat(document.getElementById('speedSelect').value);
+  currentUtterance = new SpeechSynthesisUtterance(text);
+  currentUtterance.lang = 'ja-JP';
+  currentUtterance.rate = speed;
+  currentUtterance.pitch = 1.0;
+
+  // 日本語音声を優先して選択
+  const voices = window.speechSynthesis.getVoices();
+  const jaVoice = voices.find(v => v.lang.startsWith('ja'));
+  if (jaVoice) currentUtterance.voice = jaVoice;
+
+  currentUtterance.onstart = () => {
+    setVoiceStatus('🔊 読み上げ中…', 'playing');
+    document.getElementById('btnPlay').disabled = true;
+  };
+  currentUtterance.onend = () => {
+    setVoiceStatus('読み上げが完了しました');
+    document.getElementById('btnPlay').disabled = false;
+    currentUtterance = null;
+  };
+  currentUtterance.onerror = (e) => {
+    setVoiceStatus('エラーが発生しました: ' + e.error, 'error');
+    document.getElementById('btnPlay').disabled = false;
+    currentUtterance = null;
+  };
+
+  window.speechSynthesis.speak(currentUtterance);
+}
+
+function stopSpeech() {
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+  document.getElementById('btnPlay').disabled = false;
+  setVoiceStatus('停止しました');
+  currentUtterance = null;
+}
+
+function setVoiceStatus(msg, type) {
+  const el = document.getElementById('voiceStatus');
+  el.textContent = msg;
+  el.className = 'voice-status' + (type ? ' ' + type : '');
+}
+
+// ===== タグクラス =====
+function tagClass(cat) {
+  return 'tag-' + cat.replace(/[・]/g, '').replace(/　/g, '');
+}
+
+// ===== テーブル描画 =====
+function renderTable() {
+  const tbody = document.getElementById('tbody');
+  const start = (currentPage - 1) * PER_PAGE;
+  const end = start + PER_PAGE;
+  const page = filtered.slice(start, end);
+
+  tbody.innerHTML = page.map(w => `
+    <tr>
+      <td>
+        <a class="title-link" href="#" onclick="openModal(event, ${JSON.stringify(w).replace(/"/g,'&quot;')})">
+          ${escHtml(w.t)}
+          <span class="read-badge">読む</span>
+        </a>
+      </td>
+      <td class="td-author">${escHtml(w.a)}</td>
+      <td><span class="cat-tag ${tagClass(w.c)}">${escHtml(w.c)}</span></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('resultCount').textContent =
+    `${filtered.length.toLocaleString()} 件 （${start+1}〜${Math.min(end, filtered.length)} 件表示）`;
+
+  renderPagination();
+}
+
+// ===== ページネーション =====
+function renderPagination() {
+  const total = Math.ceil(filtered.length / PER_PAGE);
+  const pg = document.getElementById('pagination');
+  if (total <= 1) { pg.innerHTML = ''; return; }
+
+  let html = '';
+  html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>◀ 前へ</button>`;
+
+  const range = new Set([1]);
+  for (let i = Math.max(2, currentPage-2); i <= Math.min(total-1, currentPage+2); i++) range.add(i);
+  range.add(total);
+
+  let prev = 0;
+  for (const p of [...range].sort((a,b)=>a-b)) {
+    if (p - prev > 1) html += `<span class="page-info">…</span>`;
+    html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+    prev = p;
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>次へ ▶</button>`;
+  html += `<span class="page-info">${currentPage} / ${total} ページ</span>`;
+  pg.innerHTML = html;
+}
+
+function goPage(p) {
+  const total = Math.ceil(filtered.length / PER_PAGE);
+  if (p < 1 || p > total) return;
+  currentPage = p;
+  renderTable();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== 検索 =====
+function doSearch() {
+  const title = document.getElementById('titleSearch').value.trim();
+  const author = document.getElementById('authorSearch').value.trim();
+  filtered = allWorks.filter(w => {
+    const matchCat = currentCategory === '' || w.c === currentCategory;
+    const matchTitle = title === '' || w.t.includes(title);
+    const matchAuthor = author === '' || w.a.includes(author);
+    return matchCat && matchTitle && matchAuthor;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+// ===== カテゴリー =====
+function setCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  const id = cat === '' ? 'cat-all' : 'cat-' + cat;
+  const btn = document.getElementById(id);
+  if (btn) btn.classList.add('active');
+  doSearch();
+}
+
+// ===== モーダル =====
+function openModal(event, work) {
+  event.preventDefault();
+  stopSpeech();
+
+  document.getElementById('modalTitle').textContent = work.t;
+  document.getElementById('modalAuthor').textContent = '著者：' + work.a;
+  document.getElementById('modalInfo').innerHTML =
+    `<strong>作品名：</strong>${work.t}<br>` +
+    `<strong>著者名：</strong>${work.a}<br>` +
+    `<strong>カテゴリー：</strong>${work.c}`;
+
+  // 音声テキストに作品名・著者名をセット
+  document.getElementById('voiceText').value =
+    `「${work.t}」\n著者：${work.a}\n\n（ここに読み上げたい文章を貼り付けてください）`;
+  setVoiceStatus('テキストを編集して「読み上げる」を押してください');
+  document.getElementById('btnPlay').disabled = false;
+
+  // 青空文庫リンク
+  document.getElementById('btnRead').href =
+    'https://www.google.com/search?q=' + encodeURIComponent('site:aozora.gr.jp ' + work.t + ' ' + work.a);
+  document.getElementById('btnSearch').href =
+    'https://www.aozora.gr.jp/index_pages/person_search.html#q=' + encodeURIComponent(work.a);
+
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModalBtn() {
+  stopSpeech();
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeModal(event) {
+  if (event.target === document.getElementById('modalOverlay')) closeModalBtn();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalBtn(); });
+
+// ===== HTMLエスケープ =====
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ===== データ読み込み =====
+fetch('works.json')
+  .then(r => r.json())
+  .then(data => {
+    allWorks = data;
+    filtered = allWorks;
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+    renderTable();
+    // 音声リスト初期化（ブラウザによっては遅延が必要）
+    window.speechSynthesis.getVoices();
+  })
+  .catch(() => {
+    document.getElementById('loading').textContent = 'データの読み込みに失敗しました。';
+  });
+</script>
+</body>
+</html>
