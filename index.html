@@ -164,7 +164,10 @@ header p{font-size:13px;opacity:0.6;position:relative;letter-spacing:1px}
 <header>
   <span class="header-icon">📚</span>
   <h1>学習アプリ ライブラリ</h1>
-  <a href="https://proceedx.github.io/meisakubunko/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;margin:12px auto 0;padding:10px 22px;background:linear-gradient(135deg,#fdcb6e,#e17055);color:white;border-radius:50px;text-decoration:none;font-size:13px;font-weight:700;box-shadow:0 4px 16px rgba(225,112,85,0.4);">📖 名作文学館はこちら →</a>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px">
+    <a href="https://proceedx.github.io/portal/" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:rgba(255,255,255,0.15);color:white;border-radius:50px;text-decoration:none;font-size:12px;font-weight:700;">🌟 ポータルへ</a>
+    <a href="https://proceedx.github.io/meisakubunko/" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:linear-gradient(135deg,#fdcb6e,#e17055);color:white;border-radius:50px;text-decoration:none;font-size:12px;font-weight:700;box-shadow:0 4px 12px rgba(225,112,85,0.4);">📖 名作文学館へ</a>
+  </div>
   <div class="stats">
     <div class="stat">
       <div class="stat-num" id="totalApps">197</div>
@@ -437,22 +440,6 @@ function updateStats(){
   document.getElementById('totalProgress').style.width=(done/APPS.length*100)+'%';
   const total=APPS.reduce((s,a)=>s+a.count,0);
   document.getElementById('totalQ').textContent=total.toLocaleString();
-}
-
-function makeTabs(containerId,items,getCls,getActiveCls,onClick){
-  const div=document.getElementById(containerId);
-  items.forEach((item,i)=>{
-    const btn=document.createElement('button');
-    btn.className=getCls(item,i);
-    btn.textContent=(CAT_ICONS[item]?CAT_ICONS[item]+' ':'')+item;
-    btn.dataset.val=item;
-    btn.onclick=()=>{
-      div.querySelectorAll('button').forEach(b=>{b.className=getCls(b.dataset.val)});
-      btn.className=getActiveCls(item);
-      onClick(item);
-    };
-    div.appendChild(btn);
-  });
 }
 
 function init(){
